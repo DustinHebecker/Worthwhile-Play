@@ -31,6 +31,7 @@ interface GameModule<S> {
   isValidState(value: unknown): value is S;     // validates untrusted saves, never throws
   migrateState?(state: unknown, fromVersion: number): S | undefined;
   preload?(locale: string): Promise<void>;      // optional: per-locale content (+ English) before create (ADR 0011)
+  prepare?(options: NewGameOptions): Promise<void>; // optional: what one new game needs, awaited before newGame (ADR 0011 amendment)
 }
 interface GameInstance<S> {
   newGame({ seed, difficulty }): void;

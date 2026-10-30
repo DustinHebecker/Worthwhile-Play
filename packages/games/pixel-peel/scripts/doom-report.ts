@@ -11,20 +11,14 @@
  * checks every first move other than the stored solution's. It prints the distribution and the owner's targets
  * (2026-10-29): median delay ≤ 6, 90th percentile ≤ 20, no fatal move among the first 5 moves.
  *
- * Node runs this TypeScript file directly (type stripping); a tiny resolve hook maps extensionless relative imports to
- * `.ts`. With --jobs > 1 the work is split over child processes of this script.
+ * Node runs this TypeScript file directly (type stripping) with the module hooks of `hooks.ts`. With --jobs > 1 the work is split over child processes of this script.
  */
+import './hooks.ts';
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
-import { register } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-register(
-  `data:text/javascript,${encodeURIComponent(
-    "export async function resolve(s, c, n) { try { return await n(s, c); } catch (e) { if (s.startsWith('.') && !/\\.[a-z]+$/.test(s)) return n(s + '.ts', c); throw e; } }"
-  )}`
-);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -56,6 +50,8 @@ const levels = levelArg === 'all' ? ['easy', 'medium', 'hard'] : [levelArg];
 async function work(index: number, count: number): Promise<void> {
   const { MOTIFS } = (await import(pathToFileURL(resolve(here, '../src/motifs/index.ts')).href)) as { MOTIFS: readonly { id: string }[] };
   const { createInitial } = (await import(pathToFileURL(resolve(here, '../src/generate.ts')).href)) as { createInitial: (s: number, d: string, m: string) => unknown };
+  // A game plays the baked art, loaded on demand (src/catalogue.ts); load it all up front.
+  await ((await import(pathToFileURL(resolve(here, '../src/catalogue.ts')).href)) as { loadAllArt: () => Promise<void> }).loadAllArt();
   const doom = (await import(pathToFileURL(resolve(here, '../test/doom.ts')).href)) as {
     measurePuzzle: (s: unknown, o: unknown) => { runs: Line['runs']; firsts: Line['firsts'] };
     ORACLE: unknown;

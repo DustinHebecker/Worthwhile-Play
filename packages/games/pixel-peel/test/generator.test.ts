@@ -8,10 +8,16 @@ import { identitiesOf } from '../src/hint';
 import { runPolicy } from '../src/policies';
 import { prove } from '../src/prove';
 import { findMotif } from '../src/motifs/index';
-import { widthFor } from '../src/art/sizes';
+import { motifFor } from '../src/catalogue';
+import { heightOf, widthFor } from '../src/art/sizes';
 import { MOTIFS } from '../src/motifs/index';
 import { apply, DIFFICULTIES, initialPosition, isPeelState, LIMITS, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
 import { oracleSolvable } from './oracle';
+import { SAMPLE } from './sample';
+import { loadAllArt } from '../src/catalogue';
+
+// A game plays baked art loaded on demand (`prepare`); these tests start games directly.
+await loadAllArt();
 
 /** Replays a witness and measures it (design v2 § 2.2). */
 function witnessStats(picture: Picture, lanes: Shooter[][], slots: number, witness: readonly Move[]) {
@@ -31,18 +37,19 @@ function witnessStats(picture: Picture, lanes: Shooter[][], slots: number, witne
   return { slotEntries, zeroHitParks, maxOccupied, solved: cur.cells.left === 0 };
 }
 
-/** One motif of each group (season, landscape, animal, scene). */
-const SAMPLE = MOTIFS.filter((m, i) => MOTIFS.findIndex((x) => x.group === m.group) === i);
 
 describe('generator (design v2 § 3)', () => {
   it('is deterministic: the same seed, difficulty and choice give a deep-equal state', () => {
     for (const d of DIFFICULTIES) for (const choice of ['any', 'koala', 'market-stall']) expect(createInitial(99, d, choice)).toEqual(createInitial(99, d, choice));
   });
 
-  it('"Any picture" covers every motif over 300 seeds', () => {
+  it('"Any picture" covers every motif (the cheap draw over enough seeds; a sample of full games plays the drawn motif)', () => {
+    // Coupon collector: n · (ln n + 8) seeds miss a given motif with probability < e^-8 per motif.
+    const limit = Math.ceil(MOTIFS.length * (Math.log(MOTIFS.length) + 8));
     const seen = new Set<string>();
-    for (let seed = 0; seed < 300 && seen.size < MOTIFS.length; seed++) seen.add(createInitial(seed, 'easy', 'any').motif);
+    for (let seed = 0; seed < limit && seen.size < MOTIFS.length; seed++) seen.add(motifFor(seed, 'any').id);
     expect(seen.size).toBe(MOTIFS.length);
+    for (let seed = 0; seed < 20; seed++) expect(createInitial(seed, 'easy', 'any').motif).toBe(motifFor(seed, 'any').id);
   });
 
   it('construction keeps its invariants on small random pictures and always terminates with a solving witness (property)', () => {
@@ -81,7 +88,7 @@ describe('generator (design v2 § 3)', () => {
     );
   });
 
-  // One motif per group here; generator.slow.test.ts sweeps every motif (ADR 0021).
+  // A fixed sample here (test/sample.ts); generator.slow.test.ts sweeps every motif (ADR 0021).
   for (const motif of SAMPLE) {
     it(`${motif.id}: every difficulty × 2 seeds is valid, solved by its witness and within the bounds`, () => {
       for (const d of DIFFICULTIES) {
@@ -92,7 +99,7 @@ describe('generator (design v2 § 3)', () => {
           expect(witnessSolves(g.picture, g.lanes, g.slots, g.witness), label).toBe(true);
           const w = widthFor(motif, d);
           expect(g.picture.w, label).toBe(w);
-          expect(g.picture.h, label).toBe(motif.aspect === 'wide' ? (w * 3) / 4 : w);
+          expect(g.picture.h, label).toBe(heightOf(motif, w));
           expect(g.slots).toBe(level.slots);
           expect(g.lanes).toHaveLength(4);
           const lengths = g.lanes.map((l) => l.length);
@@ -238,8 +245,9 @@ describe('bounded waiting horizon and opening guard (design v3 § 2.2, § 2.3)',
 
   it('easy and medium are unchanged by v3: the same states as before for fixed seeds', () => {
     const hash = (d: string, seed: number, motif: string) => createHash('sha256').update(JSON.stringify(createInitial(seed, d, motif))).digest('hex').slice(0, 16);
-    expect([hash('easy', 11, 'any'), hash('easy', 12, 'koala'), hash('easy', 13, 'winter-village')]).toEqual(['e44963f8b4adf7b7', 'feb09f7319092528', '2b4ed0911fd9af7f']);
-    expect([hash('medium', 11, 'any'), hash('medium', 12, 'koala'), hash('medium', 13, 'winter-village')]).toEqual(['cd8356f2e9c82eb6', 'cf36bdd0c48fa1fd', 'b9f0dae92af354ad']);
+    // Explicit pictures only: which picture "Any picture" draws for a seed changes whenever motifs are added.
+    expect([hash('easy', 12, 'koala'), hash('easy', 13, 'winter-village')]).toEqual(['feb09f7319092528', '2b4ed0911fd9af7f']);
+    expect([hash('medium', 12, 'koala'), hash('medium', 13, 'winter-village')]).toEqual(['cf36bdd0c48fa1fd', 'b9f0dae92af354ad']);
     expect(LEVELS.easy.horizon).toBe(Infinity);
     expect(LEVELS.medium.horizon).toBe(Infinity);
     expect(LEVELS.hard.horizon).toBe(20);

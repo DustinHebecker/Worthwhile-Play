@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
+import { ASPECTS, heightOf, MAX_HEIGHT, MAX_WIDTH, WIDTHS } from '../src/art/sizes';
+import type { Aspect } from '../src/art/types';
 import { FIT_MARGIN, fitCell, MAX_CELL, MIN_CELL } from '../src/layout';
 
 describe('fitCell (design v3 § 4.2)', () => {
@@ -50,5 +52,19 @@ describe('fitCell (design v3 § 4.2)', () => {
       }),
       { numRuns: 500 }
     );
+  });
+
+  it('every picture size of the size table, and the largest a size override may use, fits a 360 × 640 phone with about 305 px of chrome', () => {
+    const phone = { availW: 344, availH: 640, track: 6, chrome: 305 };
+    const sizes: [string, number, number][] = [];
+    for (const aspect of Object.keys(ASPECTS) as Aspect[]) {
+      for (const cls of ['other', 'large'] as const) for (const w of WIDTHS[aspect][cls]) sizes.push([`${aspect} ${cls}`, w, heightOf({ aspect }, w)]);
+    }
+    sizes.push(['bound', MAX_WIDTH, MAX_HEIGHT]);
+    for (const [label, w, h] of sizes) {
+      const cell = fitCell({ ...phone, w, h });
+      expect(phone.chrome + 2 * phone.track + h * cell + FIT_MARGIN, `${label} ${w} × ${h}: height`).toBeLessThanOrEqual(phone.availH);
+      expect(2 * phone.track + w * cell, `${label} ${w} × ${h}: width`).toBeLessThanOrEqual(phone.availW);
+    }
   });
 });

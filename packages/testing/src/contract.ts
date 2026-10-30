@@ -49,7 +49,9 @@ function arbitraryOptions(module: GameModule<unknown>, specs: readonly SettingSp
 
 /**
  * Shared contract every game must satisfy. Games with `preload` (ADR 0011) get it awaited for English before
- * the suite and for each locale before rendering in it, as the app shell does. Call from a test file running in jsdom:
+ * the suite and for each locale before rendering in it, as the app shell does. Games with `prepare` (ADR 0011
+ * amendment) get one test of it; the other tests start games synchronously, so such a game loads everything its
+ * starts may need in a `beforeAll` of its contract test file. Call from a test file running in jsdom:
  *
  *   // @vitest-environment jsdom
  *   runGameContract(game, { interact: (root) => root.querySelector('button')!.click() });
@@ -254,6 +256,28 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
         } finally {
           reported.mockRestore();
         }
+      });
+    }
+
+    if (module.prepare) {
+      const prepare = module.prepare.bind(module);
+      it('prepares any start (ADR 0011 amendment): repeatable for any start-screen settings, then newGame starts validly', async () => {
+        const env = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+        const specs = hostSettings(module as GameModule<unknown>, env.settingsEnv);
+        env.context.root.remove();
+        await fc.assert(
+          fc.asyncProperty(fc.integer({ min: 0, max: 0xffffffff }), arbitraryOptions(module as GameModule<unknown>, specs), async (seed, opts) => {
+            await expect(prepare({ seed, ...opts })).resolves.toBeUndefined();
+            await expect(prepare({ seed, ...opts })).resolves.toBeUndefined();
+            const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+            const instance = module.create(ctx.context);
+            instance.newGame({ seed, ...opts });
+            expect(module.isValidState(clone(instance.serialize()))).toBe(true);
+            instance.dispose();
+            ctx.context.root.remove();
+          }),
+          { numRuns: 12 }
+        );
       });
     }
 

@@ -155,6 +155,12 @@ export type SettingSpec =
       readonly default: string | number;
       readonly display?: 'auto' | 'radio' | 'select';
       /**
+       * Optional groups for a long select (rendered as `<optgroup>`s with the label `labelKey` from the game's
+       * namespace, in this order, after the values that are in no group). Each value is in at most one group; radio
+       * buttons ignore the groups.
+       */
+      readonly groups?: readonly { readonly labelKey: string; readonly values: readonly (string | number)[] }[];
+      /**
        * `false`: the host never remembers this setting (ADR 0017), so the start screen always opens on `default` (e.g. a
        * picture choice whose default is "Any picture"). "Another round" still repeats the save's value. Default `true`.
        */
@@ -408,6 +414,14 @@ export interface GameModule<S = unknown> {
    * Never needed for the catalogue: `metadata` stays synchronous and complete.
    */
   preload?(locale: string): Promise<void>;
+  /**
+   * Optional (ADR 0011 amendment 2026-10-30): loads what `newGame(options)` needs beyond `preload`, when that depends
+   * on the options (e.g. the art of the one picture a seed draws out of many, each its own chunk). The host awaits it
+   * with the same options right before every `newGame`; `newGame` stays synchronous. Must be idempotent and cache its
+   * result; rejects only when it cannot load (the host then shows its load error and starts nothing). Never needed for
+   * `restore`: a save holds everything it needs.
+   */
+  prepare?(options: NewGameOptions): Promise<void>;
   /**
    * Optional (ADR 0017): the settings that change the game, drawn by the host on the start screen and passed to
    * `newGame` as `NewGameOptions.settings`. A function when the list depends on the device (e.g. imported decks).

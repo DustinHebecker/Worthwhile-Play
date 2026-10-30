@@ -1,0 +1,122 @@
+import type { Motif } from '../art/types';
+
+/** Table Mountain seen across Table Bay in late-afternoon light: the flat summit under its tablecloth cloud, Devil's Peak and Lion's Head, Cape Town at its foot, surf on the beach. Original vector art drawn for Worthwhile Play. */
+export const tableMountain: Motif = {
+  id: 'table-mountain',
+  group: 'landmark',
+  title: {
+    de: 'Tafelberg',
+    en: 'Table Mountain',
+    nl: 'Tafelberg',
+    es: 'Montaña de la Mesa',
+    fr: 'Montagne de la Table',
+    ru: 'Столовая гора',
+    'zh-Hans': '桌山',
+    ko: '테이블산',
+    ja: 'テーブルマウンテン',
+    ar: 'جبل الطاولة',
+    pt: 'Montanha da Mesa',
+    it: 'Table Mountain',
+    pl: 'Góra Stołowa',
+    tr: 'Masa Dağı',
+    uk: 'Столова гора',
+    hi: 'टेबल माउंटेन'
+  },
+  place: {
+    de: 'Kapstadt, Südafrika',
+    en: 'Cape Town, South Africa',
+    nl: 'Kaapstad, Zuid-Afrika',
+    es: 'Ciudad del Cabo, Sudáfrica',
+    fr: 'Le Cap, Afrique du Sud',
+    ru: 'Кейптаун, ЮАР',
+    'zh-Hans': '南非开普敦',
+    ko: '남아프리카 공화국 케이프타운',
+    ja: '南アフリカ、ケープタウン',
+    ar: 'كيب تاون، جنوب أفريقيا',
+    pt: 'Cidade do Cabo, África do Sul',
+    it: 'Città del Capo, Sudafrica',
+    pl: 'Kapsztad, Republika Południowej Afryki',
+    tr: 'Cape Town, Güney Afrika',
+    uk: 'Кейптаун, Південна Африка',
+    hi: 'केप टाउन, दक्षिण अफ़्रीका'
+  },
+  aspect: 'panorama',
+  backdrop: '#e8c8f0',
+  palette: {
+    s: ['#7ab8e6', 'skyBlue', 1],
+    l: ['#bcdcf4', 'lightBlue', 2, 's'],
+    q: ['#f2b48a', 'peach', 1],
+    p: ['#f6c8d0', 'lightPink', 3, 'q'],
+    w: ['#fbfaf4', 'white', 1],
+    c: ['#d4d6d8', 'lightGrey', 2, 'w'],
+    t: ['#ecd9a6', 'beige', 1],
+    o: ['#d9a44e', 'ochre', 1],
+    x: ['#a87a4e', 'lightBrown', 1],
+    u: ['#6e4a34', 'brown', 1],
+    k: ['#3a3a44', 'darkGrey', 1],
+    g: ['#80808a', 'grey', 3, 'k'],
+    e: ['#5d8f3e', 'green', 1],
+    m: ['#a2c25a', 'lime', 2, 'e'],
+    d: ['#2f5a35', 'darkGreen', 1],
+    a: ['#3fb2b4', 'turquoise', 2, 'b'],
+    b: ['#2c64a0', 'blue', 1],
+    n: ['#1b355e', 'navy', 1]
+  },
+  layers: [
+    // Late-afternoon sky, warming towards the horizon; a few high clouds.
+    { shape: { rect: [0, 0, 100, 32] }, fill: { gradient: ['s', 's', 'l', 'q'], from: [0, 0], to: [0, 28], soft: 0.6 } },
+    { shape: { ellipse: [88, 4.5, 9, 1.6] }, fill: 'w', shade: { dark: 'c', dir: 'n', mode: 'band', amount: 0.4 } },
+    { shape: { ellipse: [6, 3.5, 6, 1.4] }, fill: 'w', shade: { dark: 'c', dir: 'n', mode: 'band', amount: 0.4 } },
+    // Lion's Head: a separate rocky cone on the right, Signal Hill running off to the right edge.
+    { name: 'lion', shape: { poly: [[72, 34], [76, 27], [79, 20], [81.5, 13.5], [83.6, 10], [85.6, 9.2], [87.6, 10.4], [89.8, 15], [92.4, 21], [96.5, 24.5], [104, 25.6], [104, 34]] }, fill: { gradient: ['e', 'e', 'd'], from: [0, 18], to: [0, 32], soft: 0.6 }, shade: { light: 'm', dir: 'ne' } },
+    { name: 'dome', shape: { poly: [[78.6, 21.6], [81.5, 13.5], [83.6, 10], [85.6, 9.2], [87.6, 10.4], [89.8, 15], [92, 21.4], [88, 23], [82, 23]], smooth: 1 }, fill: 'x', shade: { light: 'o', dark: 'u', dir: 'ne', width: 2 }, keep: true },
+    { shape: { line: [[81, 17], [90.6, 17.6]], width: 1 }, fill: 'u', clip: 'dome', min: 56 },
+    // Devil's Peak on the left: a pointed peak, rock above and green flanks below.
+    { name: 'devil', shape: { poly: [[-6, 34], [-6, 23], [2, 18], [7, 13], [10.5, 9.6], [12.5, 8.8], [14.5, 10.2], [17.5, 12.4], [22, 13.4], [26, 20], [26, 34]] }, fill: 'x', shade: { light: 'o', dark: 'u', dir: 'ne', width: 2 } },
+    { shape: { poly: [[-6, 34], [-6, 24], [2, 20.5], [8, 18], [14, 19.5], [20, 20], [26, 21], [26, 34]], smooth: 1 }, fill: { gradient: ['e', 'd'], from: [0, 20], to: [0, 30], soft: 0.6 }, clip: 'devil' },
+    { shape: { line: [[12.5, 10], [11, 15], [12, 19]], width: 1.2 }, fill: 'u', clip: 'devil' },
+    // Table Mountain: a long level summit and a wall of sandstone buttresses.
+    { name: 'mtn', shape: { poly: [[20, 34], [20, 13], [22.5, 10.4], [24.5, 8.6], [71, 8.6], [72.4, 10.2], [73.4, 14], [74.6, 19], [77, 24], [79, 34]] }, fill: 'u' },
+    { shape: { poly: [[25.4, 8.6], [30.4, 8.6], [30.7, 18.5], [29.8, 20.5], [25.6, 20.5], [25, 17.5]] }, fill: 'o', clip: 'mtn', shade: { dark: 'x', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[32.4, 8.6], [37.8, 8.6], [38.1, 19.5], [37.2, 21.5], [32.6, 21.5], [32, 18.5]] }, fill: 'o', clip: 'mtn', shade: { dark: 'x', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[39.8, 8.6], [45.4, 8.6], [45.7, 19], [44.8, 21], [40, 21], [39.4, 18]] }, fill: 'o', clip: 'mtn', shade: { dark: 'x', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[49.2, 8.6], [54.4, 8.6], [54.7, 19.6], [53.8, 21.6], [49.4, 21.6], [48.8, 18.6]] }, fill: 'o', clip: 'mtn', shade: { dark: 'x', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[56.4, 8.6], [61.6, 8.6], [61.9, 19], [61, 21], [56.6, 21], [56, 18]] }, fill: 'o', clip: 'mtn', shade: { dark: 'x', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[63.6, 8.6], [68.8, 8.6], [69.1, 18.4], [68.2, 20.4], [63.8, 20.4], [63.2, 17.4]] }, fill: 'o', clip: 'mtn', shade: { dark: 'x', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[70.6, 8.6], [72.6, 8.6], [72.9, 17], [72, 19], [70.8, 19], [70.2, 16]] }, fill: 'o', clip: 'mtn', shade: { dark: 'x', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { line: [[47.1, 9], [46.8, 21.5]], width: 2.6 }, fill: 'k', clip: 'mtn' },
+    { shape: { line: [[24, 9.6], [72, 9.6]], width: 1 }, fill: 'q', clip: 'mtn', min: 48 },
+    { shape: { line: [[38.6, 12], [38.4, 20]], width: 1 }, fill: 'k', clip: 'mtn', min: 56 },
+    { shape: { line: [[62.4, 11], [62.4, 19.5]], width: 1 }, fill: 'k', clip: 'mtn', min: 56 },
+    // Green lower slopes between the cliffs and the town, a darker band of trees at their foot.
+    { name: 'slope', shape: { poly: [[-6, 34], [-6, 26], [8, 22.4], [20, 21.4], [30, 22.2], [40, 21.6], [50, 22.4], [60, 21.4], [70, 21], [76, 23.6], [80, 27], [86, 27.4], [96, 27], [104, 27.4], [104, 34]], smooth: 1 }, fill: { gradient: ['m', 'e', 'e', 'd'], from: [0, 22], to: [0, 31], soft: 0.3 } },
+    { shape: { poly: [[-6, 34], [-6, 29], [20, 28.4], [50, 29], [80, 28.6], [104, 29], [104, 34]], smooth: 1 }, fill: 'd' },
+    // The tablecloth: a white cloud lying level on the summit and spilling over the edge.
+    { name: 'cloth', shape: { poly: [[23.5, 9.2], [25.5, 6.4], [30, 5.4], [40, 5], [50, 5.2], [60, 4.9], [68, 5.4], [72, 7.4], [71.5, 9.4], [69, 11.4], [67, 9.6], [61, 9.6], [58.5, 12.2], [56, 9.6], [44, 9.6], [41, 12.6], [38, 9.6], [31, 9.6], [28.5, 11.6], [26, 9.6]], smooth: 1 }, fill: 'w', shade: { dark: 'c', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [46, 4.6, 9, 1.4] }, fill: 'w' },
+    // Cape Town: a calm band of white and pastel houses, a few taller blocks.
+    { name: 'town', shape: { poly: [[-6, 36], [-6, 31.6], [14, 31], [34, 31.4], [54, 30.8], [74, 31.4], [104, 31], [104, 36]] }, fill: 'w' },
+    { shape: { all: true }, fill: { stripes: ['w', 't', 'p', 'w', 'q', 'c', 't', 'p'], width: 3.2 }, clip: 'town' },
+    { name: 'front', shape: { rect: [-6, 33.4, 112, 3] }, fill: 'w', clip: 'town' },
+    { shape: { all: true }, fill: { stripes: ['q', 'w', 'p', 't', 'w', 'p', 'c', 't'], width: 3.6 }, clip: 'front' },
+    { shape: { rect: [30, 27.6, 3.2, 5] }, fill: 'w', shade: { dark: 'c', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { rect: [34.4, 28.6, 2.8, 4] }, fill: 't', shade: { dark: 'c', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { rect: [38.4, 28, 3, 4.6] }, fill: 'w', shade: { dark: 'c', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { ellipse: [16, 31.6, 3, 1.2] }, fill: 'd' },
+    { shape: { ellipse: [60, 31.4, 3.4, 1.2] }, fill: 'd' },
+    { shape: { ellipse: [86, 31.6, 3, 1.2] }, fill: 'd', min: 56 },
+    // Table Bay: deep blue offshore, turquoise in the shallows; a yacht.
+    { name: 'sea', shape: { rect: [0, 36.6, 100, 14] }, fill: { gradient: ['n', 'n', 'b', 'a'], from: [0, 37], to: [0, 46], soft: 0.6 } },
+    { shape: { rect: [-6, 35.2, 112, 2.2] }, fill: 'k', shade: { light: 'g', dir: 'n', mode: 'band', amount: 0.4 } },
+    { shape: { line: [[8, 39.5], [28, 39.5]], width: 1 }, fill: 'b', min: 56 },
+    { shape: { line: [[66, 40.5], [88, 40.5]], width: 1 }, fill: 'l', min: 56 },
+    { shape: { poly: [[56.6, 42.4], [63, 42.4], [62, 43.6], [57.6, 43.6]] }, fill: 'k' },
+    { shape: { poly: [[60.2, 42], [60.2, 36.6], [63.4, 42]] }, fill: 'w', shade: { dark: 'c', dir: 'e', mode: 'band', amount: 0.4 }, keep: true },
+    { shape: { poly: [[59.6, 42], [59.6, 38], [57.2, 42]] }, fill: 'w', min: 48 },
+    // The beach at Bloubergstrand: a band of surf, smooth sand, a dune with fynbos.
+    { name: 'beach', shape: { poly: [[-6, 52], [-6, 44.2], [20, 45], [50, 46], [80, 46.6], [106, 46.8], [106, 52]], smooth: 1 }, fill: { gradient: ['t', 't', 'o'], from: [0, 46], to: [0, 51], soft: 0.5 } },
+    { shape: { line: [[-4, 44.2], [20, 45], [50, 46], [80, 46.6], [104, 46.8]], width: 1.6 }, fill: 'w' },
+    { shape: { poly: [[-6, 52], [-6, 45.6], [4, 45.2], [11, 47], [16, 52]], smooth: 1 }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'ne' } },
+    { shape: { poly: [[88, 52], [94, 48.8], [102, 48.4], [106, 49], [106, 52]], smooth: 1 }, fill: 'e', shade: { light: 'm', dir: 'n' } }
+  ]
+};

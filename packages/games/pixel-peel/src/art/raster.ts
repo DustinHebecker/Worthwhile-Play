@@ -1,9 +1,10 @@
+import { heightOf } from './sizes';
 import { cosDeg, sinDeg } from './trig';
 import type { Direction, Fill, Layer, Motif, PaletteSpec, Point, Shade, Shape } from './types';
 
 /**
  * The deterministic rasteriser (design v2 § 1.3). It turns a vector motif into a grid of palette keys at width
- * W (32 to 64) with the difficulty's palette tier. Pure and synchronous; only + − × ÷, comparisons,
+ * W (24 to 64) with the difficulty's palette tier. Pure and synchronous; only + − × ÷, comparisons,
  * `Math.floor`/`Math.round`, `Math.sqrt` and integer hashing; trigonometry from a table. The same motif, width and
  * tier give bit-identical grids on every device. There is no colour quantisation: every cell gets a palette key
  * chosen by a rule.
@@ -40,7 +41,6 @@ export type Tier = 1 | 2 | 3;
 export const minPixels = (w: number): number => Math.floor(w / 4);
 /** Samples per cell side when drawing a layer (design v2 § 1.3, supersampling). */
 export const SUPERSAMPLE = 4;
-export const heightOf = (motif: Pick<Motif, 'aspect'>, w: number): number => (motif.aspect === 'wide' ? (w * 3) / 4 : w);
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 

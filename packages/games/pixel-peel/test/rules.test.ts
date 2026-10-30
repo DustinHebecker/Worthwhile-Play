@@ -27,6 +27,10 @@ import {
 } from '../src/rules';
 import { gridArb, pictureOf, stateOf } from './helpers';
 import { exposedCells, front, launch } from './reference';
+import { loadAllArt } from '../src/catalogue';
+
+// A game plays baked art loaded on demand (`prepare`); these tests start games directly.
+await loadAllArt();
 
 const cellsOf = (rows: string[]) => rows.join('').split('');
 const xy = (i: number, w: number) => [i % w, Math.floor(i / w)];

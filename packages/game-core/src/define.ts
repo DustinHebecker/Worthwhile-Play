@@ -104,6 +104,21 @@ export function validateSettings(module: Pick<GameModule, 'metadata' | 'settings
       if (spec.valueKey !== undefined) for (const v of spec.values) keys.push(`${spec.valueKey}.${v}`);
       if (spec.valueLabels) for (const v of spec.values) if (!spec.valueLabels[String(v)]?.trim()) problems.push(`setting "${spec.id}" has no label for value ${JSON.stringify(v)}`);
       if (spec.display !== undefined && !['auto', 'radio', 'select'].includes(spec.display)) problems.push(`setting "${spec.id}": unknown display "${String(spec.display)}"`);
+      if (spec.groups !== undefined) {
+        if (!Array.isArray(spec.groups)) problems.push(`setting "${spec.id}": groups must be an array`);
+        else {
+          const grouped = new Set<string>();
+          for (const group of spec.groups) {
+            keys.push(group.labelKey);
+            if (!Array.isArray(group.values) || group.values.length === 0) problems.push(`setting "${spec.id}": group "${group.labelKey}" lists no values`);
+            for (const v of group.values ?? []) {
+              if (!spec.values.includes(v)) problems.push(`setting "${spec.id}": group "${group.labelKey}" lists ${JSON.stringify(v)}, not one of its values`);
+              if (grouped.has(String(v))) problems.push(`setting "${spec.id}": value ${JSON.stringify(v)} is in more than one group`);
+              grouped.add(String(v));
+            }
+          }
+        }
+      }
     }
     if (spec.kind !== 'difficulty' && spec.remember !== undefined && typeof (spec.remember as unknown) !== 'boolean') problems.push(`setting "${spec.id}": remember must be a boolean`);
     if (spec.kind === 'toggle' && typeof (spec.default as unknown) !== 'boolean') problems.push(`setting "${spec.id}": default must be a boolean`);

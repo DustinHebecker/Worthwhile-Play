@@ -1,30 +1,35 @@
 /**
- * Renders every Pixel Peel motif to PNG for the owner's review (design v2 § 1.7); the output is never committed.
+ * Renders and bakes Pixel Peel motifs (design v2 § 1.7, docs/design/pixel-peel-motifs.md § 5); the PNGs are never
+ * committed.
  *
- *   node packages/games/pixel-peel/scripts/render-motifs.ts [out-dir] [--only <id>] [--watch]
+ *   node packages/games/pixel-peel/scripts/render-motifs.ts [out-dir] [--only <id>[,<id>…]] [--batch <name>] [--sheet] [--bake] [--watch]
  *
- * Default output: packages/games/pixel-peel/renders/ (git-ignored). Per motif `<id>.png`: the three difficulty
- * renders side by side (32 at ×12, 40 at ×10, 48 at ×8), each with a palette strip (swatch with symbol, name, cell
- * count; a count under the minimum in red); `<id>-layers.png`: the hard render once per layer with that layer's mask
- * highlighted; and `contact-sheet.png` (all motifs at 48 × 4). Warnings: ΔE pairs below the thresholds, the despeckle
- * share, colours merged for size, and the rasterisation time.
+ * - Default output: packages/games/pixel-peel/renders/ (git-ignored).
+ * - `--only` limits the run to these motifs (comma-separated, may be repeated); `--batch` to one batch file of
+ *   src/motifs/batches (its name without `.ts`, e.g. `00-core`).
+ * - Per motif: `<id>.png`, the three difficulties side by side (each about 384 px wide) with a palette strip (swatch
+ *   with symbol, name, cell count; a count under the minimum in red); `<id>-<difficulty>-<w>.png` at about 512 px;
+ *   `<id>-layers.png`, the hard render once per layer with that layer's mask highlighted. `--sheet` skips these.
+ * - Always `contact-sheet.png`: every selected motif at easy, medium and hard, each fitted into a 256 px box, two
+ *   motifs per row, labelled with id, aspect and sizes (the quick review sheet).
+ * - Warnings: ΔE pairs below the thresholds, the colour-share rules, the despeckle share, colours merged for size,
+ *   and the rasterisation time.
+ * - `--bake` writes the generated runtime files: `src/motifs/baked/<id>.ts` per selected motif (the run-length rows,
+ *   palette and backdrop a game plays) and `src/motifs/cards/<batch>.ts` for each batch with a selected motif (ids,
+ *   groups, aspects, titles, places). A full bake (no `--only`/`--batch`) also deletes generated files of motifs and
+ *   batches that no longer exist.
+ * - `--watch` re-renders when a file in src/motifs or src/art changes.
  *
- * Node runs this TypeScript file directly (type stripping). A tiny resolve hook maps extensionless relative imports
- * to `.ts`, so the game's own `src/art/raster.ts`, `src/symbols.ts` and `src/motifs/` are used unchanged. The PNG
- * encoder uses only node:zlib.
+ * Node runs this TypeScript file directly (type stripping) with the module hooks of `hooks.ts`, so the game's own
+ * `src/art/raster.ts`, `src/symbols.ts` and `src/motifs/` are used unchanged. The PNG encoder uses only node:zlib.
  */
+import './hooks.ts';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, watch, writeFileSync } from 'node:fs';
-import { register } from 'node:module';
+import { mkdirSync, readdirSync, unlinkSync, watch, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
 
-register(
-  `data:text/javascript,${encodeURIComponent(
-    "export async function resolve(s, c, n) { try { return await n(s, c); } catch (e) { if (s.startsWith('.') && !/\\.[a-z]+$/.test(s)) return n(s + '.ts', c); throw e; } }"
-  )}`
-);
 
 type RGB = [number, number, number];
 interface Pic {
@@ -43,7 +48,11 @@ interface Report {
 }
 interface MotifLike {
   id: string;
-  aspect: 'square' | 'wide';
+  group: string;
+  aspect: 'square' | 'wide' | 'tall' | 'panorama';
+  size?: readonly number[];
+  title: Record<string, string>;
+  place: Record<string, string>;
   backdrop: string;
   palette: Record<string, readonly [string, string, number, string?]>;
   layers: readonly unknown[];
@@ -52,10 +61,19 @@ interface MotifLike {
 const here = dirname(fileURLToPath(import.meta.url));
 const src = resolve(here, '../src');
 const args = process.argv.slice(2);
-const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : undefined;
+const valued = new Set(['--only', '--batch']);
+const listArg = (name: string) => args.flatMap((a, i) => (args[i - 1] === name ? a.split(',').filter(Boolean) : []));
+const only = listArg('--only');
+const batchArg = listArg('--batch');
 const watching = args.includes('--watch');
 const baking = args.includes('--bake');
-const out = resolve(args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--only') ?? join(here, '../renders'));
+const sheetOnly = args.includes('--sheet');
+const out = resolve(args.find((a, i) => !a.startsWith('--') && !valued.has(args[i - 1] ?? '')) ?? join(here, '../renders'));
+
+/** A TypeScript string literal in single quotes. */
+const lit = (text: string) => `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+const localized = (record: Record<string, string>) => `{ ${Object.entries(record).map(([k, v]) => `${/^[a-z]+$/.test(k) ? k : lit(k)}: ${lit(v)}`).join(', ')} }`;
+const GENERATED = 'Generated by `node packages/games/pixel-peel/scripts/render-motifs.ts --bake`. Do not edit by hand.';
 
 const rgb = (hex: string): RGB => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
 
@@ -131,15 +149,34 @@ function text(img: Image, x: number, y: number, s: string, c: RGB, scale = 2) {
 async function main(): Promise<void> {
   const raster = (await import(pathToFileURL(join(src, 'art/raster.ts')).href)) as { rasteriseReport: (m: MotifLike, w: number, t: 1 | 2 | 3) => Report; minPixels: (w: number) => number };
   const symbols = (await import(pathToFileURL(join(src, 'symbols.ts')).href)) as { insideSymbol: (i: number, x: number, y: number) => boolean; inkFor: (hex: string) => string; deltaE: (a: string, b: string) => number };
-  const bust = `?t=${Date.now()}`;
-  const index = (await import(pathToFileURL(join(src, 'motifs/index.ts')).href + bust)) as { MOTIFS: readonly MotifLike[] };
   const sizes = (await import(pathToFileURL(join(src, 'art/sizes.ts')).href)) as {
     widthFor: (m: MotifLike, d: 'easy' | 'medium' | 'hard') => number;
+    sizeProblems: (aspect: MotifLike['aspect'], widths: readonly number[]) => string[];
     colourStats: (rows: readonly string[]) => { effective: number; atLeast2: number; largest: number; shares: Map<string, number> };
   };
   const bake = (await import(pathToFileURL(join(src, 'art/bake.ts')).href)) as { encodeRows: (rows: readonly string[]) => string };
-  const baked: string[] = [];
-  const motifs = index.MOTIFS.filter((m) => !only || m.id === only);
+  const order = (await import(pathToFileURL(join(src, 'motifs/order.ts')).href)) as { orderMotifs: <T extends { group: string }>(b: Record<string, readonly T[]>) => T[] };
+  // The batches (src/motifs/batches/*.ts, each exporting BATCH), freshly loaded so --watch sees changes.
+  const bust = `?t=${Date.now()}`;
+  const batchDir = join(src, 'motifs/batches');
+  const batches: Record<string, readonly MotifLike[]> = {};
+  const batchOf = new Map<string, string>();
+  for (const file of readdirSync(batchDir).filter((f) => f.endsWith('.ts')).sort()) {
+    const name = file.slice(0, -3);
+    const mod = (await import(pathToFileURL(join(batchDir, file)).href + bust)) as { BATCH?: readonly MotifLike[] };
+    if (!Array.isArray(mod.BATCH)) throw new Error(`${file} does not export BATCH`);
+    batches[name] = mod.BATCH;
+    for (const m of mod.BATCH) {
+      if (batchOf.has(m.id)) throw new Error(`motif ${m.id} is in two batches: ${batchOf.get(m.id)} and ${name}`);
+      batchOf.set(m.id, name);
+    }
+  }
+  const all = order.orderMotifs(batches);
+  for (const id of only) if (!batchOf.has(id)) throw new Error(`unknown motif ${id} (is it in a batch file?)`);
+  for (const name of batchArg) if (!batches[name]) throw new Error(`unknown batch ${name} (files: ${Object.keys(batches).join(', ')})`);
+  const selected = (m: MotifLike) => (!only.length || only.includes(m.id)) && (!batchArg.length || batchArg.includes(batchOf.get(m.id) ?? ''));
+  const motifs = (only.length ? only.map((id) => all.find((m) => m.id === id) as MotifLike) : all).filter(selected);
+  const full = !only.length && !batchArg.length;
   mkdirSync(out, { recursive: true });
 
   const drawPicture = (img: Image, pic: Pic, ox: number, oy: number, s: number) => {
@@ -152,24 +189,54 @@ async function main(): Promise<void> {
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (symbols.insideSymbol(index, ((x + 0.5) * 24) / size, ((y + 0.5) * 24) / size)) img.set(ox + x, oy + y, ink);
   };
 
-  const sheet: { id: string; pic: Pic }[] = [];
+  const sheet: { m: MotifLike; pics: Pic[] }[] = [];
+  const bakedRows = new Map<string, string[]>();
   for (const m of motifs) {
+    const warnings: string[] = [];
+    if (m.size) for (const p of sizes.sizeProblems(m.aspect, m.size)) warnings.push(`  ! size: ${p} (the table's sizes are used)`);
     const levels = (['easy', 'medium', 'hard'] as const).map((d, k) => {
       const w = sizes.widthFor(m, d);
-      return { d, w, tier: (k + 1) as 1 | 2 | 3, s: Math.floor(384 / w), de: k === 0 ? 18 : 12 };
+      return { d, w, tier: (k + 1) as 1 | 2 | 3, s: Math.max(1, Math.floor(384 / w)), de: k === 0 ? 18 : 12 };
     });
     const reports = levels.map((l) => {
       const t0 = performance.now();
       const r = raster.rasteriseReport(m, l.w, l.tier);
       return { ...l, r, ms: performance.now() - t0 };
     });
+    reports.forEach((x) => {
+      const pic = x.r.picture;
+      const filled = pic.rows.join('').replace(/\./g, '').length;
+      const share = x.r.despeckled / (pic.w * pic.h);
+      const lowPairs: string[] = [];
+      for (let i = 0; i < pic.palette.length; i++) {
+        if (symbols.deltaE(pic.palette[i]!.hex, pic.backdrop) < 15) lowPairs.push(`${pic.palette[i]!.key}/backdrop`);
+        for (let j = i + 1; j < pic.palette.length; j++) {
+          const d = symbols.deltaE(pic.palette[i]!.hex, pic.palette[j]!.hex);
+          if (d < x.de) lowPairs.push(`${pic.palette[i]!.key}${pic.palette[j]!.key}=${d.toFixed(1)}`);
+        }
+      }
+      const tierKeys = Object.entries(m.palette).filter(([, spec]) => spec[2] <= x.tier).length;
+      const st = sizes.colourStats(pic.rows);
+      warnings.push(`${m.id} ${x.d} ${pic.w}×${pic.h}: ${pic.palette.length} colours (tier keys ${tierKeys}), effective ${st.effective.toFixed(1)}, ≥2 % ${st.atLeast2}, largest ${(st.largest * 100).toFixed(0)} %, filled ${filled}/${pic.w * pic.h}, despeckle ${(share * 100).toFixed(1)} %, ${x.ms.toFixed(0)} ms`);
+      if (pic.palette.length !== tierKeys) warnings.push(`  ! played colours differ from the tier's keys`);
+      if (lowPairs.length) warnings.push(`  ! ΔE low: ${lowPairs.join(' ')}`);
+      if (x.d === 'medium' && st.effective < 6) warnings.push('  ! effective colours below 6');
+      if (x.d === 'hard' && (st.effective < 8 || st.atLeast2 < 12 || st.largest > 0.25)) warnings.push('  ! hard needs effective ≥ 8, ≥ 12 colours with 2 %, none above 25 %');
+      if (x.r.mergedForSize.length) warnings.push(`  ! merged for size: ${x.r.mergedForSize.join(' ')}`);
+      if (x.r.orphans.length) warnings.push(`  ! ORPHANS: ${x.r.orphans.join(' ')}`);
+      if (share > 0.02) warnings.push(`  ! despeckle over 2 %`);
+    });
+    bakedRows.set(m.id, reports.map((r) => bake.encodeRows(r.r.picture.rows)));
+    sheet.push({ m, pics: reports.map((r) => r.r.picture) });
+    process.stdout.write(`${warnings.join('\n')}\n`);
+    if (sheetOnly) continue;
+
     const colW = 400;
     const gap = 16;
     const picH = Math.max(...reports.map((x) => x.r.picture.h * x.s));
     const strip = Math.max(...reports.map((x) => x.r.picture.palette.length)) * 16 + 8;
     const img = new Image(3 * colW + 4 * gap, picH + strip + 2 * gap + 20);
     text(img, gap, 6, m.id, [40, 40, 40]);
-    const warnings: string[] = [];
     reports.forEach((x, k) => {
       const ox = gap + k * (colW + gap);
       const pic = x.r.picture;
@@ -186,34 +253,14 @@ async function main(): Promise<void> {
         text(img, Math.max(after + 8, ox + 230), y + 2, String(n), n < min ? [200, 0, 0] : [40, 40, 40]);
         y += 16;
       });
-      const filled = pic.rows.join('').replace(/\./g, '').length;
-      const share = x.r.despeckled / (pic.w * pic.h);
-      const lowPairs: string[] = [];
-      for (let i = 0; i < pic.palette.length; i++) {
-        if (symbols.deltaE(pic.palette[i]!.hex, pic.backdrop) < 15) lowPairs.push(`${pic.palette[i]!.key}/backdrop`);
-        for (let j = i + 1; j < pic.palette.length; j++) {
-          const d = symbols.deltaE(pic.palette[i]!.hex, pic.palette[j]!.hex);
-          if (d < x.de) lowPairs.push(`${pic.palette[i]!.key}${pic.palette[j]!.key}=${d.toFixed(1)}`);
-        }
-      }
-      const tierKeys = Object.entries(m.palette).filter(([, spec]) => spec[2] <= x.tier).length;
-      const st = sizes.colourStats(pic.rows);
-      const line = `${m.id} @${x.w}: ${pic.palette.length} colours (tier keys ${tierKeys}), effective ${st.effective.toFixed(1)}, ≥2 % ${st.atLeast2}, largest ${(st.largest * 100).toFixed(0)} %, filled ${filled}/${pic.w * pic.h}, despeckle ${(share * 100).toFixed(1)} %, ${x.ms.toFixed(1)} ms`;
-      warnings.push(line);
-      if (pic.palette.length !== tierKeys) warnings.push(`  ! played colours differ from the tier's keys`);
-      if (lowPairs.length) warnings.push(`  ! ΔE low: ${lowPairs.join(' ')}`);
-      if (x.r.mergedForSize.length) warnings.push(`  ! merged for size: ${x.r.mergedForSize.join(' ')}`);
-      if (x.r.orphans.length) warnings.push(`  ! ORPHANS: ${x.r.orphans.join(' ')}`);
-      if (share > 0.02) warnings.push(`  ! despeckle over 2 %`);
     });
     writeFileSync(join(out, `${m.id}.png`), img.png());
     for (const r of reports) {
-      const scale = Math.floor(512 / r.w);
+      const scale = Math.max(1, Math.floor(512 / Math.max(r.r.picture.w, r.r.picture.h)));
       const single = new Image(r.r.picture.w * scale, r.r.picture.h * scale);
       drawPicture(single, r.r.picture, 0, 0, scale);
       writeFileSync(join(out, `${m.id}-${r.d}-${r.w}.png`), single.png());
     }
-    baked.push(`  '${m.id}': [${reports.map((r) => `'${bake.encodeRows(r.r.picture.rows)}'`).join(', ')}]`);
     // Layers: the hard render once per layer, its mask brightened and outlined.
     const hard = reports[2]!.r;
     const tile = hard.picture.w * 3;
@@ -239,33 +286,63 @@ async function main(): Promise<void> {
       }
     });
     writeFileSync(join(out, `${m.id}-layers.png`), layers.png());
-    sheet.push({ id: m.id, pic: hard.picture });
-    process.stdout.write(`${warnings.join('\n')}\n`);
   }
 
-  if (!only) {
-    const s = 3;
-    const tile = 64 * s;
-    const gap = 18;
-    const cols = 5;
-    const rows = Math.ceil(sheet.length / cols);
-    const img = new Image(cols * tile + (cols + 1) * gap, rows * (tile + gap + 14) + gap);
-    sheet.forEach(({ id, pic }, k) => {
-      const ox = gap + (k % cols) * (tile + gap);
-      const oy = gap + Math.floor(k / cols) * (tile + gap + 14);
-      drawPicture(img, pic, ox, oy + Math.floor((tile - pic.h * s) / 2), s);
-      text(img, ox, oy + tile + 3, id, [40, 40, 40], 2);
+  // The contact sheet: each motif at easy, medium and hard, fitted into a box, `perRow` motifs per row.
+  if (sheet.length) {
+    const box = 256;
+    const gap = 12;
+    const label = 34;
+    const perRow = sheet.length > 2 ? 2 : sheet.length;
+    const unit = 3 * box + 4 * gap;
+    const rows = Math.ceil(sheet.length / perRow);
+    const img = new Image(perRow * unit + gap, rows * (box + label + gap) + gap);
+    sheet.forEach(({ m, pics }, k) => {
+      const ox = gap + (k % perRow) * unit;
+      const oy = gap + Math.floor(k / perRow) * (box + label + gap);
+      text(img, ox, oy, `${m.id}  ${m.group} ${m.aspect}`, [40, 40, 40], 2);
+      text(img, ox, oy + 14, pics.map((p) => `${p.w}x${p.h}: ${p.palette.length}`).join('   '), [90, 90, 90], 2);
+      pics.forEach((pic, j) => {
+        const s = Math.max(1, Math.floor(Math.min(box / pic.w, box / pic.h)));
+        const bx = ox + j * (box + gap);
+        img.rect(bx, oy + label, box, box, [228, 226, 220]);
+        drawPicture(img, pic, bx + Math.floor((box - pic.w * s) / 2), oy + label + Math.floor((box - pic.h * s) / 2), s);
+      });
     });
     writeFileSync(join(out, 'contact-sheet.png'), img.png());
-    if (baking) {
-      const file = join(src, 'motifs/baked.ts');
-      writeFileSync(
-        file,
-        `/** Generated by \`scripts/render-motifs.ts --bake\`; see \`src/art/bake.ts\`. Do not edit by hand. */\n// prettier-ignore\nexport const BAKED: Readonly<Record<string, readonly [string, string, string]>> = {\n${baked.join(',\n')}\n};\n`
-      );
-      process.stdout.write(`baked ${baked.length} motifs into ${file}\n`);
-    }
   }
+
+  if (baking) {
+    const bakedDir = join(src, 'motifs/baked');
+    const cardsDir = join(src, 'motifs/cards');
+    mkdirSync(bakedDir, { recursive: true });
+    mkdirSync(cardsDir, { recursive: true });
+    for (const m of motifs) {
+      const rows = bakedRows.get(m.id)!;
+      const palette = Object.entries(m.palette).map(([key, spec]) => `[${lit(key)}, ${lit(spec[0])}, ${lit(spec[1])}]`);
+      writeFileSync(
+        join(bakedDir, `${m.id}.ts`),
+        `/** The baked art of \`${m.id}\` (src/motifs/${m.id}.ts). ${GENERATED} */\nimport type { BakedArt } from '../../art/types';\n\n// prettier-ignore\nexport const art: BakedArt = {\n  backdrop: ${lit(m.backdrop)},\n  palette: [${palette.join(', ')}],\n  rows: [\n${rows.map((r) => `    ${lit(r)}`).join(',\n')}\n  ]\n};\n`
+      );
+    }
+    const touched = new Set(motifs.map((m) => batchOf.get(m.id)!));
+    for (const name of Object.keys(batches)) {
+      if (!touched.has(name) && !(full && batches[name]!.length === 0)) continue;
+      const cards = batches[name]!.map(
+        (m) => `  {\n    id: ${lit(m.id)},\n    group: ${lit(m.group)},\n    aspect: ${lit(m.aspect)},\n    art: () => import('../baked/${m.id}'),\n    title: ${localized(m.title)},\n    place: ${localized(m.place)}\n  }`
+      );
+      writeFileSync(
+        join(cardsDir, `${name}.ts`),
+        `/** The cards of batch \`${name}\` (src/motifs/batches/${name}.ts). ${GENERATED} */\nimport type { MotifCard } from '../../art/types';\n\n// prettier-ignore\nexport const CARDS: readonly MotifCard[] = [\n${cards.join(',\n')}\n];\n`
+      );
+    }
+    if (full) {
+      for (const file of readdirSync(bakedDir)) if (file.endsWith('.ts') && !batchOf.has(file.slice(0, -3))) unlinkSync(join(bakedDir, file));
+      for (const file of readdirSync(cardsDir)) if (file.endsWith('.ts') && !batches[file.slice(0, -3)]) unlinkSync(join(cardsDir, file));
+    }
+    process.stdout.write(`baked ${motifs.length} motif(s) into ${bakedDir} and the cards of ${[...touched].join(', ') || 'no batch'} into ${cardsDir}\n`);
+  }
+  if (!motifs.length) process.stdout.write('no motif selected\n');
   process.stdout.write(`${motifs.length} motif(s) rendered to ${out}\n`);
 }
 
@@ -278,7 +355,7 @@ if (watching) {
       clearTimeout(timer);
       timer = setTimeout(() => {
         // Node caches modules; a fresh process gives fresh motif data.
-        spawnSync(process.execPath, [fileURLToPath(import.meta.url), out, ...(only ? ['--only', only] : [])], { stdio: 'inherit' });
+        spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...args.filter((a) => a !== '--watch')], { stdio: 'inherit' });
       }, 150);
     });
   }

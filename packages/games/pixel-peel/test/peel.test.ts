@@ -4,6 +4,10 @@ import { PeelQueue, peelTimeline, shotsOf, SLOW_TIMING, TIMING, tokenAt, type Pe
 import { parseMove, startCursor, step } from '../src/engine';
 import { createInitial } from '../src/generate';
 import { tableOfState } from '../src/rules';
+import { loadAllArt } from '../src/catalogue';
+
+// A game plays baked art loaded on demand (`prepare`); these tests start games directly.
+await loadAllArt();
 
 /** Hits on a track of `stations` stations, with distinct cells (as a launch never hits a cell twice). */
 const hitsArb = (stations: number, max = 90) =>
