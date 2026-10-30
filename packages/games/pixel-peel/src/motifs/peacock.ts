@@ -103,14 +103,14 @@ export const peacock: Motif = {
     { shape: { ellipse: [CX, CY, 46.5, 64] }, fill: 'e' },
     { shape: { ellipse: [CX, CY, 36, 48] }, fill: { gradient: ['e', 'o'], from: [CX, CY - 46], to: [CX, CY - 14], soft: 0.5 } },
     { shape: { ellipse: [CX, CY, 21, 28] }, fill: 'd' },
-    { shape: { all: true }, fill: { scatter: 'z', density: 0.1, salt: 71 }, clip: 'fan', min: 40 },
+    { shape: { all: true }, fill: { scatter: 'z', density: 0.1, salt: 71 }, clip: 'fan', min: 48 },
     ...shafts(),
     ...eyes(44, 13, 6, 174, 1.25),
     ...eyes(33, 10, 12, 168, 1.1),
-    ...eyes(23, 7, 16, 164, 0.9, 40),
+    ...eyes(23, 7, 16, 164, 0.9, 48),
     // The garden path and grass.
     { name: 'ground', shape: { rect: [0, 84, 100, 16] }, fill: { gradient: ['c', 'h'], from: [0, 84], to: [0, 104], soft: 0.6 } },
-    { shape: { all: true }, fill: { scatter: 'h', density: 0.12, salt: 73 }, clip: 'ground', min: 40 },
+    { shape: { all: true }, fill: { scatter: 'h', density: 0.12, salt: 73 }, clip: 'ground', min: 48 },
     { shape: { poly: [[0, 84], [8, 80], [14, 84], [20, 81], [26, 86], [0, 90]], smooth: 1 }, fill: 'd', shade: { light: 'e', dir: 'n', mode: 'band', amount: 0.4 } },
     { shape: { poly: [[74, 86], [80, 81], [86, 84], [92, 80], [100, 83], [100, 90], [76, 90]], smooth: 1 }, fill: 'd', shade: { light: 'e', dir: 'n', mode: 'band', amount: 0.4 } },
     // Copper wings and legs.

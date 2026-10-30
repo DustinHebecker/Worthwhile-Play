@@ -72,7 +72,7 @@ export const orangutan: Motif = {
   },
   layers: [
     // Misty rainforest depths: bright haze above, darker green-teal below, pale trunks fading into the mist.
-    { shape: { all: true }, fill: { gradient: ['g', 'a', 't', 'q'], from: [0, 0], to: [0, 133], soft: 0.6 } },
+    { shape: { all: true }, fill: { gradient: ['g', 'a', 't', 'q'], from: [0, 0], to: [0, 133], soft: 0.2 } },
     { shape: { rect: [10, 0, 7, 134] }, fill: 'a', shade: { light: 'g', dir: 'w' }, min: 36 },
     { shape: { rect: [62, 0, 6, 134] }, fill: 't', shade: { light: 'a', dir: 'w' } },
     { shape: { rect: [24, 30, 4, 104] }, fill: 't', min: 36 },
@@ -80,11 +80,11 @@ export const orangutan: Motif = {
     { shape: { ellipse: [70, 56, 18, 8] }, fill: 't', shade: { light: 'a', dir: 'nw', mode: 'band', amount: 0.3 }, min: 36 },
     // Hanging lianas.
     { shape: { line: [[6, 14], [8, 50], [5, 90], [8, 134]], width: 1 }, fill: 'v' },
-    { shape: { line: [[72, 10], [74, 40], [71, 70]], width: 1 }, fill: 'm', min: 36 },
+    { shape: { line: [[72, 10], [74, 40], [71, 70]], width: 1 }, fill: 'm', min: 42 },
     { shape: { line: [[90, 8], [88, 60], [91, 100]], width: 1 }, fill: 'v', min: 42 },
     // The big trunk on the right and the bough above.
     { shape: { poly: [[80, 0], [96, 0], [97, 134], [78, 134], [80, 100], [82, 60]], smooth: 1 }, fill: 'b', shade: { light: 'l', dark: 'n', dir: 'w', width: 2 } },
-    { shape: { line: [[86, 10], [85, 50], [87, 90], [86, 130]], width: 1 }, fill: 'n', min: 36 },
+    { shape: { line: [[86, 10], [85, 50], [87, 90], [86, 130]], width: 1 }, fill: 'n', min: 42 },
     { shape: { line: [[0, 22], [40, 17], [82, 12]], width: 6.5 }, fill: 'b', shade: { light: 'l', dark: 'n', dir: 'n', width: 1 } },
     // Leaves along the bough.
     ...leaves(8, 18, 1, -30, 'e', 'm'),
@@ -102,7 +102,7 @@ export const orangutan: Motif = {
     // The long raised arm, gripping the bough, with long hair hanging from it.
     { shape: { poly: [[30, 30], [26, 40], [22, 48], [25, 49], [24, 56], [28, 56], [29, 63], [34, 62], [36, 50], [33, 34]] }, fill: 'u' },
     { shape: { line: [[38, 66], [33, 46], [30, 22]], width: 8 }, fill: 'o', shade: { light: 'p', dark: 'u', dir: 'w', width: 1 } },
-    { shape: { line: [[33, 60], [30, 44], [29, 30]], width: 1 }, fill: 'p', min: 36 },
+    { shape: { line: [[33, 60], [30, 44], [29, 30]], width: 1 }, fill: 'p', min: 42 },
     { shape: { ellipse: [30.5, 20, 4.6, 3.6] }, fill: 'c', shade: { light: 'h', dir: 'n', mode: 'band', amount: 0.3 } },
     // Folded legs on the branch, a shadow between them, then the shaggy body.
     { shape: { ellipse: [49, 96, 8, 5] }, fill: 'n' },
@@ -116,7 +116,7 @@ export const orangutan: Motif = {
     { shape: { line: [[40, 64], [39, 76], [41, 88]], width: 1 }, fill: 'u', clip: 'body' },
     { shape: { line: [[51, 66], [52, 78], [50, 89]], width: 1 }, fill: 'u', clip: 'body' },
     { shape: { line: [[45, 70], [46, 84]], width: 1 }, fill: 'p', clip: 'body', min: 42 },
-    { shape: { line: [[58, 68], [59, 82]], width: 1 }, fill: 'u', clip: 'body', min: 36 },
+    { shape: { line: [[58, 68], [59, 82]], width: 1 }, fill: 'u', clip: 'body', min: 42 },
     // The other arm resting on the knee.
     { shape: { line: [[61, 63], [68, 76], [63, 87]], width: 7 }, fill: 'o', shade: { light: 'p', dark: 'u', dir: 'nw', width: 1 } },
     { shape: { ellipse: [62, 88, 4, 3] }, fill: 'c', shade: { light: 'h', dir: 'n', mode: 'band', amount: 0.3 } },

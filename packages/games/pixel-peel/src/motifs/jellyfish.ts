@@ -99,7 +99,7 @@ export const jellyfish: Motif = {
   },
   layers: [
     // Water: light near the surface, deep blue and violet-black below.
-    { name: 'water', shape: { all: true }, fill: { gradient: ['t', 'b', 'n', 'x'], from: [0, 0], to: [0, 133], soft: 0.6 } },
+    { name: 'water', shape: { all: true }, fill: { gradient: ['t', 'b', 'n', 'x'], from: [0, 0], to: [0, 133], soft: 0.25 } },
     { shape: { poly: [[0, 0], [16, 0], [44, 133], [30, 133]] }, fill: 'd', clip: 'water', min: 36 },
     { shape: { poly: [[30, 0], [40, 0], [76, 120], [66, 120]] }, fill: { gradient: ['s', 't', 'b'], from: [0, 0], to: [0, 110], soft: 0.6 }, min: 36 },
     { shape: { poly: [[60, 0], [66, 0], [96, 90], [90, 90]] }, fill: { gradient: ['s', 't'], from: [0, 0], to: [0, 70], soft: 0.6 } },
