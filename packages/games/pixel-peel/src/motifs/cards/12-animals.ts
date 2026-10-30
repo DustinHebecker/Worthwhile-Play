@@ -26,5 +26,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/chameleon'),
     title: { de: 'Chamäleon', en: 'Chameleon', nl: 'Kameleon', es: 'Camaleón', fr: 'Caméléon', ru: 'Хамелеон', 'zh-Hans': '变色龙', ko: '카멜레온', ja: 'カメレオン', ar: 'الحرباء', pt: 'Camaleão', it: 'Camaleonte', pl: 'Kameleon', tr: 'Bukalemun', uk: 'Хамелеон', hi: 'गिरगिट' },
     place: { de: 'Madagaskar, Afrika, Südeuropa und Südasien', en: 'Madagascar, Africa, southern Europe and South Asia', nl: 'Madagaskar, Afrika, Zuid-Europa en Zuid-Azië', es: 'Madagascar, África, el sur de Europa y el sur de Asia', fr: 'Madagascar, Afrique, Europe du Sud et Asie du Sud', ru: 'Мадагаскар, Африка, Южная Европа и Южная Азия', 'zh-Hans': '马达加斯加、非洲、南欧和南亚', ko: '마다가스카르, 아프리카, 남유럽, 남아시아', ja: 'マダガスカル、アフリカ、南ヨーロッパ、南アジア', ar: 'مدغشقر وأفريقيا وجنوب أوروبا وجنوب آسيا', pt: 'Madagáscar, África, sul da Europa e sul da Ásia', it: 'Madagascar, Africa, Europa meridionale e Asia meridionale', pl: 'Madagaskar, Afryka, Europa Południowa i Azja Południowa', tr: 'Madagaskar, Afrika, Güney Avrupa ve Güney Asya', uk: 'Мадагаскар, Африка, Південна Європа та Південна Азія', hi: 'मेडागास्कर, अफ़्रीका, दक्षिणी यूरोप और दक्षिण एशिया' }
+  },
+  {
+    id: 'giraffe',
+    group: 'animal',
+    aspect: 'tall',
+    art: () => import('../baked/giraffe'),
+    title: { de: 'Giraffe', en: 'Giraffe', nl: 'Giraf', es: 'Jirafa', fr: 'Girafe', ru: 'Жираф', 'zh-Hans': '长颈鹿', ko: '기린', ja: 'キリン', ar: 'الزرافة', pt: 'Girafa', it: 'Giraffa', pl: 'Żyrafa', tr: 'Zürafa', uk: 'Жирафа', hi: 'जिराफ़' },
+    place: { de: 'Savannen Afrikas südlich der Sahara', en: 'Savannas of Africa south of the Sahara', nl: 'Savannes van Afrika ten zuiden van de Sahara', es: 'Sabanas del África subsahariana', fr: 'Savanes d’Afrique au sud du Sahara', ru: 'Саванны Африки к югу от Сахары', 'zh-Hans': '撒哈拉以南非洲的稀树草原', ko: '사하라 이남 아프리카의 사바나', ja: 'サハラ以南のアフリカのサバンナ', ar: 'سافانا أفريقيا جنوب الصحراء الكبرى', pt: 'Savanas da África ao sul do Saara', it: 'Savane dell’Africa a sud del Sahara', pl: 'Sawanny Afryki na południe od Sahary', tr: 'Sahra’nın güneyindeki Afrika savanları', uk: 'Савани Африки на південь від Сахари', hi: 'सहारा के दक्षिण में अफ़्रीका के घास के मैदान' }
+  },
+  {
+    id: 'panda',
+    group: 'animal',
+    aspect: 'square',
+    art: () => import('../baked/panda'),
+    title: { de: 'Großer Panda', en: 'Giant panda', nl: 'Reuzenpanda', es: 'Panda gigante', fr: 'Panda géant', ru: 'Большая панда', 'zh-Hans': '大熊猫', ko: '자이언트판다', ja: 'ジャイアントパンダ', ar: 'الباندا العملاقة', pt: 'Panda-gigante', it: 'Panda gigante', pl: 'Panda wielka', tr: 'Dev panda', uk: 'Велика панда', hi: 'विशाल पांडा' },
+    place: { de: 'Bambuswälder in den Bergen Zentralchinas', en: 'Bamboo forests in the mountains of central China', nl: 'Bamboebossen in de bergen van Centraal-China', es: 'Bosques de bambú en las montañas del centro de China', fr: 'Forêts de bambous des montagnes du centre de la Chine', ru: 'Бамбуковые леса в горах Центрального Китая', 'zh-Hans': '中国中部山区的竹林', ko: '중국 중부 산지의 대나무 숲', ja: '中国中部の山地の竹林', ar: 'غابات الخيزران في جبال وسط الصين', pt: 'Florestas de bambu nas montanhas do centro da China', it: 'Foreste di bambù sulle montagne della Cina centrale', pl: 'Lasy bambusowe w górach środkowych Chin', tr: 'Orta Çin dağlarındaki bambu ormanları', uk: 'Бамбукові ліси в горах Центрального Китаю', hi: 'मध्य चीन के पहाड़ों के बाँस के जंगल' }
   }
 ];
