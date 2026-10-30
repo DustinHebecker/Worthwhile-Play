@@ -26,5 +26,13 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/hedgehog'),
     title: { de: 'Igel', en: 'Hedgehog', nl: 'Egel', es: 'Erizo', fr: 'Hérisson', ru: 'Ёж', 'zh-Hans': '刺猬', ko: '고슴도치', ja: 'ハリネズミ', ar: 'القنفذ', pt: 'Ouriço-cacheiro', it: 'Riccio', pl: 'Jeż', tr: 'Kirpi', uk: 'Їжак', hi: 'हेजहॉग' },
     place: { de: 'Gärten, Hecken und Wälder in Europa', en: 'Gardens, hedgerows and woodland across Europe', nl: 'Tuinen, heggen en bossen in heel Europa', es: 'Jardines, setos y bosques de toda Europa', fr: 'Jardins, haies et bois de toute l’Europe', ru: 'Сады, живые изгороди и леса Европы', 'zh-Hans': '欧洲各地的花园、树篱和林地', ko: '유럽 곳곳의 정원, 산울타리, 숲', ja: 'ヨーロッパ各地の庭、生け垣、森', ar: 'الحدائق والسياجات النباتية والغابات في أنحاء أوروبا', pt: 'Jardins, sebes e bosques de toda a Europa', it: 'Giardini, siepi e boschi di tutta Europa', pl: 'Ogrody, żywopłoty i lasy w całej Europie', tr: 'Avrupa’nın bahçeleri, çit bitkileri ve ormanları', uk: 'Сади, живоплоти й ліси по всій Європі', hi: 'पूरे यूरोप के बाग़, झाड़ियों की बाड़ें और वन' }
+  },
+  {
+    id: 'orangutan',
+    group: 'animal',
+    aspect: 'tall',
+    art: () => import('../baked/orangutan'),
+    title: { de: 'Orang-Utan', en: 'Orangutan', nl: 'Orang-oetan', es: 'Orangután', fr: 'Orang-outan', ru: 'Орангутан', 'zh-Hans': '猩猩', ko: '오랑우탄', ja: 'オランウータン', ar: 'إنسان الغاب', pt: 'Orangotango', it: 'Orango', pl: 'Orangutan', tr: 'Orangutan', uk: 'Орангутан', hi: 'ओरंगउटान' },
+    place: { de: 'Regenwälder auf Borneo, Südostasien', en: 'Rainforests of Borneo, South-East Asia', nl: 'Regenwouden van Borneo, Zuidoost-Azië', es: 'Selvas de Borneo, sudeste asiático', fr: 'Forêts tropicales de Bornéo, Asie du Sud-Est', ru: 'Тропические леса Борнео, Юго-Восточная Азия', 'zh-Hans': '东南亚婆罗洲的雨林', ko: '동남아시아 보르네오섬의 열대우림', ja: '東南アジア、ボルネオ島の熱帯雨林', ar: 'الغابات المطيرة في بورنيو، جنوب شرق آسيا', pt: 'Florestas tropicais de Bornéu, Sudeste Asiático', it: 'Foreste pluviali del Borneo, Sud-est asiatico', pl: 'Lasy deszczowe Borneo, Azja Południowo-Wschodnia', tr: 'Borneo’nun yağmur ormanları, Güneydoğu Asya', uk: 'Тропічні ліси Борнео, Південно-Східна Азія', hi: 'बोर्नियो के वर्षावन, दक्षिण-पूर्व एशिया' }
   }
 ];
