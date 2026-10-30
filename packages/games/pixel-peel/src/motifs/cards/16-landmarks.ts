@@ -18,5 +18,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/icecube-lab'),
     title: { de: 'IceCube-Labor', en: 'IceCube Laboratory', nl: 'IceCube-laboratorium', es: 'Laboratorio IceCube', fr: 'Laboratoire IceCube', ru: 'Лаборатория IceCube', 'zh-Hans': '冰立方实验室', ko: '아이스큐브 연구소', ja: 'アイスキューブ研究所', ar: 'مختبر آيس كيوب', pt: 'Laboratório IceCube', it: 'Laboratorio IceCube', pl: 'Laboratorium IceCube', tr: 'IceCube Laboratuvarı', uk: 'Лабораторія IceCube', hi: 'आइसक्यूब प्रयोगशाला' },
     place: { de: 'Geographischer Südpol, Antarktis', en: 'Geographic South Pole, Antarctica', nl: 'Geografische zuidpool, Antarctica', es: 'Polo sur geográfico, la Antártida', fr: 'Pôle Sud géographique, Antarctique', ru: 'Географический Южный полюс, Антарктида', 'zh-Hans': '南极洲，地理南极点', ko: '남극 대륙, 지리적 남극점', ja: '南極大陸、地理的な南極点', ar: 'القطب الجنوبي الجغرافي، القارة القطبية الجنوبية', pt: 'Polo Sul geográfico, Antártida', it: 'Polo sud geografico, Antartide', pl: 'Biegun południowy, Antarktyda', tr: 'Coğrafi Güney Kutbu, Antarktika', uk: 'Географічний Південний полюс, Антарктида', hi: 'भौगोलिक दक्षिणी ध्रुव, अंटार्कटिका' }
+  },
+  {
+    id: 'golden-gate-bridge',
+    group: 'landmark',
+    aspect: 'panorama',
+    art: () => import('../baked/golden-gate-bridge'),
+    title: { de: 'Golden Gate Bridge', en: 'Golden Gate Bridge', nl: 'Golden Gate Bridge', es: 'Puente Golden Gate', fr: 'Pont du Golden Gate', ru: 'Мост Золотые Ворота', 'zh-Hans': '金门大桥', ko: '금문교', ja: 'ゴールデン・ゲート・ブリッジ', ar: 'جسر البوابة الذهبية', pt: 'Ponte Golden Gate', it: 'Golden Gate Bridge', pl: 'Most Golden Gate', tr: 'Golden Gate Köprüsü', uk: 'Міст Золоті Ворота', hi: 'गोल्डन गेट ब्रिज' },
+    place: { de: 'San Francisco, Kalifornien, USA', en: 'San Francisco, California, United States', nl: 'San Francisco, Californië, Verenigde Staten', es: 'San Francisco, California, Estados Unidos', fr: 'San Francisco, Californie, États-Unis', ru: 'Сан-Франциско, Калифорния, США', 'zh-Hans': '美国加利福尼亚州旧金山', ko: '미국 캘리포니아주 샌프란시스코', ja: 'アメリカ合衆国カリフォルニア州サンフランシスコ', ar: 'سان فرانسيسكو، كاليفورنيا، الولايات المتحدة', pt: 'São Francisco, Califórnia, Estados Unidos', it: 'San Francisco, California, Stati Uniti', pl: 'San Francisco, Kalifornia, Stany Zjednoczone', tr: 'San Francisco, Kaliforniya, ABD', uk: 'Сан-Франциско, Каліфорнія, США', hi: 'सैन फ़्रांसिस्को, कैलिफ़ोर्निया, संयुक्त राज्य अमेरिका' }
+  },
+  {
+    id: 'yosemite-valley',
+    group: 'landmark',
+    aspect: 'wide',
+    art: () => import('../baked/yosemite-valley'),
+    title: { de: 'Yosemite Valley', en: 'Yosemite Valley', nl: 'Yosemite Valley', es: 'Valle de Yosemite', fr: 'Vallée de Yosemite', ru: 'Долина Йосемити', 'zh-Hans': '优胜美地山谷', ko: '요세미티 계곡', ja: 'ヨセミテ渓谷', ar: 'وادي يوسمايت', pt: 'Vale de Yosemite', it: 'Valle di Yosemite', pl: 'Dolina Yosemite', tr: 'Yosemite Vadisi', uk: 'Долина Йосеміті', hi: 'योसेमिटी घाटी' },
+    place: { de: 'Yosemite-Nationalpark, Kalifornien, USA', en: 'Yosemite National Park, California, United States', nl: 'Yosemite National Park, Californië, Verenigde Staten', es: 'Parque nacional de Yosemite, California, Estados Unidos', fr: 'Parc national de Yosemite, Californie, États-Unis', ru: 'Йосемитский национальный парк, Калифорния, США', 'zh-Hans': '美国加利福尼亚州优胜美地国家公园', ko: '미국 캘리포니아주 요세미티 국립공원', ja: 'アメリカ合衆国カリフォルニア州、ヨセミテ国立公園', ar: 'منتزه يوسمايت الوطني، كاليفورنيا، الولايات المتحدة', pt: 'Parque Nacional de Yosemite, Califórnia, Estados Unidos', it: 'Parco nazionale di Yosemite, California, Stati Uniti', pl: 'Park Narodowy Yosemite, Kalifornia, Stany Zjednoczone', tr: 'Yosemite Ulusal Parkı, Kaliforniya, ABD', uk: 'Національний парк Йосеміті, Каліфорнія, США', hi: 'योसेमिटी राष्ट्रीय उद्यान, कैलिफ़ोर्निया, संयुक्त राज्य अमेरिका' }
   }
 ];
