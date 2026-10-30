@@ -63,7 +63,7 @@ export const southPoleStation: Motif = {
     // Pale polar sky: a deeper blue at the top fading to a warm haze at the horizon; a low sun with a halo.
     { shape: { rect: [0, 0, 100, 50] }, fill: { gradient: ['b', 's', 'l', 'm'], from: [0, -8], to: [0, 44], soft: 0.6 } },
     { shape: { ellipse: [13, 10, 7, 7] }, fill: 'l', min: 40 },
-    { shape: { ellipse: [13, 10, 4, 4] }, fill: 'y' },
+    { shape: { ellipse: [13.75, 10, 4.6, 4.6] }, fill: 'y' },
     { shape: { ellipse: [64, 8, 15, 1.8] }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.4 } },
     { shape: { ellipse: [86, 12, 10, 1.4] }, fill: 'w', min: 40 },
     { shape: { ellipse: [34, 14, 9, 1.2] }, fill: 'w', min: 48 },
