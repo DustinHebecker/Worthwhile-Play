@@ -245,8 +245,9 @@ describe('bounded waiting horizon and opening guard (design v3 § 2.2, § 2.3)',
 
   it('easy and medium are unchanged by v3: the same states as before for fixed seeds', () => {
     const hash = (d: string, seed: number, motif: string) => createHash('sha256').update(JSON.stringify(createInitial(seed, d, motif))).digest('hex').slice(0, 16);
-    expect([hash('easy', 11, 'any'), hash('easy', 12, 'koala'), hash('easy', 13, 'winter-village')]).toEqual(['e44963f8b4adf7b7', 'feb09f7319092528', '2b4ed0911fd9af7f']);
-    expect([hash('medium', 11, 'any'), hash('medium', 12, 'koala'), hash('medium', 13, 'winter-village')]).toEqual(['cd8356f2e9c82eb6', 'cf36bdd0c48fa1fd', 'b9f0dae92af354ad']);
+    // Explicit pictures only: which picture "Any picture" draws for a seed changes whenever motifs are added.
+    expect([hash('easy', 12, 'koala'), hash('easy', 13, 'winter-village')]).toEqual(['feb09f7319092528', '2b4ed0911fd9af7f']);
+    expect([hash('medium', 12, 'koala'), hash('medium', 13, 'winter-village')]).toEqual(['cf36bdd0c48fa1fd', 'b9f0dae92af354ad']);
     expect(LEVELS.easy.horizon).toBe(Infinity);
     expect(LEVELS.medium.horizon).toBe(Infinity);
     expect(LEVELS.hard.horizon).toBe(20);
