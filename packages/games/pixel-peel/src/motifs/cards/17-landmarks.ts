@@ -26,5 +26,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/kilimanjaro'),
     title: { de: 'Kilimandscharo', en: 'Kilimanjaro', nl: 'Kilimanjaro', es: 'Kilimanjaro', fr: 'Kilimandjaro', ru: 'Килиманджаро', 'zh-Hans': '乞力马扎罗山', ko: '킬리만자로산', ja: 'キリマンジャロ', ar: 'كليمنجارو', pt: 'Kilimanjaro', it: 'Kilimangiaro', pl: 'Kilimandżaro', tr: 'Kilimanjaro', uk: 'Кіліманджаро', hi: 'किलिमंजारो' },
     place: { de: 'Region Kilimandscharo, Tansania', en: 'Kilimanjaro Region, Tanzania', nl: 'Regio Kilimanjaro, Tanzania', es: 'Región de Kilimanjaro, Tanzania', fr: 'Région du Kilimandjaro, Tanzanie', ru: 'Область Килиманджаро, Танзания', 'zh-Hans': '坦桑尼亚乞力马扎罗区', ko: '탄자니아 킬리만자로주', ja: 'タンザニア、キリマンジャロ州', ar: 'منطقة كليمنجارو، تنزانيا', pt: 'Região de Kilimanjaro, Tanzânia', it: 'Regione del Kilimangiaro, Tanzania', pl: 'Region Kilimandżaro, Tanzania', tr: 'Kilimanjaro Bölgesi, Tanzanya', uk: 'Регіон Кіліманджаро, Танзанія', hi: 'किलिमंजारो क्षेत्र, तंज़ानिया' }
+  },
+  {
+    id: 'chichen-itza',
+    group: 'landmark',
+    aspect: 'wide',
+    art: () => import('../baked/chichen-itza'),
+    title: { de: 'Chichén Itzá, El Castillo', en: 'Chichén Itzá, El Castillo', nl: 'Chichén Itzá, El Castillo', es: 'Chichén Itzá, El Castillo', fr: 'Chichén Itzá, El Castillo', ru: 'Чичен-Ица, Эль-Кастильо', 'zh-Hans': '奇琴伊察卡斯蒂略金字塔', ko: '치첸이트사 엘 카스티요', ja: 'チチェン・イッツァのカスティーヨ', ar: 'تشيتشن إيتزا، القلعة', pt: 'Chichén Itzá, El Castillo', it: 'Chichén Itzá, El Castillo', pl: 'Chichén Itzá, El Castillo', tr: 'Chichén Itzá, El Castillo', uk: 'Чичен-Іца, Ель-Кастільо', hi: 'चिचेन इत्ज़ा, एल कास्तियो' },
+    place: { de: 'Yucatán, Mexiko', en: 'Yucatán, Mexico', nl: 'Yucatán, Mexico', es: 'Yucatán, México', fr: 'Yucatán, Mexique', ru: 'Юкатан, Мексика', 'zh-Hans': '墨西哥尤卡坦州', ko: '멕시코 유카탄주', ja: 'メキシコ、ユカタン州', ar: 'يوكاتان، المكسيك', pt: 'Iucatã, México', it: 'Yucatán, Messico', pl: 'Jukatan, Meksyk', tr: 'Yucatán, Meksika', uk: 'Юкатан, Мексика', hi: 'युकाटान, मेक्सिको' }
+  },
+  {
+    id: 'moai',
+    group: 'landmark',
+    aspect: 'panorama',
+    art: () => import('../baked/moai'),
+    title: { de: 'Moai auf Rapa Nui', en: 'Moai of Rapa Nui', nl: 'Moai op Rapa Nui', es: 'Moáis de Rapa Nui', fr: 'Moaï de Rapa Nui', ru: 'Моаи острова Пасхи', 'zh-Hans': '复活节岛摩艾石像', ko: '라파누이의 모아이', ja: 'ラパ・ヌイのモアイ', ar: 'تماثيل مواي في رابا نوي', pt: 'Moais de Rapa Nui', it: 'Moai di Rapa Nui', pl: 'Moai na Rapa Nui', tr: 'Rapa Nui Moaileri', uk: 'Моаї острова Пасхи', hi: 'रापा नुई की मोआई मूर्तियाँ' },
+    place: { de: 'Osterinsel (Rapa Nui), Chile', en: 'Easter Island (Rapa Nui), Chile', nl: 'Paaseiland (Rapa Nui), Chili', es: 'Isla de Pascua (Rapa Nui), Chile', fr: 'Île de Pâques (Rapa Nui), Chili', ru: 'Остров Пасхи (Рапа-Нуи), Чили', 'zh-Hans': '智利复活节岛（拉帕努伊）', ko: '칠레 이스터섬(라파누이)', ja: 'チリ、イースター島（ラパ・ヌイ）', ar: 'جزيرة الفصح (رابا نوي)، تشيلي', pt: 'Ilha de Páscoa (Rapa Nui), Chile', it: 'Isola di Pasqua (Rapa Nui), Cile', pl: 'Wyspa Wielkanocna (Rapa Nui), Chile', tr: 'Paskalya Adası (Rapa Nui), Şili', uk: 'Острів Пасхи (Рапа-Нуї), Чилі', hi: 'ईस्टर द्वीप (रापा नुई), चिली' }
   }
 ];
