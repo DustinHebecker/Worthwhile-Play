@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { childrenOf, engineOf, fullCells, launch, replayCursor } from '../src/engine';
 import { createInitial } from '../src/generate';
 import { hint } from '../src/hint';
-import { MOTIFS } from '../src/motifs/index';
 import { picker } from '../src/policies';
 import { play, tableOfState, type PeelState } from '../src/rules';
 import { loadAllArt } from '../src/catalogue';
+import { SAMPLE } from './sample';
 
 // A game plays baked art loaded on demand (`prepare`); these tests start games directly.
 await loadAllArt();
@@ -15,6 +15,8 @@ await loadAllArt();
  * Nothing in the game depends on time: generation, policies and the hint count launches and nodes, and those budgets
  * are asserted deterministically elsewhere. These tests only catch a gross slowdown, so they are robust to a loaded
  * machine: each case is timed as the fastest of a few repeats, and the bounds are several times the measured values.
+ * Generation is timed on a fixed sample of motifs (test/sample.ts: each group and aspect, and the largest picture);
+ * every motif's generation stays within its counted launch budget (generator.slow.test.ts).
  */
 
 /** The fastest of `repeats` runs of `f`, in ms. */
@@ -73,16 +75,16 @@ describe('timing budgets (sanity only)', () => {
     expect(ms / launches).toBeLessThan(0.2);
   });
 
-  it('generation: median over every motif and difficulty under 60 ms, none over 400 ms (measured about 10 / 40 ms)', () => {
+  it('generation: median over the sample of motifs and the difficulties under 60 ms, none over 400 ms (measured about 10 / 40 ms)', () => {
     const times: number[] = [];
-    for (const d of ['easy', 'medium'] as const) for (const motif of MOTIFS) times.push(fastest(3, () => createInitial(1, d, motif.id)));
+    for (const d of ['easy', 'medium'] as const) for (const motif of SAMPLE) times.push(fastest(3, () => createInitial(1, d, motif.id)));
     expect(median(times), 'median generation (ms)').toBeLessThan(60);
     expect(Math.max(...times), 'slowest generation (ms)').toBeLessThan(400);
   });
 
   it('hard generation with the waiting horizon and the opening guard (design v3 § 2.6): average under 150 ms, none over 600 ms (measured about 48 / 155 ms)', () => {
     const times: number[] = [];
-    for (const motif of MOTIFS) for (const seed of [1, 2, 3]) times.push(fastest(3, () => createInitial(seed, 'hard', motif.id)));
+    for (const motif of SAMPLE) for (const seed of [1, 2, 3]) times.push(fastest(3, () => createInitial(seed, 'hard', motif.id)));
     expect(times.reduce((a, b) => a + b, 0) / times.length, 'average hard generation (ms)').toBeLessThan(150);
     expect(Math.max(...times), 'slowest hard generation (ms)').toBeLessThan(600);
   });

@@ -12,6 +12,7 @@ import { heightOf, widthFor } from '../src/art/sizes';
 import { MOTIFS } from '../src/motifs/index';
 import { apply, DIFFICULTIES, initialPosition, isPeelState, LIMITS, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
 import { oracleSolvable } from './oracle';
+import { SAMPLE } from './sample';
 import { loadAllArt } from '../src/catalogue';
 
 // A game plays baked art loaded on demand (`prepare`); these tests start games directly.
@@ -35,11 +36,6 @@ function witnessStats(picture: Picture, lanes: Shooter[][], slots: number, witne
   return { slotEntries, zeroHitParks, maxOccupied, solved: cur.cells.left === 0 };
 }
 
-/**
- * A fixed sample: the first motif of each group and of each aspect (a deterministic, small set however many motifs
- * there are; generator.slow.test.ts sweeps every motif).
- */
-const SAMPLE = MOTIFS.filter((m, i) => MOTIFS.findIndex((x) => x.group === m.group) === i || MOTIFS.findIndex((x) => x.aspect === m.aspect) === i);
 
 describe('generator (design v2 § 3)', () => {
   it('is deterministic: the same seed, difficulty and choice give a deep-equal state', () => {
@@ -88,7 +84,7 @@ describe('generator (design v2 § 3)', () => {
     );
   });
 
-  // One motif per group here; generator.slow.test.ts sweeps every motif (ADR 0021).
+  // A fixed sample here (test/sample.ts); generator.slow.test.ts sweeps every motif (ADR 0021).
   for (const motif of SAMPLE) {
     it(`${motif.id}: every difficulty × 2 seeds is valid, solved by its witness and within the bounds`, () => {
       for (const d of DIFFICULTIES) {

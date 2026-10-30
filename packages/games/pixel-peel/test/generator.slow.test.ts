@@ -13,8 +13,8 @@ import { loadAllArt } from '../src/catalogue';
 await loadAllArt();
 
 /**
- * The long generator tests (ADR 0021: `*.slow.test.ts` runs in `pnpm test` and CI, not under Stryker): every motif at
- * every difficulty, and the measured level definitions of design v2 § 2.2 over every motif × 6 seeds. Counted
+ * The long generator tests (ADR 0021: `*.slow.test.ts` runs in `pnpm test` and CI's long job, not under Stryker): every
+ * motif at every difficulty × 6 seeds, each game checked, and the measured level definitions of design v2 § 2.2. Counted
  * launches, never time: wall-clock budgets live in timing.slow.test.ts.
  */
 
@@ -36,44 +36,36 @@ function witnessStats(picture: Picture, lanes: Shooter[][], slots: number, witne
   return { slotEntries, zeroHitParks, maxOccupied, solved: cur.cells.left === 0 };
 }
 
-describe('generator over every motif (design v2 § 3)', () => {
-  for (const motif of MOTIFS) {
-    it(`${motif.id}: every difficulty × 2 seeds is valid, solved by its witness and within the bounds`, () => {
-      for (const d of DIFFICULTIES) {
-        for (const seed of [3, 4]) {
-          const level = LEVELS[d];
-          const g = generate(motif, d, createRng(seed), seed);
-          const label = `${motif.id} ${d} ${seed}`;
-          expect(witnessSolves(g.picture, g.lanes, g.slots, g.witness), label).toBe(true);
-          const w = widthFor(motif, d);
-          expect(g.picture.w, label).toBe(w);
-          expect(g.picture.h, label).toBe(heightOf(motif, w));
-          expect(g.slots).toBe(level.slots);
-          expect(g.lanes).toHaveLength(4);
-          const lengths = g.lanes.map((l) => l.length);
-          expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(4);
-          // Lanes interleave colours: never three of one colour in a row.
-          for (const lane of g.lanes) for (let k = 2; k < lane.length; k++) expect(lane[k]!.c === lane[k - 1]!.c && lane[k]!.c === lane[k - 2]!.c, label).toBe(false);
-          const shooters = g.lanes.flat();
-          expect(shooters.length).toBeLessThanOrEqual(LIMITS.maxShooters);
-          for (const s of shooters) expect(s.n >= 1 && s.n <= LIMITS.maxShots, label).toBe(true);
-          expect(shooters.filter((s) => s.n < 4).length / shooters.length, label).toBeLessThanOrEqual(0.08);
-          expect(g.witness.length).toBeLessThanOrEqual(LIMITS.maxMoves);
-          for (const p of g.picture.palette) {
-            const cells = g.picture.rows.join('').split(p.key).length - 1;
-            expect(shooters.filter((s) => s.c === p.key).reduce((n, s) => n + s.n, 0), `${label} ${p.key}`).toBe(cells);
-          }
-          expect(g.launches, label).toBeLessThanOrEqual(level.budget + 2000);
-          const state = createInitial(seed, d, motif.id);
-          expect(isPeelState(JSON.parse(JSON.stringify(state))), label).toBe(true);
-        }
-      }
-    });
+/** Every generated game: valid, solved by its witness and within the bounds (design v2 § 10.4). */
+function expectValid(g: ReturnType<typeof generate>, motif: (typeof MOTIFS)[number], d: Difficulty, label: string) {
+  const level = LEVELS[d];
+  expect(witnessSolves(g.picture, g.lanes, g.slots, g.witness), label).toBe(true);
+  const w = widthFor(motif, d);
+  expect(g.picture.w, label).toBe(w);
+  expect(g.picture.h, label).toBe(heightOf(motif, w));
+  expect(g.slots).toBe(level.slots);
+  expect(g.lanes).toHaveLength(4);
+  const lengths = g.lanes.map((l) => l.length);
+  expect(Math.max(...lengths) - Math.min(...lengths), label).toBeLessThanOrEqual(4);
+  // Lanes interleave colours: never three of one colour in a row on medium and hard (design v2 § 15.2).
+  if (d !== 'easy') for (const lane of g.lanes) for (let k = 2; k < lane.length; k++) expect(lane[k]!.c === lane[k - 1]!.c && lane[k]!.c === lane[k - 2]!.c, label).toBe(false);
+  const shooters = g.lanes.flat();
+  expect(shooters.length, label).toBeLessThanOrEqual(LIMITS.maxShooters);
+  for (const s of shooters) expect(s.n >= 1 && s.n <= LIMITS.maxShots, label).toBe(true);
+  expect(shooters.filter((s) => s.n < 4).length / shooters.length, label).toBeLessThanOrEqual(0.08);
+  expect(g.witness.length, label).toBeLessThanOrEqual(LIMITS.maxMoves);
+  for (const p of g.picture.palette) {
+    const cells = g.picture.rows.join('').split(p.key).length - 1;
+    expect(shooters.filter((s) => s.c === p.key).reduce((n, s) => n + s.n, 0), `${label} ${p.key}`).toBe(cells);
   }
+  // Counted launches bound the work of every motif (wall-clock budgets: timing.slow.test.ts, on a sample).
+  expect(g.launches, label).toBeLessThanOrEqual(level.budget + 2000);
+}
 
+describe('generator over every motif (design v2 § 3)', () => {
   /**
-   * The measurable level definitions (design v2 § 2.2) over every motif × 6 seeds, gathered in chunks of 5 motifs
-   * (each test stays short under load) and asserted once per level. The thresholds are the measured values with a
+   * Every motif × 6 seeds per level: each game is checked (`expectValid`), and the measurable level definitions
+   * (design v2 § 2.2) are gathered in chunks of 5 motifs (each test stays short under load) and asserted once per level. The thresholds are the measured values with a
    * margin; the implementation notes record the measured numbers.
    */
   interface Tally {
@@ -95,8 +87,11 @@ describe('generator over every motif (design v2 § 3)', () => {
   const tally = (): Tally => ({ n: 0, accepted: 0, obviousFails: 0, allFail: 0, small: 0, shooters: 0, fullSlots: 0, parked: 0, slotEntries: [], longestRun: 0, pairs: 0, samePairs: 0, unguarded: 0 });
   const gather = (t: Tally, d: Difficulty, motifs: typeof MOTIFS) => {
     for (const motif of motifs) {
+      // A whole game as a new game starts it, checked as a save would be.
+      expect(isPeelState(JSON.parse(JSON.stringify(createInitial(3, d, motif.id)))), `${motif.id} ${d}: createInitial`).toBe(true);
       for (let seed = 1; seed <= 6; seed++) {
         const g = generate(motif, d, createRng(seed * 7919), seed);
+        expectValid(g, motif, d, `${motif.id} ${d} ${seed}`);
         t.n++;
         if (g.accepted) t.accepted++;
         if (g.accepted && LEVELS[d].guard && g.guarded !== true) t.unguarded++;
@@ -172,7 +167,8 @@ describe('generator over every motif (design v2 § 3)', () => {
     describe(`${d}: the level definition over every motif × 6 seeds`, () => {
       const t = tally();
       for (let k = 0; k < MOTIFS.length; k += CHUNK) {
-        it(`${d}: motifs ${k + 1}–${Math.min(MOTIFS.length, k + CHUNK)}`, () => gather(t, d, MOTIFS.slice(k, k + CHUNK)));
+        const chunk = MOTIFS.slice(k, k + CHUNK);
+        it(`${d}: motifs ${k + 1}–${k + chunk.length} (${chunk.map((m) => m.id).join(', ')}): every game valid`, () => gather(t, d, chunk));
       }
       it(`${d}: the rates hold`, () => {
         expect(t.n).toBe(MOTIFS.length * 6);
