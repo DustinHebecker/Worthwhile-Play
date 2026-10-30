@@ -8,6 +8,7 @@ import { identitiesOf } from '../src/hint';
 import { runPolicy } from '../src/policies';
 import { prove } from '../src/prove';
 import { findMotif } from '../src/motifs/index';
+import { motifFor } from '../src/catalogue';
 import { heightOf, widthFor } from '../src/art/sizes';
 import { MOTIFS } from '../src/motifs/index';
 import { apply, DIFFICULTIES, initialPosition, isPeelState, LIMITS, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
@@ -42,10 +43,13 @@ describe('generator (design v2 § 3)', () => {
     for (const d of DIFFICULTIES) for (const choice of ['any', 'koala', 'market-stall']) expect(createInitial(99, d, choice)).toEqual(createInitial(99, d, choice));
   });
 
-  it('"Any picture" covers every motif over 300 seeds', () => {
+  it('"Any picture" covers every motif (the cheap draw over enough seeds; a sample of full games plays the drawn motif)', () => {
+    // Coupon collector: n · (ln n + 8) seeds miss a given motif with probability < e^-8 per motif.
+    const limit = Math.ceil(MOTIFS.length * (Math.log(MOTIFS.length) + 8));
     const seen = new Set<string>();
-    for (let seed = 0; seed < 300 && seen.size < MOTIFS.length; seed++) seen.add(createInitial(seed, 'easy', 'any').motif);
+    for (let seed = 0; seed < limit && seen.size < MOTIFS.length; seed++) seen.add(motifFor(seed, 'any').id);
     expect(seen.size).toBe(MOTIFS.length);
+    for (let seed = 0; seed < 20; seed++) expect(createInitial(seed, 'easy', 'any').motif).toBe(motifFor(seed, 'any').id);
   });
 
   it('construction keeps its invariants on small random pictures and always terminates with a solving witness (property)', () => {

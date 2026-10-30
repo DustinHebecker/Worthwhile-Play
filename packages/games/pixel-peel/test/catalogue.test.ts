@@ -32,7 +32,9 @@ describe('motif catalogue and choices (docs/design/pixel-peel-motifs.md § 4)', 
     for (const group of GROUPS_SHOWN) {
       const members = new Set(CATALOGUE.filter((c) => c.group === group).map((c) => c.id));
       const seen = new Set<string>();
-      for (let seed = 0; seed < 200; seed++) {
+      // Coupon collector: enough seeds that every member shows up (deterministic seeds, so no flake).
+      const limit = Math.ceil(members.size * (Math.log(members.size) + 8));
+      for (let seed = 0; seed < limit && seen.size < members.size; seed++) {
         const card = motifFor(seed, anyOf(group));
         expect(card.group).toBe(group);
         seen.add(card.id);
