@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, submitStart } from '../../packages/testing/src/e2e';
 import { position, presentCount, preview, tableOfState, type PeelState } from '../../packages/games/pixel-peel/src/rules';
 import { runPolicy } from '../../packages/games/pixel-peel/src/policies';
-import { messages } from '../../packages/games/pixel-peel/src/messages';
+import { CATALOGUES as messages } from '../../packages/games/pixel-peel/src/locales/index';
 import { COMMON_MESSAGES } from '../../packages/localization/src/common-messages';
 
 const ID = 'pixel-peel';
@@ -305,6 +305,48 @@ test('pixel-peel: a chosen picture is not remembered — the next start screen o
   await expect(page.getByTestId('difficulty').locator('input[value="easy"]')).toBeChecked();
 });
 
+test('pixel-peel: the picture select groups the pictures by kind, each group starting with "Any …"; "Any animal" plays an animal', async ({ page }) => {
+  await page.goto(`/games/${ID}`);
+  const select = page.getByTestId('setting-motif');
+  await expect(select).toBeVisible();
+  const parts = await select.evaluate((el) =>
+    [...el.children].map((child) =>
+      child.tagName === 'OPTGROUP' ? { group: (child as HTMLOptGroupElement).label, values: [...child.children].map((o) => (o as HTMLOptionElement).value) } : { option: (child as HTMLOptionElement).value }
+    )
+  );
+  expect(parts[0]).toEqual({ option: 'any' });
+  const groups = parts.slice(1) as { group: string; values: string[] }[];
+  expect(groups.slice(0, 4).map((g) => g.group)).toEqual(['Seasons', 'Landscapes', 'Animals', 'Everyday scenes']);
+  for (const g of groups) expect(g.values[0], g.group).toMatch(/^any-/);
+  await expect(select).toHaveValue('any');
+  const animals = groups[2]!.values.slice(1);
+  expect(animals).toContain('red-fox');
+  await submitStart(page, { difficulty: 'easy', settings: { motif: 'any-animal' } });
+  const state = await savedState(page);
+  expect(state.choice).toBe('any-animal');
+  expect(animals).toContain(state.motif);
+});
+
+test('pixel-peel: offline, a picture whose art was never loaded starts (every art chunk is precached)', async ({ page, context }) => {
+  await page.goto(`/games/${ID}`);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  await expect(page.getByTestId('start-game')).toBeVisible();
+  // The art of each picture is a chunk of its own, loaded only when a game with it starts.
+  const loadedArt = () => page.evaluate(() => performance.getEntriesByType('resource').some((e) => /\/lighthouse-[^/]*\.js$/.test(e.name)));
+  expect(await loadedArt()).toBe(false);
+  await context.setOffline(true);
+  await submitStart(page, { difficulty: 'hard', settings: { motif: 'lighthouse' } });
+  const state = await savedState(page);
+  expect([state.motif, state.picture.w, state.picture.h]).toEqual(['lighthouse', 45, 60]);
+  await expect(root(page).getByTestId('pp-title')).toContainText('Lighthouse');
+  expect(await loadedArt()).toBe(true);
+  await context.setOffline(false);
+});
+
 test('pixel-peel: in Arabic the lanes start at inline-start and the picture is not mirrored', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('worthwhile-play:ui-locale', 'ar'));
   await startGame(page, ID, { difficulty: 'medium', settings: { motif: 'llama' } });
@@ -353,7 +395,8 @@ function expectInViewport(boxes: Record<string, { top: number; bottom: number; l
 }
 
 for (const [width, height] of [[360, 640], [360, 740], [390, 844], [412, 915]] as const) {
-  for (const motif of ['winter-village', 'red-fox'] as const) {
+  // The smallest phone also gets the tallest (45 × 60) and the widest (64 × 32) pictures of the new aspects.
+  for (const motif of width === 360 && height === 640 ? ['winter-village', 'red-fox', 'lighthouse', 'lavender-fields'] : ['winter-village', 'red-fox']) {
     test(`pixel-peel: at ${width} × ${height} (${motif}) picture, status, waiting places and lane fronts fit one screen through 10 moves`, async ({ page }, info) => {
       test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
       await page.setViewportSize({ width, height });
