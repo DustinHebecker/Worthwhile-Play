@@ -18,5 +18,29 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/torii-gate'),
     title: { de: 'Torii', en: 'Torii gate', nl: 'Torii', es: 'Torii', fr: 'Torii', ru: 'Тории', 'zh-Hans': '鸟居', ko: '도리이', ja: '鳥居', ar: 'بوابة توري', pt: 'Torii', it: 'Torii', pl: 'Torii', tr: 'Torii kapısı', uk: 'Торії', hi: 'तोरी द्वार' },
     place: { de: 'Ein Shintō-Schrein im Wald, Japan', en: 'A Shinto shrine in the forest, Japan', nl: 'Een shintoïstisch heiligdom in het bos, Japan', es: 'Un santuario sintoísta en el bosque, Japón', fr: 'Un sanctuaire shinto dans la forêt, Japon', ru: 'Синтоистское святилище в лесу, Япония', 'zh-Hans': '日本森林中的神社', ko: '숲속의 신사, 일본', ja: '森の中の神社（日本）', ar: 'ضريح شنتوي في الغابة، اليابان', pt: 'Um santuário xintoísta na floresta, Japão', it: 'Un santuario shintoista nel bosco, Giappone', pl: 'Chram shintō w lesie, Japonia', tr: 'Ormanda bir Şinto tapınağı, Japonya', uk: 'Синтоїстське святилище в лісі, Японія', hi: 'जंगल में एक शिंतो मंदिर, जापान' }
+  },
+  {
+    id: 'empire-state-building',
+    group: 'landmark',
+    aspect: 'tall',
+    art: () => import('../baked/empire-state-building'),
+    title: { de: 'Empire State Building', en: 'Empire State Building', nl: 'Empire State Building', es: 'Empire State Building', fr: 'Empire State Building', ru: 'Эмпайр-стейт-билдинг', 'zh-Hans': '帝国大厦', ko: '엠파이어 스테이트 빌딩', ja: 'エンパイア・ステート・ビル', ar: 'مبنى إمباير ستيت', pt: 'Empire State Building', it: 'Empire State Building', pl: 'Empire State Building', tr: 'Empire State Binası', uk: 'Емпайр-стейт-білдинг', hi: 'एम्पायर स्टेट बिल्डिंग' },
+    place: { de: 'Manhattan, New York, USA', en: 'Manhattan, New York, United States', nl: 'Manhattan, New York, Verenigde Staten', es: 'Manhattan, Nueva York, Estados Unidos', fr: 'Manhattan, New York, États-Unis', ru: 'Манхэттен, Нью-Йорк, США', 'zh-Hans': '美国纽约曼哈顿', ko: '미국 뉴욕 맨해튼', ja: 'アメリカ合衆国、ニューヨーク、マンハッタン', ar: 'مانهاتن، نيويورك، الولايات المتحدة', pt: 'Manhattan, Nova Iorque, Estados Unidos', it: 'Manhattan, New York, Stati Uniti', pl: 'Manhattan, Nowy Jork, Stany Zjednoczone', tr: 'Manhattan, New York, ABD', uk: 'Мангеттен, Нью-Йорк, США', hi: 'मैनहट्टन, न्यूयॉर्क, संयुक्त राज्य अमेरिका' }
+  },
+  {
+    id: 'brandenburg-gate',
+    group: 'landmark',
+    aspect: 'wide',
+    art: () => import('../baked/brandenburg-gate'),
+    title: { de: 'Brandenburger Tor', en: 'Brandenburg Gate', nl: 'Brandenburger Tor', es: 'Puerta de Brandeburgo', fr: 'Porte de Brandebourg', ru: 'Бранденбургские ворота', 'zh-Hans': '勃兰登堡门', ko: '브란덴부르크 문', ja: 'ブランデンブルク門', ar: 'بوابة براندنبورغ', pt: 'Portão de Brandemburgo', it: 'Porta di Brandeburgo', pl: 'Brama Brandenburska', tr: 'Brandenburg Kapısı', uk: 'Бранденбурзькі ворота', hi: 'ब्रांडेनबर्ग गेट' },
+    place: { de: 'Berlin, Deutschland', en: 'Berlin, Germany', nl: 'Berlijn, Duitsland', es: 'Berlín, Alemania', fr: 'Berlin, Allemagne', ru: 'Берлин, Германия', 'zh-Hans': '德国柏林', ko: '독일 베를린', ja: 'ドイツ、ベルリン', ar: 'برلين، ألمانيا', pt: 'Berlim, Alemanha', it: 'Berlino, Germania', pl: 'Berlin, Niemcy', tr: 'Berlin, Almanya', uk: 'Берлін, Німеччина', hi: 'बर्लिन, जर्मनी' }
+  },
+  {
+    id: 'eiffel-tower',
+    group: 'landmark',
+    aspect: 'tall',
+    art: () => import('../baked/eiffel-tower'),
+    title: { de: 'Eiffelturm', en: 'Eiffel Tower', nl: 'Eiffeltoren', es: 'Torre Eiffel', fr: 'Tour Eiffel', ru: 'Эйфелева башня', 'zh-Hans': '埃菲尔铁塔', ko: '에펠탑', ja: 'エッフェル塔', ar: 'برج إيفل', pt: 'Torre Eiffel', it: 'Torre Eiffel', pl: 'Wieża Eiffla', tr: 'Eyfel Kulesi', uk: 'Ейфелева вежа', hi: 'एफ़िल टॉवर' },
+    place: { de: 'Paris, Frankreich', en: 'Paris, France', nl: 'Parijs, Frankrijk', es: 'París, Francia', fr: 'Paris, France', ru: 'Париж, Франция', 'zh-Hans': '法国巴黎', ko: '프랑스 파리', ja: 'フランス、パリ', ar: 'باريس، فرنسا', pt: 'Paris, França', it: 'Parigi, Francia', pl: 'Paryż, Francja', tr: 'Paris, Fransa', uk: 'Париж, Франція', hi: 'पेरिस, फ़्रांस' }
   }
 ];

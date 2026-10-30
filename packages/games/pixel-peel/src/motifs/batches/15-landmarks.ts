@@ -1,6 +1,9 @@
 import type { Motif } from '../../art/types';
 import { mountFuji } from '../mount-fuji';
 import { toriiGate } from '../torii-gate';
+import { empireStateBuilding } from '../empire-state-building';
+import { brandenburgGate } from '../brandenburg-gate';
+import { eiffelTower } from '../eiffel-tower';
 
 /** Ten famous landmarks around the world (batch 15, landmarks). */
-export const BATCH: readonly Motif[] = [mountFuji, toriiGate];
+export const BATCH: readonly Motif[] = [mountFuji, toriiGate, empireStateBuilding, brandenburgGate, eiffelTower];
