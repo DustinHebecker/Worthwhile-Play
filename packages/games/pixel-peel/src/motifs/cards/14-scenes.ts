@@ -26,5 +26,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/campfire'),
     title: { de: 'Lagerfeuer', en: 'Campfire', nl: 'Kampvuur', es: 'Fogata', fr: 'Feu de camp', ru: 'Костёр', 'zh-Hans': '篝火', ko: '모닥불', ja: 'キャンプファイヤー', ar: 'نار المخيم', pt: 'Fogueira', it: 'Falò', pl: 'Ognisko', tr: 'Kamp ateşi', uk: 'Багаття', hi: 'अलाव' },
     place: { de: 'Eine Wiese am Waldrand bei Nacht', en: 'A meadow by the forest at night', nl: 'Een weide aan de bosrand bij nacht', es: 'Un prado junto al bosque de noche', fr: 'Un pré à l’orée du bois, la nuit', ru: 'Луг у леса ночью', 'zh-Hans': '夜晚林边的草地', ko: '밤의 숲가 풀밭', ja: '夜の森のそばの草地', ar: 'مرج عند حافة الغابة ليلًا', pt: 'Um prado junto à floresta à noite', it: 'Un prato al limitare del bosco di notte', pl: 'Łąka na skraju lasu nocą', tr: 'Gece orman kenarında bir çayır', uk: 'Луг на узліссі вночі', hi: 'रात में जंगल के किनारे एक घास का मैदान' }
+  },
+  {
+    id: 'hot-air-balloons',
+    group: 'scene',
+    aspect: 'wide',
+    art: () => import('../baked/hot-air-balloons'),
+    title: { de: 'Heißluftballons', en: 'Hot-air balloons', nl: 'Heteluchtballonnen', es: 'Globos aerostáticos', fr: 'Montgolfières', ru: 'Воздушные шары', 'zh-Hans': '热气球', ko: '열기구', ja: '熱気球', ar: 'مناطيد الهواء الساخن', pt: 'Balões de ar quente', it: 'Mongolfiere', pl: 'Balony na ogrzane powietrze', tr: 'Sıcak hava balonları', uk: 'Повітряні кулі', hi: 'गर्म हवा के गुब्बारे' },
+    place: { de: 'Ein Tal mit Felskaminen bei Sonnenaufgang', en: 'A valley of rock chimneys at sunrise', nl: 'Een dal met rotspilaren bij zonsopgang', es: 'Un valle de chimeneas de roca al amanecer', fr: 'Une vallée de cheminées de roche au lever du soleil', ru: 'Долина каменных столбов на рассвете', 'zh-Hans': '日出时分的岩柱山谷', ko: '해 뜰 무렵 바위 기둥 골짜기', ja: '日の出の岩の尖塔の谷', ar: 'وادٍ من المداخن الصخرية عند الشروق', pt: 'Um vale de chaminés de rocha ao nascer do sol', it: 'Una valle di camini di roccia all’alba', pl: 'Dolina skalnych kominów o wschodzie słońca', tr: 'Gün doğarken peri bacalarıyla dolu bir vadi', uk: 'Долина кам’яних стовпів на світанку', hi: 'सूर्योदय के समय चट्टानी मीनारों की घाटी' }
+  },
+  {
+    id: 'greenhouse',
+    group: 'scene',
+    aspect: 'square',
+    art: () => import('../baked/greenhouse'),
+    title: { de: 'Gewächshaus', en: 'Greenhouse', nl: 'Kas', es: 'Invernadero', fr: 'Serre', ru: 'Теплица', 'zh-Hans': '温室', ko: '온실', ja: '温室', ar: 'دفيئة', pt: 'Estufa', it: 'Serra', pl: 'Szklarnia', tr: 'Sera', uk: 'Теплиця', hi: 'ग्रीनहाउस' },
+    place: { de: 'Ein Glashaus in einem Garten', en: 'A glasshouse in a garden', nl: 'Een glazen kas in een tuin', es: 'Un invernadero de cristal en un jardín', fr: 'Une serre vitrée dans un jardin', ru: 'Стеклянная теплица в саду', 'zh-Hans': '花园里的玻璃温室', ko: '정원 안의 유리 온실', ja: '庭のガラスの温室', ar: 'بيت زجاجي في حديقة', pt: 'Uma estufa de vidro num jardim', it: 'Una serra di vetro in un giardino', pl: 'Szklarnia w ogrodzie', tr: 'Bir bahçede cam sera', uk: 'Скляна теплиця в саду', hi: 'एक बगीचे में शीशे का घर' }
   }
 ];
