@@ -29,7 +29,7 @@ const contexts = new Map<string, GameContext>();
 const starts = new Map<string, NewGameOptions[]>();
 
 /** A game whose `preload` is controlled by the test and which renders the locale it was preloaded for. */
-function fakeGame(id: string, preload?: (locale: string) => Promise<void>, extra: Partial<GameMetadata> = {}, moduleExtra: Partial<Pick<GameModule<{ n: number }>, 'settings' | 'settingsOf'>> = {}) {
+function fakeGame(id: string, preload?: (locale: string) => Promise<void>, extra: Partial<GameMetadata> = {}, moduleExtra: Partial<Pick<GameModule<{ n: number }>, 'settings' | 'settingsOf' | 'prepare'>> = {}) {
   const log: string[] = [];
   let content = '(none)';
   const module: GameModule<{ n: number }> = {
@@ -149,6 +149,63 @@ describe('game page: optional per-locale preload (ADR 0011)', () => {
     } finally {
       error.mockRestore();
     }
+  });
+});
+
+describe('game page: optional prepare before each new game (ADR 0011 amendment)', () => {
+  it('awaits prepare with the options of the new game, then creates the game and calls newGame with the same options', async () => {
+    let release!: () => void;
+    const prepared: NewGameOptions[] = [];
+    const log = fakeGame('prep', undefined, {}, {
+      prepare: (options) => {
+        prepared.push(options);
+        log.push('prepare');
+        return new Promise<void>((resolve) => (release = resolve));
+      }
+    });
+    open('prep', 'en');
+    await vi.waitFor(() => expect(log).toEqual(['prepare']));
+    await new Promise((r) => setTimeout(r, 10));
+    expect(log).toEqual(['prepare']);
+    release();
+    await vi.waitFor(() => expect(log).toEqual(['prepare', 'create:en', 'newGame']));
+    expect(prepared).toEqual([{ seed: 7 }]);
+    expect(starts.get('prep')).toEqual([{ seed: 7 }]);
+  });
+
+  it('shows the load error and starts nothing when prepare fails', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const log = fakeGame('prep-broken', undefined, {}, { prepare: () => Promise.reject(new Error('offline')) });
+      const main = open('prep-broken', 'en');
+      await vi.waitFor(() => expect(main.querySelector('[data-testid="prepare-error"]')?.textContent).toBe('game.loadError'));
+      expect(main.querySelector('[data-testid="prepare-error"]')!.getAttribute('role')).toBe('alert');
+      expect(log).not.toContain('newGame');
+      expect(error).toHaveBeenCalledWith(new Error('offline'));
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('of two overlapping starts (a double press while preparing) only the later one starts, whichever prepare ends first', async () => {
+    const releases: (() => void)[] = [];
+    const en = { title: 'Demo', tagline: 't', rules: 'r', 'set.size': 'Board', 'size.4': 'Four', 'size.6': 'Six' };
+    const log = fakeGame('prep-twice', undefined, { messages: { en } }, {
+      settings: [{ kind: 'choice', id: 'size', labelKey: 'set.size', values: [4, 6], valueKey: 'size', default: 4 }],
+      prepare: () => new Promise<void>((resolve) => releases.push(resolve))
+    });
+    const main = openPlain('prep-twice');
+    await vi.waitFor(() => expect(main.querySelector('[data-testid="start-game"]')).not.toBeNull());
+    const form = main.querySelector<HTMLFormElement>('[data-testid="start-form"]')!;
+    form.requestSubmit();
+    main.querySelector<HTMLInputElement>('[data-testid="setting-size"] input[value="6"]')!.checked = true;
+    form.requestSubmit();
+    await vi.waitFor(() => expect(releases).toHaveLength(2));
+    releases[1]!();
+    releases[0]!();
+    await vi.waitFor(() => expect(log).toContain('newGame'));
+    await new Promise((r) => setTimeout(r, 10));
+    expect(starts.get('prep-twice')).toEqual([{ seed: expect.any(Number), settings: { size: 6 }, begin: true }]);
   });
 });
 
@@ -412,6 +469,21 @@ describe('game page: one start screen with host-drawn settings (ADR 0017)', () =
     expect(q<HTMLInputElement>(main, 'setting-rounds')!.type).toBe('number');
     expect(q(main, 'continue')).toBeNull();
     expect(document.activeElement).toBe(q(main, 'start-game'));
+  });
+
+  it('draws the groups of a long choice as <optgroup>s after the values in no group', async () => {
+    fakeGame('grouped', undefined, { messages: { en: { ...en, 'group.big': 'Big boards', 'group.small': 'Small boards' } } }, {
+      settings: [{ kind: 'choice', id: 'size', labelKey: 'set.size', values: [4, 5, 6, 7, 8], valueKey: 'size', default: 6, display: 'select', groups: [{ labelKey: 'group.small', values: [5, 4] }, { labelKey: 'group.big', values: [7, 8] }] }]
+    });
+    const main = openPlain('grouped');
+    await ready(main);
+    const select = q<HTMLSelectElement>(main, 'setting-size')!;
+    expect([...select.children].map((el) => (el.tagName === 'OPTGROUP' ? `${(el as HTMLOptGroupElement).label}: ${[...el.children].map((o) => o.textContent).join(', ')}` : el.textContent))).toEqual(['Six', 'Small boards: Five, Four', 'Big boards: Seven, Eight']);
+    expect(select.value).toBe('6');
+    select.value = '8';
+    submit(main);
+    await vi.waitFor(() => expect(starts.get('grouped')).toHaveLength(1));
+    expect(starts.get('grouped')![0]!.settings).toEqual({ size: 8 });
   });
 
   it('hides (and skips) settings whose condition does not hold', async () => {

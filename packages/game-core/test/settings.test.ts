@@ -15,7 +15,8 @@ const messages = {
   'size.4': '4×4',
   'size.6': '6×6',
   'setting.hints': 'Hints',
-  'setting.rounds': 'Rounds'
+  'setting.rounds': 'Rounds',
+  'group.people': 'People'
 };
 const metadata: GameMetadata = {
   id: 'demo-game',
@@ -62,7 +63,12 @@ describe('validateSettings', () => {
     [[{ kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, when: { hints: [true] } }], 'refers to itself'],
     [[{ kind: 'difficulty' }, { kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, when: { difficulty: ['brutal'] } }], 'not a value of "difficulty"'],
     [[{ kind: 'difficulty' }, { kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, when: { difficulty: [] } }], 'lists no values'],
-    [[{ kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, remember: 'no' as unknown as boolean }], 'remember must be a boolean']
+    [[{ kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, remember: 'no' as unknown as boolean }], 'remember must be a boolean'],
+    [[{ kind: 'choice', id: 'mode', labelKey: 'setting.mode', values: ['computer', 'person'], valueKey: 'mode', default: 'computer', groups: [{ labelKey: 'group.missing', values: ['person'] }] }], 'lacks setting key "group.missing"'],
+    [[{ kind: 'choice', id: 'mode', labelKey: 'setting.mode', values: ['computer', 'person'], valueKey: 'mode', default: 'computer', groups: [{ labelKey: 'group.people', values: ['robot'] }] }], 'lists "robot", not one of its values'],
+    [[{ kind: 'choice', id: 'mode', labelKey: 'setting.mode', values: ['computer', 'person'], valueKey: 'mode', default: 'computer', groups: [{ labelKey: 'group.people', values: [] }] }], 'lists no values'],
+    [[{ kind: 'choice', id: 'mode', labelKey: 'setting.mode', values: ['computer', 'person'], valueKey: 'mode', default: 'computer', groups: [{ labelKey: 'group.people', values: ['person'] }, { labelKey: 'group.people', values: ['person'] }] }], 'in more than one group'],
+    [[{ kind: 'choice', id: 'mode', labelKey: 'setting.mode', values: ['computer'], valueKey: 'mode', default: 'computer', groups: 'x' as never }], 'groups must be an array']
   ])('reports %j', (declared, fragment) => {
     expect(validateSettings(mod(declared), ['en']).join('\n')).toContain(fragment);
   });
@@ -74,6 +80,11 @@ describe('validateSettings', () => {
       { kind: 'number', id: 'rounds', labelKey: 'setting.rounds', min: 1, max: 9, default: 3, remember: false }
     ];
     expect(validateSettings(mod(remembering), ['en'])).toEqual([]);
+  });
+
+  it('accepts groups of a choice (an <optgroup> per group in the host select)', () => {
+    const grouped: SettingSpec[] = [{ kind: 'choice', id: 'mode', labelKey: 'setting.mode', values: ['computer', 'person'], valueKey: 'mode', default: 'computer', display: 'select', groups: [{ labelKey: 'group.people', values: ['person'] }] }];
+    expect(validateSettings(mod(grouped), ['en', 'de'])).toEqual([]);
   });
 
   it('needs metadata.difficulties for a difficulty entry and checks its labels', () => {
