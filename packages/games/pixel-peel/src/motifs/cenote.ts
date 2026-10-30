@@ -50,7 +50,7 @@ export const cenote: Motif = {
     d: ['#21502c', 'darkGreen', 1],
     k: ['#211f25', 'charcoal', 1],
     h: ['#4f5257', 'darkGrey', 1],
-    g: ['#83837f', 'grey', 3, 'h'],
+    g: ['#83837f', 'grey', 2, 'h'],
     t: ['#c7a272', 'tan', 1],
     o: ['#6c7236', 'olive', 2, 'e'],
     b: ['#5e3c27', 'brown', 1],
@@ -69,11 +69,11 @@ export const cenote: Motif = {
     { shape: { poly: [[0, 62], [36, 66], [70, 60], [100, 64], [100, 67], [70, 64], [36, 70], [0, 66]], smooth: 1 }, fill: 'g', clip: 'wall' },
     { shape: { poly: [[0, 76], [30, 79], [64, 75], [100, 78], [100, 82], [64, 79], [30, 83], [0, 80]], smooth: 1 }, fill: 't', clip: 'wall' },
     { shape: { poly: [[0, 86], [100, 86], [100, 100], [0, 100]] }, fill: { gradient: ['h', 'c'], from: [0, 86], to: [0, 96], soft: 0.7 }, clip: 'wall' },
-    { shape: { poly: [[0, 88], [100, 88], [100, 98], [0, 98]] }, fill: { scatter: 'q', density: 0.12, salt: 58 }, clip: 'wall', min: 39 },
+    { shape: { poly: [[0, 88], [100, 88], [100, 98], [0, 98]] }, fill: { scatter: 'q', density: 0.1, salt: 58 }, clip: 'wall', min: 45 },
     { shape: { ellipse: [22, 58, 7, 4] }, fill: 'o', clip: 'wall', shade: { light: 'e', dir: 'n', mode: 'band', amount: 0.3 } },
     { shape: { ellipse: [84, 76, 6, 4] }, fill: 'o', clip: 'wall', shade: { light: 'e', dir: 'n', mode: 'band', amount: 0.3 } },
     { shape: { ellipse: [46, 80, 5, 3] }, fill: 'o', clip: 'wall', min: 39 },
-    { shape: { all: true }, fill: { scatter: 'k', density: 0.06, salt: 51 }, clip: 'wall', min: 39 },
+    { shape: { all: true }, fill: { scatter: 'k', density: 0.05, salt: 51 }, clip: 'wall', min: 45 },
     // The opening: sky with a cloud, fringed by jungle leaning over the rim.
     { shape: { ellipse: [52, 10, 38, 20] }, fill: 'd', shade: { light: 'e', dir: 's', mode: 'band', amount: 0.3 } },
     { shape: { ellipse: [52, 6, 28, 13] }, fill: { gradient: ['s', 'l'], from: [52, 0], to: [52, 16], soft: 0.6 } },
@@ -82,7 +82,7 @@ export const cenote: Motif = {
     { shape: { ellipse: [78, 10, 10, 7] }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'nw', width: 2 } },
     { shape: { ellipse: [62, 18, 9, 4] }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'n', width: 2 } },
     { shape: { ellipse: [38, 18, 8, 3.6] }, fill: 'd', shade: { light: 'e', dir: 'n' } },
-    { shape: { rect: [14, 0, 76, 26] }, fill: { scatter: 'm', density: 0.08, salt: 52 }, min: 39 },
+    { shape: { rect: [14, 0, 76, 26] }, fill: { scatter: 'm', density: 0.08, salt: 52 }, min: 45 },
     // The rock ceiling around the opening, with stalactites.
     { shape: { poly: [[-2, -2], [24, -2], [18, 8], [14, 20], [20, 26], [34, 24], [50, 26], [66, 25], [82, 24], [90, 18], [86, 6], [80, -2], [102, -2], [102, 40], [0, 40]], smooth: 1 }, fill: 'k', shade: { light: 'h', dir: 'n', width: 2 } },
     { shape: { poly: [[30, 24], [34, 24], [32.4, 34]] }, fill: 'h', shade: { light: 't', dir: 'ne' } },
@@ -96,15 +96,10 @@ export const cenote: Motif = {
     { shape: { poly: [[56, 22], [62, 22], [80, 104], [72, 104]] }, fill: { scatter: 'y', density: 0.3, salt: 55 }, min: 39 },
     { shape: { poly: [[30, 24], [35, 24], [44, 104], [37, 104]] }, fill: { scatter: 'y', density: 0.22, salt: 56 }, min: 45 },
     // Roots hanging from the rim to the water.
-    { shape: { line: [[24, 18], [25, 40], [23, 64], [24, 92]], width: 1.4 }, fill: 'b' },
-    { shape: { line: [[28, 20], [29, 46], [28, 76]], width: 1 }, fill: 'x' },
-    { shape: { line: [[38, 22], [37, 50], [39, 84], [38, 104]], width: 1.2 }, fill: 'b' },
-    { shape: { line: [[64, 24], [65, 50], [63, 80], [64, 102]], width: 1.2 }, fill: 'x' },
-    { shape: { line: [[76, 20], [75, 44], [77, 72], [76, 96]], width: 1.4 }, fill: 'b' },
-    { shape: { line: [[80, 18], [81, 38], [80, 60]], width: 1 }, fill: 'x', min: 39 },
-    { shape: { line: [[46, 24], [46, 46], [47, 62]], width: 1 }, fill: 'b', min: 39 },
-    { shape: { line: [[56, 25], [57, 52]], width: 1 }, fill: 'x', min: 45 },
-    { shape: { line: [[33, 22], [32, 52]], width: 1 }, fill: 'x', min: 45 },
+    { shape: { line: [[24, 18], [25, 40], [23, 64], [24, 90]], width: 2.4 }, fill: 'b' },
+    { shape: { line: [[36, 22], [37, 48], [36, 70]], width: 2 }, fill: 'x' },
+    { shape: { line: [[66, 24], [65, 50], [66, 76]], width: 2 }, fill: 'x' },
+    { shape: { line: [[77, 20], [76, 44], [77, 70], [76, 94]], width: 2.4 }, fill: 'b' },
     // The pool: turquoise where the light falls, deep teal and blue in the shade.
     { name: 'pool', shape: { poly: [[-2, 106], [10, 100], [30, 97], [52, 96], [74, 97], [92, 100], [102, 104], [102, 126], [-2, 126]], smooth: 1 }, fill: { gradient: ['c', 'n'], from: [50, 100], to: [50, 124], soft: 0.5 } },
     { shape: { ellipse: [60, 108, 26, 8] }, fill: 'q', clip: 'pool', shade: { light: 'i', dir: 'n', mode: 'band', amount: 0.35 } },
@@ -121,6 +116,6 @@ export const cenote: Motif = {
     { name: 'rocks', shape: { poly: [[-4, 136], [-4, 120], [10, 116], [24, 118], [34, 124], [44, 128], [52, 136]], smooth: 1 }, fill: 'h', shade: { light: 't', dir: 'n', width: 2 } },
     { shape: { poly: [[56, 136], [64, 126], [76, 120], [90, 118], [104, 120], [104, 136]], smooth: 1 }, fill: 'h', shade: { light: 't', dir: 'n', width: 2 } },
     { shape: { poly: [[18, 136], [26, 128], [38, 130], [46, 136]], smooth: 1 }, fill: 'k', shade: { light: 't', dir: 'n' } },
-    { shape: { rect: [0, 116, 100, 20] }, fill: { scatter: 'g', density: 0.1, salt: 57 }, clip: 'rocks', min: 39 }
+    { shape: { rect: [0, 116, 100, 20] }, fill: { scatter: 'g', density: 0.1, salt: 57 }, clip: 'rocks', min: 45 }
   ]
 };

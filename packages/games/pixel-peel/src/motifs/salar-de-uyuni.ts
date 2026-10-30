@@ -79,6 +79,9 @@ export const salarDeUyuni: Motif = {
     { shape: { ellipse: [66, 27, 11, 1.6] }, fill: 'p', min: 48 },
     { shape: { ellipse: [48, 8, 9, 2] }, fill: 'w', shade: { dark: 'l', dir: 's', mode: 'band', amount: 0.4 }, min: 40 },
     { shape: { ellipse: [8, 6, 7, 1.6] }, fill: 'l', min: 48 },
+    { shape: { ellipse: [86, 16, 8, 1.6] }, fill: 'w', min: 48 },
+    { shape: { ellipse: [46, 22, 6, 1.4] }, fill: 'l', min: 48 },
+    { shape: { ellipse: [8, 26, 7, 1.4] }, fill: 'w', min: 48 },
     { shape: { ellipse: [26, 46, 15, 6] }, fill: 'w', clip: 'mirror', shade: { dark: 'g', dir: 'se', mode: 'band', amount: 0.35 } },
     { shape: { ellipse: [22, 52, 9, 6] }, fill: 'w', clip: 'mirror', shade: { dark: 'g', dir: 'se', width: 2 } },
     { shape: { ellipse: [31, 54, 7, 5.5] }, fill: 'w', clip: 'mirror', shade: { dark: 'g', dir: 'se', width: 2 } },
@@ -93,6 +96,9 @@ export const salarDeUyuni: Motif = {
     { shape: { poly: [[0, 34], [0, 36.5], [5, 37], [9, 39.5], [13, 42.5], [16, 43.8], [19, 43.4], [23, 40.5], [28, 37.5], [36, 36.4], [46, 35.6], [56, 36.2], [66, 35.4], [78, 36.8], [86, 37.2], [94, 36.2], [100, 36.6], [100, 34]], smooth: 1 }, fill: 'v', shade: { light: 'a', dark: 'm', dir: 'se' } },
     { shape: { poly: [[12, 41.6], [15, 43.6], [19, 43.4], [22, 41.4], [19, 41.8], [17, 40.6], [15, 41.8]], smooth: 1 }, fill: 'g', min: 40 },
     { shape: { line: [[0, 34], [100, 34]], width: 1 }, fill: 'm' },
+    { shape: { rect: [0, 36, 100, 18] }, fill: { scatter: 'l', density: 0.05, salt: 26 }, clip: 'mirror', min: 48 },
+    { shape: { ellipse: [86, 52, 8, 1.6] }, fill: 'w', clip: 'mirror', min: 48 },
+    { shape: { ellipse: [8, 42, 7, 1.4] }, fill: 'w', clip: 'mirror', min: 48 },
     // The edge of the shallow water over the crust, with glints.
     { shape: { poly: [[0, 55], [20, 54], [44, 54.6], [70, 53.6], [100, 54.4], [100, 61], [0, 61]], smooth: 1 }, fill: 'q', shade: { dark: 'k', dir: 'n', mode: 'band', amount: 0.45 } },
     { shape: { line: [[78, 56], [86, 56]], width: 1 }, fill: 'y', min: 40 },
@@ -119,6 +125,6 @@ export const salarDeUyuni: Motif = {
     { shape: { poly: [[77.4, 73.3], [85.6, 73.3], [89.8, 77], [85.6, 80.7], [77.4, 80.7], [73.2, 77]] }, fill: 'w', clip: 'crust', shade: { dark: 'b', dir: 'nw', width: 2 } },
     { shape: { poly: [[91.6, 59.1], [99.9, 59.1], [104, 62.8], [99.9, 66.4], [91.6, 66.4], [87.5, 62.8]] }, fill: 'w', clip: 'crust', shade: { dark: 'b', dir: 'nw', width: 2 } },
     { shape: { poly: [[91.6, 68.6], [99.9, 68.6], [104, 72.2], [99.9, 75.9], [91.6, 75.9], [87.5, 72.2]] }, fill: 'w', clip: 'crust', shade: { dark: 'b', dir: 'nw', width: 2 } },
-    { shape: { rect: [0, 56, 100, 19] }, fill: { scatter: 'g', density: 0.05, salt: 23 }, clip: 'crust', min: 48 }
+    { shape: { rect: [0, 56, 100, 19] }, fill: { scatter: 'b', density: 0.06, salt: 23 }, clip: 'crust', min: 48 }
   ]
 };
