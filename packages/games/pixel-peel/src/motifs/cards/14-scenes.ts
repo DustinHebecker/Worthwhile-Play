@@ -56,7 +56,7 @@ export const CARDS: readonly MotifCard[] = [
     group: 'scene',
     aspect: 'panorama',
     art: () => import('../baked/viaduct-train'),
-    title: { de: 'Dampfzug auf dem Viadukt', en: 'Steam train on a viaduct', nl: 'Stoomtrein op een viaduct', es: 'Tren de vapor en un viaducto', fr: 'Train à vapeur sur un viaduc', ru: 'Паровоз на виадуке', 'zh-Hans': '高架桥上的蒸汽火车', ko: '고가교 위의 증기 기관차', ja: '高架橋を渡る蒸気機関車', ar: 'قطار بخاري على جسر', pt: 'Comboio a vapor num viaduto', it: 'Treno a vapore sul viadotto', pl: 'Parowóz na wiadukcie', tr: 'Viyadükte buharlı tren', uk: 'Паротяг на віадуці', hi: 'पुल पर भाप की रेलगाड़ी' },
+    title: { de: 'Dampfzug auf dem Viadukt', en: 'Steam train on a viaduct', nl: 'Stoomtrein op een viaduct', es: 'Tren de vapor en un viaducto', fr: 'Train à vapeur sur un viaduc', ru: 'Паровоз на виадуке', 'zh-Hans': '高架桥上的蒸汽火车', ko: '고가교 위의 증기 기관차', ja: '高架橋を渡る蒸気機関車', ar: 'قطار بخاري على جسر', pt: 'Trem a vapor em um viaduto', it: 'Treno a vapore sul viadotto', pl: 'Parowóz na wiadukcie', tr: 'Viyadükte buharlı tren', uk: 'Паротяг на віадуці', hi: 'पुल पर भाप की रेलगाड़ी' },
     place: { de: 'Ein grünes Flusstal', en: 'A green river valley', nl: 'Een groen rivierdal', es: 'Un valle fluvial verde', fr: 'Une vallée verdoyante', ru: 'Зелёная долина реки', 'zh-Hans': '绿色的河谷', ko: '푸른 강 골짜기', ja: '緑の川の谷', ar: 'وادي نهر أخضر', pt: 'Um vale verde com um rio', it: 'Una verde valle fluviale', pl: 'Zielona dolina rzeki', tr: 'Yeşil bir nehir vadisi', uk: 'Зелена долина річки', hi: 'एक हरी-भरी नदी घाटी' }
   },
   {

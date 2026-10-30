@@ -15,7 +15,7 @@ export const viaductTrain: Motif = {
     ko: '고가교 위의 증기 기관차',
     ja: '高架橋を渡る蒸気機関車',
     ar: 'قطار بخاري على جسر',
-    pt: 'Comboio a vapor num viaduto',
+    pt: 'Trem a vapor em um viaduto',
     it: 'Treno a vapore sul viadotto',
     pl: 'Parowóz na wiadukcie',
     tr: 'Viyadükte buharlı tren',
