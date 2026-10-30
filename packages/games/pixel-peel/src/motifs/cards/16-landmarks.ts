@@ -34,5 +34,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/yosemite-valley'),
     title: { de: 'Yosemite Valley', en: 'Yosemite Valley', nl: 'Yosemite Valley', es: 'Valle de Yosemite', fr: 'Vallée de Yosemite', ru: 'Долина Йосемити', 'zh-Hans': '优胜美地山谷', ko: '요세미티 계곡', ja: 'ヨセミテ渓谷', ar: 'وادي يوسمايت', pt: 'Vale de Yosemite', it: 'Valle di Yosemite', pl: 'Dolina Yosemite', tr: 'Yosemite Vadisi', uk: 'Долина Йосеміті', hi: 'योसेमिटी घाटी' },
     place: { de: 'Yosemite-Nationalpark, Kalifornien, USA', en: 'Yosemite National Park, California, United States', nl: 'Yosemite National Park, Californië, Verenigde Staten', es: 'Parque nacional de Yosemite, California, Estados Unidos', fr: 'Parc national de Yosemite, Californie, États-Unis', ru: 'Йосемитский национальный парк, Калифорния, США', 'zh-Hans': '美国加利福尼亚州优胜美地国家公园', ko: '미국 캘리포니아주 요세미티 국립공원', ja: 'アメリカ合衆国カリフォルニア州、ヨセミテ国立公園', ar: 'منتزه يوسمايت الوطني، كاليفورنيا، الولايات المتحدة', pt: 'Parque Nacional de Yosemite, Califórnia, Estados Unidos', it: 'Parco nazionale di Yosemite, California, Stati Uniti', pl: 'Park Narodowy Yosemite, Kalifornia, Stany Zjednoczone', tr: 'Yosemite Ulusal Parkı, Kaliforniya, ABD', uk: 'Національний парк Йосеміті, Каліфорнія, США', hi: 'योसेमिटी राष्ट्रीय उद्यान, कैलिफ़ोर्निया, संयुक्त राज्य अमेरिका' }
+  },
+  {
+    id: 'grand-canyon',
+    group: 'landmark',
+    aspect: 'panorama',
+    art: () => import('../baked/grand-canyon'),
+    title: { de: 'Grand Canyon', en: 'Grand Canyon', nl: 'Grand Canyon', es: 'Gran Cañón', fr: 'Grand Canyon', ru: 'Гранд-Каньон', 'zh-Hans': '科罗拉多大峡谷', ko: '그랜드 캐니언', ja: 'グランド・キャニオン', ar: 'الأخدود العظيم', pt: 'Grand Canyon', it: 'Grand Canyon', pl: 'Wielki Kanion', tr: 'Büyük Kanyon', uk: 'Великий каньйон', hi: 'ग्रैंड कैन्यन' },
+    place: { de: 'Arizona, USA', en: 'Arizona, United States', nl: 'Arizona, Verenigde Staten', es: 'Arizona, Estados Unidos', fr: 'Arizona, États-Unis', ru: 'Аризона, США', 'zh-Hans': '美国亚利桑那州', ko: '미국 애리조나주', ja: 'アメリカ合衆国アリゾナ州', ar: 'أريزونا، الولايات المتحدة', pt: 'Arizona, Estados Unidos', it: 'Arizona, Stati Uniti', pl: 'Arizona, Stany Zjednoczone', tr: 'Arizona, ABD', uk: 'Аризона, США', hi: 'एरिज़ोना, संयुक्त राज्य अमेरिका' }
+  },
+  {
+    id: 'taj-mahal',
+    group: 'landmark',
+    aspect: 'tall',
+    art: () => import('../baked/taj-mahal'),
+    title: { de: 'Taj Mahal', en: 'Taj Mahal', nl: 'Taj Mahal', es: 'Taj Mahal', fr: 'Taj Mahal', ru: 'Тадж-Махал', 'zh-Hans': '泰姬陵', ko: '타지마할', ja: 'タージ・マハル', ar: 'تاج محل', pt: 'Taj Mahal', it: 'Taj Mahal', pl: 'Tadź Mahal', tr: 'Tac Mahal', uk: 'Тадж-Махал', hi: 'ताजमहल' },
+    place: { de: 'Agra, Uttar Pradesh, Indien', en: 'Agra, Uttar Pradesh, India', nl: 'Agra, Uttar Pradesh, India', es: 'Agra, Uttar Pradesh, India', fr: 'Agra, Uttar Pradesh, Inde', ru: 'Агра, Уттар-Прадеш, Индия', 'zh-Hans': '印度北方邦阿格拉', ko: '인도 우타르프라데시주 아그라', ja: 'インド、ウッタル・プラデーシュ州アーグラ', ar: 'أغرا، أتر برديش، الهند', pt: 'Agra, Uttar Pradesh, Índia', it: 'Agra, Uttar Pradesh, India', pl: 'Agra, Uttar Pradesh, Indie', tr: 'Agra, Uttar Pradeş, Hindistan', uk: 'Агра, Уттар-Прадеш, Індія', hi: 'आगरा, उत्तर प्रदेश, भारत' }
   }
 ];
