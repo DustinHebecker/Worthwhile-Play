@@ -1,6 +1,6 @@
 import type { Motif } from '../art/types';
 
-/** The wide view east along Yosemite Valley on a misty morning: the pale wall of El Capitan on the left, the shaded Cathedral Rocks with Bridalveil Fall on the right, a small hazy Half Dome far away at the end of the valley, bands of mist over the dark forest and a tall pine framing the view. Original vector art drawn for Worthwhile Play. */
+/** The view east along Yosemite Valley on a misty morning: the sheer pale face of El Capitan on the left, the shaded Cathedral Rocks with Bridalveil Fall on the right, a small hazy Half Dome in the gap at the far end, the conifer forest receding in bands of mist, and a tall pine framing the view. Original vector art drawn for Worthwhile Play. */
 export const yosemiteTunnelView: Motif = {
   id: 'yosemite-tunnel-view',
   group: 'landmark',
@@ -40,85 +40,78 @@ export const yosemiteTunnelView: Motif = {
     uk: 'Національний парк Йосеміті, Каліфорнія, США',
     hi: 'योसेमिटी राष्ट्रीय उद्यान, कैलिफ़ोर्निया, संयुक्त राज्य अमेरिका'
   },
-  aspect: 'panorama',
+  aspect: 'wide',
   backdrop: '#f0b6cf',
   palette: {
     b: ['#3c70b6', 'blue', 1],
     s: ['#7cb4e2', 'skyBlue', 1],
     l: ['#c6e0f3', 'lightBlue', 2, 's'],
     w: ['#f7f8f6', 'white', 1],
-    a: ['#968cc0', 'lavender', 1],
-    i: ['#c6c1b6', 'lightGrey', 1],
-    y: ['#ecdcb4', 'beige', 2, 'i'],
+    y: ['#ecdcb4', 'beige', 1],
+    i: ['#c6c1b6', 'lightGrey', 2, 'y'],
     g: ['#8f8d89', 'grey', 1],
     k: ['#53565f', 'darkGrey', 1],
+    a: ['#968cc0', 'lavender', 1],
     h: ['#4b8783', 'teal', 1],
     u: ['#2a5856', 'darkTeal', 2, 'd'],
     e: ['#4f8c40', 'green', 1],
     m: ['#8dbb6a', 'lightGreen', 3, 'e'],
+    q: ['#9cc4be', 'mint', 2, 'h'],
     d: ['#21432d', 'darkGreen', 1],
     c: ['#151c1b', 'charcoal', 1],
     n: ['#6e4a2e', 'brown', 2, 'k']
   },
   layers: [
-    // A big morning sky, deep blue overhead, paler towards the valley, with wispy cirrus streaks.
-    { shape: { rect: [0, 0, 100, 34] }, fill: { gradient: ['b', 's', 's', 'l'], from: [0, 0], to: [0, 26], soft: 0.4 } },
-    { shape: { line: [[44, 7], [56, 4.6], [70, 3.4]], width: 1 }, fill: 'w' },
-    { shape: { line: [[62, 9], [76, 6.6], [90, 6]], width: 1 }, fill: 'w' },
-    { shape: { line: [[50, 11], [60, 9.6]], width: 1 }, fill: 'l', min: 56 },
-    { shape: { line: [[74, 2], [86, 1.4], [96, 2]], width: 1 }, fill: 'l', min: 56 },
-    { shape: { line: [[40, 3], [48, 1.8]], width: 1 }, fill: 'l', min: 64 },
-    { shape: { rect: [0, 30, 100, 21] }, fill: 'd' },
-    // Far ridges at the head of the valley in blue haze, and Half Dome, small and pale in the distance.
-    { shape: { poly: [[40, 30], [44, 25], [50, 24], [58, 23.4], [64, 21.8], [70, 22.4], [74, 25], [76, 30]], smooth: 1 }, fill: 'a', shade: { light: 'l', dir: 'ne' } },
-    { name: 'dome', shape: { poly: [[50.6, 25], [50.6, 18], [51.2, 16.6], [52.6, 15.8], [54.4, 15.8], [56.4, 16.6], [58.4, 18.4], [60.2, 21], [61.4, 25]], smooth: 1 }, fill: 'i', shade: { dark: 'a', dir: 'ne', mode: 'band', amount: 0.35 } },
-    { shape: { line: [[51.2, 16], [51.4, 25]], width: 1 }, fill: 'g', clip: 'dome', min: 56 },
-    // The far valley walls in haze on both sides.
-    { shape: { poly: [[36, 32], [40, 26], [44, 25], [48, 27], [48, 32]], smooth: 1 }, fill: 'a', shade: { dark: 'g', dir: 'ne', width: 1 } },
-    { shape: { poly: [[62, 32], [64, 26], [67, 22.5], [70, 21], [72, 32]], smooth: 1 }, fill: 'g', shade: { light: 'a', dir: 'ne', width: 1 } },
-    // Cathedral Rocks on the right: dark, shaded cliffs with forest on the ledges and the Cathedral Spires.
-    { name: 'cath', shape: { poly: [[64, 40], [66, 32], [69, 25], [72, 19], [75, 15], [78, 13], [80, 10.6], [83, 10], [86, 8.6], [90, 7.4], [95, 7], [102, 6.4], [102, 44], [64, 44]], smooth: 1 }, fill: 'k', shade: { light: 'g', dir: 'ne', width: 2 } },
-    { shape: { poly: [[73.4, 18], [74.2, 12.6], [75, 18]] }, fill: 'k', min: 56 },
-    { shape: { poly: [[76, 15], [76.8, 10.4], [77.6, 14]] }, fill: 'k', min: 56 },
-    { shape: { poly: [[66, 34], [70, 30], [74, 31], [72, 38], [66, 42]], smooth: 1 }, fill: 'u', clip: 'cath' },
-    { shape: { poly: [[84, 20], [90, 15], [96, 13], [102, 12], [102, 18], [94, 20], [88, 23]], smooth: 1 }, fill: 'd', clip: 'cath' },
-    { shape: { poly: [[86, 30], [92, 25], [102, 23], [102, 44], [86, 44]], smooth: 1 }, fill: 'd', clip: 'cath' },
-    { shape: { line: [[78, 16], [77, 24]], width: 1 }, fill: 'g', clip: 'cath', min: 64 },
-    // Bridalveil Fall: a white ribbon from its hanging valley, mist where it lands.
-    { shape: { line: [[81.4, 19], [81.8, 26], [82.4, 33]], width: 1.4 }, fill: 'w' },
-    { shape: { ellipse: [82.4, 34, 3.4, 1.6] }, fill: 'l' },
-    // El Capitan: a huge pale granite wall rising on the left, its sheer face lit from the east, trees on its crown.
-    { name: 'cap', shape: { poly: [[-2, 18], [4, 14], [10, 10.4], [16, 7.6], [22, 6], [28, 5.8], [32, 7], [35.4, 9.6], [37.4, 13.6], [38.6, 19], [39.6, 26], [41, 33], [42.4, 40], [-2, 40]], smooth: 1 }, fill: { gradient: ['g', 'i', 'i', 'i'], from: [0, 0], to: [36, 0], soft: 0.4 }, shade: { light: 'y', dark: 'g', dir: 'ne', width: 2 } },
-    { shape: { line: [[30, 8], [31.4, 20], [32, 32]], width: 1 }, fill: 'g', clip: 'cap', min: 56 },
-    { shape: { line: [[24, 9], [24.6, 22]], width: 1 }, fill: 'g', clip: 'cap', min: 64 },
-    { shape: { poly: [[33, 14], [37, 14], [38.4, 24], [34.6, 26]], smooth: 1 }, fill: 'y', clip: 'cap', min: 56 },
-    { shape: { poly: [[-2, 16], [6, 11], [12, 8], [18, 6.2], [22, 5.6], [20, 8], [14, 10], [8, 13.4], [2, 18], [-2, 20]], smooth: 1 }, fill: 'd' },
-    { shape: { poly: [[-2, 26], [8, 24], [16, 26], [24, 30], [32, 34], [40, 40], [-2, 40]], smooth: 1 }, fill: 'd', shade: { light: 'e', dir: 'ne' } },
-    // The valley floor: forest receding into the distance, bluer and paler with every band, its foot lost in wisps of morning mist.
-    { shape: { poly: [[40, 33], [42, 30.4], [45, 29.8], [48, 30.2], [51, 29.4], [55, 29.8], [59, 29.2], [63, 29.8], [67, 30.6], [70, 33]], smooth: 1 }, fill: { gradient: ['a', 'h'], from: [0, 29.6], to: [0, 32], soft: 0.5 } },
-    { shape: { ellipse: [50, 31.8, 7, 0.9] }, fill: 'w' },
-    { shape: { ellipse: [61, 31.4, 5, 0.8] }, fill: 'l', min: 56 },
-    { name: 'mid', shape: { poly: [[32, 43], [32, 34.8], [33.5, 33.4], [35, 34.8], [36.2, 33.9], [37.4, 34.8], [39.2, 32.8], [41, 34.8], [42.4, 33.7], [43.8, 34.8], [45.4, 33.2], [47, 34.8], [48.5, 33.4], [50, 34.8], [51.2, 33.9], [52.4, 34.8], [54.2, 32.8], [56, 34.8], [57.4, 33.7], [58.8, 34.8], [60.4, 33.2], [62, 34.8], [63.5, 33.4], [65, 34.8], [66.2, 33.9], [67.4, 34.8], [69.2, 32.8], [71, 34.8], [72.4, 33.7], [73.8, 34.8], [75.4, 33.2], [77, 34.8], [78.5, 33.4], [80, 34.8], [80, 34.8], [80, 43]] }, fill: { gradient: ['h', 'h', 'u'], from: [0, 33], to: [0, 39], soft: 0.5 } },
-    { shape: { ellipse: [43, 37.2, 7, 0.8] }, fill: 'w' },
-    { shape: { ellipse: [64, 36.8, 7, 0.8] }, fill: 'w' },
-    { shape: { ellipse: [54, 37.6, 5, 0.7] }, fill: 'l', min: 56 },
-    { shape: { ellipse: [75, 38, 5, 0.8] }, fill: 'l', min: 64 },
-    // The near forest and the forested slope on the right: dark conifers, a few taller ones catching the light.
-    { name: 'near', shape: { poly: [[26, 51], [26, 40.6], [28.2, 38.2], [30.4, 40.6], [32.1, 39], [33.8, 40.6], [36.3, 37.6], [38.8, 40.6], [40.7, 38.6], [42.6, 40.6], [44.7, 37.8], [46.8, 40.6], [48.3, 39.2], [49.8, 40.6], [52, 38.2], [54.2, 40.6], [55.9, 39], [57.6, 40.6], [60.1, 37.6], [62.6, 40.6], [64.5, 38.6], [66.4, 40.5], [68.5, 37.4], [70.6, 39.8], [72.1, 38.1], [73.6, 39.2], [75.8, 36.4], [78, 38.4], [79.7, 36.5], [81.4, 37.8], [83.9, 34.4], [86.4, 36.9], [88.3, 34.6], [90.2, 36.2], [92.3, 33.1], [94.4, 35.5], [95.9, 33.8], [97.4, 34.9], [99.6, 32.2], [101.8, 34.2], [102, 34.1], [102, 51]] }, fill: 'd', shade: { light: 'e', dir: 'ne', width: 1 } },
-    { shape: { poly: [[30, 51], [30, 45], [32.5, 42.8], [35, 45], [36.8, 43.6], [38.6, 45], [40.8, 42.4], [43, 45], [44.6, 43.4], [46.2, 45], [48.6, 43], [51, 45], [53.5, 42.8], [56, 45], [57.8, 43.6], [59.6, 45], [61.8, 42.4], [64, 45], [65.6, 43.4], [67.2, 44.8], [69.6, 42.4], [72, 43.9], [74.5, 41.3], [77, 43], [78.8, 41.3], [80.6, 42.4], [82.8, 39.4], [85, 41.6], [86.6, 39.7], [88.2, 41], [90.6, 38.6], [93, 40.1], [95.5, 37.5], [98, 39.2], [99.8, 37.5], [101.6, 38.6], [102, 38.5], [102, 51]] }, fill: 'u', clip: 'near', min: 56 },
-    { shape: { poly: [[34, 51], [34, 48.6], [36.3, 46.6], [38.6, 48.6], [40.5, 47.2], [42.4, 48.6], [45, 46.2], [47.6, 48.6], [49.3, 47], [51, 48.6], [53.3, 46.6], [55.6, 48.6], [57.5, 47.2], [59.4, 48.6], [62, 46.2], [64.6, 48.6], [66.3, 46.9], [68, 48.2], [70.3, 45.8], [72.6, 47.4], [74.5, 45.7], [76.4, 46.7], [79, 43.9], [81.6, 45.8], [83.3, 43.9], [85, 45.2], [87.3, 42.8], [89.6, 44.4], [91.5, 42.6], [93.4, 43.7], [96, 40.8], [98.6, 42.7], [100.3, 40.8], [102, 42.1], [102, 42.1], [102, 51]] }, fill: 'd', clip: 'near', shade: { light: 'u', dir: 'ne', width: 1 }, min: 56 },
-    { shape: { poly: [[36, 35.8], [37.6, 38.6], [36.9, 38.6], [38.6, 42], [33.4, 42], [35.1, 38.6], [34.4, 38.6]] }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'ne', width: 1 } },
-    { shape: { poly: [[47, 36.4], [48.4, 39.2], [47.8, 39.2], [49.4, 42.6], [44.6, 42.6], [46.2, 39.2], [45.6, 39.2]] }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'ne', width: 1 }, min: 56 },
-    { shape: { poly: [[60, 35.8], [61.7, 38.6], [61, 38.6], [62.8, 42], [57.2, 42], [59, 38.6], [58.3, 38.6]] }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'ne', width: 1 } },
-    { shape: { poly: [[73, 34.8], [74.6, 37.6], [73.9, 37.6], [75.6, 41], [70.4, 41], [72.1, 37.6], [71.4, 37.6]] }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'ne', width: 1 }, min: 56 },
-    { shape: { poly: [[88, 31], [89.8, 34.3], [89, 34.3], [91, 38.4], [85, 38.4], [87, 34.3], [86.2, 34.3]] }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'ne', width: 1 } },
-    // The forested slope below El Capitan on the left.
-    { name: 'slope', shape: { poly: [[-2, 30], [6, 31], [14, 34], [22, 37.4], [28, 40], [34, 44], [40, 48], [42, 51], [-2, 51]], smooth: 1 }, fill: { gradient: ['e', 'e', 'd'], from: [0, 32], to: [0, 46], soft: 0.6 } },
-    { shape: { rect: [0, 48.4, 100, 2] }, fill: 'c' },
-    // The tall pine in the left foreground framing the view, its trunk standing on the slope.
-    { shape: { line: [[9, 10], [9, 49]], width: 2.4 }, fill: 'n' },
-    { shape: { poly: [[9, 1], [10.7, 7.2], [9.8, 6.2], [12.3, 13.3], [10.5, 12.4], [14, 19.5], [11.2, 18.6], [15.7, 25.7], [12, 24.7], [17.3, 31.8], [12.8, 30.9], [19, 38], [10.5, 38], [7.5, 38], [-1, 38], [5.2, 30.9], [0.7, 31.8], [6, 24.7], [2.3, 25.7], [6.8, 18.6], [4, 19.5], [7.5, 12.4], [5.7, 13.3], [8.2, 6.2], [7.3, 7.2]] }, fill: 'd', shade: { light: 'e', dir: 'ne', width: 1 } },
-    { shape: { poly: [[24, 32], [27, 39.6], [25.6, 39], [28.6, 46], [19.4, 46], [22.4, 39], [21, 39.6]] }, fill: 'd', shade: { light: 'e', dir: 'ne', width: 1 } },
-    { shape: { line: [[24, 45], [24, 49]], width: 1.4 }, fill: 'n' }
+    // A clear morning sky in flat bands, deep blue overhead, with long thin cirrus streaks.
+    { shape: { rect: [0, 0, 100, 10] }, fill: 'b' },
+    { shape: { rect: [0, 10, 100, 16] }, fill: 's' },
+    { shape: { rect: [0, 26, 100, 22] }, fill: 'l' },
+    { shape: { line: [[30, 15], [52, 13], [78, 12.2], [100, 12.4]], width: 1 }, fill: 'w' },
+    { shape: { line: [[48, 21], [68, 19.4], [92, 19]], width: 1 }, fill: 'w' },
+    { shape: { line: [[38, 5], [60, 3.6], [84, 3.4]], width: 1 }, fill: 'l', min: 48 },
+    { shape: { line: [[60, 7.4], [86, 6.6]], width: 1 }, fill: 'l', min: 64 },
+    { shape: { rect: [0, 38, 100, 38] }, fill: 'd' },
+    // Far ridges at the head of the valley and Half Dome, small and hazy blue in the gap.
+    { shape: { poly: [[42, 41], [46, 33.6], [52, 32.4], [60, 32], [66, 31], [72, 33], [76, 41]], smooth: 1 }, fill: 'a', shade: { light: 'l', dir: 'n', width: 1 } },
+    { name: 'dome', shape: { poly: [[50.4, 35], [50.4, 29], [51, 27.4], [52.6, 26.4], [54.6, 26.4], [56.8, 27.4], [59, 29.4], [61, 32.2], [62.4, 35]], smooth: 1 }, fill: 'a', shade: { light: 'l', dir: 'ne', width: 1 } },
+    // Cathedral Rocks on the right: dark, shaded cliffs stepping down towards the centre, the spires and forest on the ledges.
+    { name: 'cath', shape: { poly: [[60, 48], [63, 42], [67, 36], [71, 30], [74, 25], [77, 20.4], [80, 17.4], [84, 14.6], [89, 12.4], [95, 11], [102, 10.4], [102, 56], [60, 56]], smooth: 1 }, fill: 'k', shade: { light: 'g', dir: 'n', width: 2 } },
+    { shape: { poly: [[73.6, 26], [74.6, 19], [75.6, 25]] }, fill: 'k', min: 48 },
+    { shape: { poly: [[76.6, 21], [77.6, 15.6], [78.6, 20]] }, fill: 'k', min: 48 },
+    { shape: { poly: [[86, 24], [92, 19], [102, 17], [102, 24], [94, 26]], smooth: 1 }, fill: 'd', clip: 'cath' },
+    { shape: { poly: [[64, 46], [70, 40], [76, 41], [72, 50], [64, 54]], smooth: 1 }, fill: 'u', clip: 'cath' },
+    { shape: { poly: [[88, 40], [96, 34], [102, 33], [102, 56], [88, 56]], smooth: 1 }, fill: 'd', clip: 'cath' },
+    { shape: { line: [[90, 14], [86, 30]], width: 1 }, fill: 'g', clip: 'cath', min: 64 },
+    // Bridalveil Fall: a thin white ribbon from its hanging valley, a puff of spray at its foot.
+    { shape: { line: [[80.6, 26], [81, 36], [81.6, 45]], width: 1 }, fill: 'w' },
+    { shape: { ellipse: [81.6, 46, 2.8, 1.4] }, fill: 'l', min: 48 },
+    // El Capitan: a tall sheer granite face left of centre, its curved prow lit warm white, its western side in grey.
+    { name: 'cap', shape: { poly: [[8, 22], [14, 16], [20, 12.4], [26, 9.6], [31, 8], [35, 8.2], [37.8, 10.4], [39.2, 14], [40, 20], [40.4, 28], [41, 36], [42, 44], [43.6, 52], [8, 54]], smooth: 1 }, fill: 'g', shade: { light: 'i', dir: 'n', width: 1 } },
+    { shape: { poly: [[25, 8], [31, 7], [35, 8.2], [37.8, 10.4], [39.2, 14], [40, 20], [40.4, 28], [41, 36], [42, 44], [43.6, 52], [30, 54], [29, 40], [27.6, 26], [26, 14]], smooth: 1 }, fill: 'y', clip: 'cap', shade: { light: 'w', dir: 'e', width: 1 } },
+    { shape: { poly: [[24, 10], [27, 9], [28.6, 24], [30, 40], [31, 54], [28, 54], [26.6, 38], [25.4, 22]] }, fill: 'i', clip: 'cap' },
+    { shape: { line: [[34, 10], [35, 24], [35.6, 40]], width: 1 }, fill: 'i', clip: 'cap', min: 48 },
+    { shape: { line: [[18, 16], [19, 32]], width: 1 }, fill: 'k', clip: 'cap', min: 64 },
+    { shape: { poly: [[8, 20], [14, 14.6], [20, 11.2], [26, 8.8], [31, 7.4], [28, 10], [22, 13], [16, 17.4], [10, 24]], smooth: 1 }, fill: 'd' },
+    // The forested talus below El Capitan.
+    { shape: { poly: [[8, 40], [16, 40.6], [24, 43], [32, 46], [40, 50], [46, 56], [8, 56]], smooth: 1 }, fill: 'd', shade: { light: 'm', dir: 'ne', width: 2 } },
+    // The valley floor: dense conifer forest receding in bands, bluer and paler with distance, soft mist lying between them.
+    { shape: { poly: [[40, 47], [40, 40], [41.3, 38], [42.6, 40], [44.2, 38.6], [45.8, 40], [47, 37.6], [48.2, 40], [49.7, 38.4], [51.2, 40], [52.5, 38], [53.8, 40], [55.4, 38.6], [57, 40], [58.2, 37.6], [59.4, 40], [60.9, 38.4], [62.4, 40], [63.7, 38], [65, 40], [66.6, 38.6], [68.2, 40], [69.4, 37.6], [70.6, 40], [72, 40], [72, 47]] }, fill: 'q' },
+    { shape: { ellipse: [52, 43.4, 10, 1.1] }, fill: 'l' },
+    { shape: { ellipse: [63, 43, 7, 0.9] }, fill: 'l' },
+    { shape: { ellipse: [51, 43.4, 5, 0.6] }, fill: 'w', min: 48 },
+    { shape: { poly: [[30, 56], [30, 46.4], [31.3, 44.2], [32.6, 46.4], [34.1, 44.8], [35.6, 46.4], [36.8, 43.8], [38, 46.4], [39.4, 44.6], [40.8, 46.4], [42.1, 44.2], [43.4, 46.4], [44.9, 44.8], [46.4, 46.4], [47.6, 43.8], [48.8, 46.4], [50.2, 44.6], [51.6, 46.4], [52.9, 44.2], [54.2, 46.4], [55.7, 44.8], [57.2, 46.4], [58.4, 43.8], [59.6, 46.4], [61, 44.6], [62.4, 46.4], [63.7, 44.2], [65, 46.4], [66.5, 44.8], [68, 46.4], [69.2, 43.8], [70.4, 46.4], [71.8, 44.6], [73.2, 46.4], [74.5, 44.2], [75.8, 46.4], [77.3, 44.8], [78.8, 46.4], [80, 43.8], [81.2, 46.4], [82, 46.4], [82, 56]] }, fill: 'h' },
+    { shape: { ellipse: [48, 52.4, 13, 1.2] }, fill: 'w' },
+    { shape: { ellipse: [66, 52, 10, 1.1] }, fill: 'w' },
+    { shape: { ellipse: [57, 52.6, 6, 0.8] }, fill: 'l', min: 48 },
+    { name: 'b3', shape: { poly: [[14, 66], [14, 55], [15.5, 52.4], [17, 55], [18.7, 53], [20.4, 55], [21.8, 52], [23.2, 55], [24.8, 52.8], [26.4, 55], [28.2, 52.2], [30, 55], [31.5, 52.4], [33, 55], [34.7, 53], [36.4, 55], [37.8, 52], [39.2, 55], [40.8, 52.8], [42.4, 55], [44.2, 52.2], [46, 55], [47.5, 52.4], [49, 55], [50.7, 53], [52.4, 55], [53.8, 52], [55.2, 55], [56.8, 52.8], [58.4, 55], [60.2, 52.2], [62, 55], [63.5, 52.4], [65, 55], [66.7, 53], [68.4, 55], [69.8, 52], [71.2, 55], [72.8, 52.8], [74.4, 55], [76.2, 52.2], [78, 55], [79.5, 52.4], [81, 55], [82.7, 53], [84.4, 55], [85.8, 52], [87.2, 55], [88.8, 52.8], [90.4, 55], [92.2, 52.2], [94, 55], [95.5, 52.4], [97, 55], [98.7, 53], [100.4, 55], [102, 55], [102, 66]] }, fill: 'u', shade: { light: 'h', dir: 'n', width: 1 } },
+    { name: 'b4', shape: { poly: [[-2, 76], [-2, 63], [0.5, 60], [3, 63], [6, 60.8], [9, 63], [11.2, 59.4], [13.4, 63], [16.2, 60.4], [19, 63], [21.4, 59.8], [23.8, 63], [26.3, 60], [28.8, 63], [31.8, 60.8], [34.8, 63], [37, 59.4], [39.2, 63], [42, 60.4], [44.8, 63], [47.2, 59.8], [49.6, 63], [52.1, 60], [54.6, 63], [57.6, 60.8], [60.6, 63], [62.8, 59.4], [65, 63], [67.8, 60.4], [70.6, 63], [73, 59.8], [75.4, 63], [77.9, 60], [80.4, 63], [83.4, 60.8], [86.4, 63], [88.6, 59.4], [90.8, 63], [93.6, 60.4], [96.4, 63], [98.8, 59.8], [101.2, 63], [102, 63], [102, 76]] }, fill: 'd', shade: { light: 'e', dir: 'n', width: 1 } },
+    { shape: { poly: [[30, 59.6], [32.5, 63.8], [31.5, 63.8], [35, 68], [25, 68], [28.5, 63.8], [27.5, 63.8]] }, fill: 'e', shade: { dark: 'd', dir: 'ne', width: 1 } },
+    { shape: { poly: [[50, 60.4], [52.2, 64.5], [51.3, 64.5], [54.4, 68.6], [45.6, 68.6], [48.7, 64.5], [47.8, 64.5]] }, fill: 'e', shade: { dark: 'd', dir: 'ne', width: 1 }, min: 48 },
+    { shape: { poly: [[68, 59.2], [70.5, 63.6], [69.5, 63.6], [73, 68], [63, 68], [66.5, 63.6], [65.5, 63.6]] }, fill: 'e', shade: { dark: 'd', dir: 'ne', width: 1 } },
+    { shape: { poly: [[88, 58.4], [90.7, 63], [89.6, 63], [93.4, 67.6], [82.6, 67.6], [86.4, 63], [85.3, 63]] }, fill: 'e', shade: { dark: 'd', dir: 'ne', width: 1 } },
+    { shape: { poly: [[-2, 76], [-2, 71], [24, 72], [52, 71], [78, 72.4], [102, 71], [102, 76]], smooth: 1 }, fill: 'c' },
+    // The tall dark pine covering the left edge, top to bottom.
+    { shape: { poly: [[8, -1], [9.6, 6.9], [8.7, 5.7], [11.2, 14.8], [9.5, 13.6], [12.9, 22.6], [10.2, 21.4], [14.5, 30.5], [10.9, 29.3], [16.1, 38.4], [11.7, 37.2], [17.8, 46.2], [12.4, 45.1], [19.4, 54.1], [13.1, 52.9], [21, 62], [9.9, 62], [6, 62], [-5, 62], [2.9, 52.9], [-3.4, 54.1], [3.6, 45.1], [-1.8, 46.2], [4.3, 37.2], [-0.1, 38.4], [5.1, 29.3], [1.5, 30.5], [5.8, 21.4], [3.1, 22.6], [6.5, 13.6], [4.8, 14.8], [7.3, 5.7], [6.4, 6.9]] }, fill: 'c', shade: { light: 'd', dir: 'ne', width: 2 } },
+    { shape: { line: [[8, 60], [8, 72]], width: 3.6 }, fill: 'n' }
   ]
 };

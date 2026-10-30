@@ -6,7 +6,7 @@ export const CARDS: readonly MotifCard[] = [
   {
     id: 'yosemite-tunnel-view',
     group: 'landmark',
-    aspect: 'panorama',
+    aspect: 'wide',
     art: () => import('../baked/yosemite-tunnel-view'),
     title: { de: 'Yosemite-Tal vom Tunnel View', en: 'Yosemite from Tunnel View', nl: 'Yosemite vanaf Tunnel View', es: 'Yosemite desde Tunnel View', fr: 'Yosemite depuis Tunnel View', ru: 'Йосемити с Tunnel View', 'zh-Hans': '从隧道观景点眺望优胜美地', ko: '터널 뷰에서 본 요세미티', ja: 'トンネルビューから見たヨセミテ', ar: 'يوسمايت من مطل تانل فيو', pt: 'Yosemite vista do Tunnel View', it: 'Yosemite da Tunnel View', pl: 'Yosemite z Tunnel View', tr: 'Tunnel View\'dan Yosemite', uk: 'Йосеміті з Tunnel View', hi: 'टनल व्यू से योसेमिटी' },
     place: { de: 'Yosemite-Nationalpark, Kalifornien, USA', en: 'Yosemite National Park, California, United States', nl: 'Yosemite National Park, Californië, Verenigde Staten', es: 'Parque nacional de Yosemite, California, Estados Unidos', fr: 'Parc national de Yosemite, Californie, États-Unis', ru: 'Йосемитский национальный парк, Калифорния, США', 'zh-Hans': '美国加利福尼亚州优胜美地国家公园', ko: '미국 캘리포니아주 요세미티 국립공원', ja: 'アメリカ合衆国カリフォルニア州、ヨセミテ国立公園', ar: 'منتزه يوسمايت الوطني، كاليفورنيا، الولايات المتحدة', pt: 'Parque Nacional de Yosemite, Califórnia, Estados Unidos', it: 'Parco nazionale di Yosemite, California, Stati Uniti', pl: 'Park Narodowy Yosemite, Kalifornia, Stany Zjednoczone', tr: 'Yosemite Ulusal Parkı, Kaliforniya, ABD', uk: 'Національний парк Йосеміті, Каліфорнія, США', hi: 'योसेमिटी राष्ट्रीय उद्यान, कैलिफ़ोर्निया, संयुक्त राज्य अमेरिका' }
