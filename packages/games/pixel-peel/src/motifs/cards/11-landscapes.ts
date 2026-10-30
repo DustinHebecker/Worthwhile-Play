@@ -34,5 +34,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/icebergs'),
     title: { de: 'Eisberge', en: 'Icebergs', nl: 'IJsbergen', es: 'Icebergs', fr: 'Icebergs', ru: 'Айсберги', 'zh-Hans': '冰山', ko: '빙산', ja: '氷山', ar: 'جبال جليدية', pt: 'Icebergs', it: 'Iceberg', pl: 'Góry lodowe', tr: 'Buzdağları', uk: 'Айсберги', hi: 'हिमशैल' },
     place: { de: 'Polarmeere der Arktis und Antarktis', en: 'Polar seas of the Arctic and Antarctic', nl: 'Poolzeeën van de Noord- en Zuidpool', es: 'Mares polares del Ártico y la Antártida', fr: 'Mers polaires de l’Arctique et de l’Antarctique', ru: 'Полярные моря Арктики и Антарктики', 'zh-Hans': '北极和南极的极地海域', ko: '북극과 남극의 극지 바다', ja: '北極と南極の極地の海', ar: 'البحار القطبية في القطبين الشمالي والجنوبي', pt: 'Mares polares do Ártico e da Antártida', it: 'Mari polari dell’Artico e dell’Antartide', pl: 'Morza polarne Arktyki i Antarktyki', tr: 'Arktik ve Antarktika’nın kutup denizleri', uk: 'Полярні моря Арктики та Антарктики', hi: 'आर्कटिक और अंटार्कटिक के ध्रुवीय समुद्र' }
+  },
+  {
+    id: 'cenote',
+    group: 'landscape',
+    aspect: 'tall',
+    art: () => import('../baked/cenote'),
+    title: { de: 'Cenote', en: 'Cenote', nl: 'Cenote', es: 'Cenote', fr: 'Cénote', ru: 'Сенот', 'zh-Hans': '天然井', ko: '세노테', ja: 'セノーテ', ar: 'سينوتي', pt: 'Cenote', it: 'Cenote', pl: 'Cenote', tr: 'Cenote', uk: 'Сенот', hi: 'सेनोते' },
+    place: { de: 'Halbinsel Yucatán, Mexiko', en: 'Yucatán Peninsula, Mexico', nl: 'Schiereiland Yucatán, Mexico', es: 'Península de Yucatán, México', fr: 'Péninsule du Yucatán, Mexique', ru: 'Полуостров Юкатан, Мексика', 'zh-Hans': '墨西哥尤卡坦半岛', ko: '멕시코 유카탄반도', ja: 'メキシコ、ユカタン半島', ar: 'شبه جزيرة يوكاتان، المكسيك', pt: 'Península de Iucatã, México', it: 'Penisola dello Yucatán, Messico', pl: 'Półwysep Jukatan, Meksyk', tr: 'Yucatán Yarımadası, Meksika', uk: 'Півострів Юкатан, Мексика', hi: 'युकातान प्रायद्वीप, मेक्सिको' }
+  },
+  {
+    id: 'tundra',
+    group: 'landscape',
+    aspect: 'panorama',
+    art: () => import('../baked/tundra'),
+    title: { de: 'Tundra im Herbst', en: 'Tundra in autumn', nl: 'Toendra in de herfst', es: 'Tundra en otoño', fr: 'Toundra en automne', ru: 'Тундра осенью', 'zh-Hans': '秋日苔原', ko: '가을의 툰드라', ja: '秋のツンドラ', ar: 'التندرا في الخريف', pt: 'Tundra no outono', it: 'Tundra in autunno', pl: 'Tundra jesienią', tr: 'Sonbaharda tundra', uk: 'Тундра восени', hi: 'पतझड़ में टुंड्रा' },
+    place: { de: 'Arktische Tundra, etwa in Lappland', en: 'Arctic tundra, such as in Lapland', nl: 'Arctische toendra, zoals in Lapland', es: 'Tundra ártica, como en Laponia', fr: 'Toundra arctique, par exemple en Laponie', ru: 'Арктическая тундра, например в Лапландии', 'zh-Hans': '北极苔原，例如拉普兰', ko: '라플란드 같은 북극 툰드라', ja: 'ラップランドなどの北極圏のツンドラ', ar: 'التندرا القطبية الشمالية، مثل لابلاند', pt: 'Tundra ártica, como na Lapônia', it: 'Tundra artica, per esempio in Lapponia', pl: 'Tundra arktyczna, na przykład w Laponii', tr: 'Laponya gibi Arktik tundra bölgeleri', uk: 'Арктична тундра, наприклад у Лапландії', hi: 'आर्कटिक टुंड्रा, जैसे लैपलैंड में' }
   }
 ];
