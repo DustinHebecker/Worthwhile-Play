@@ -42,5 +42,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/prairie-storm'),
     title: { de: 'Gewitter über der Prärie', en: 'Thunderstorm on the prairie', nl: 'Onweer boven de prairie', es: 'Tormenta sobre la pradera', fr: 'Orage sur la prairie', ru: 'Гроза над прерией', 'zh-Hans': '草原上的雷暴', ko: '대초원의 뇌우', ja: '大草原の雷雨', ar: 'عاصفة رعدية فوق البراري', pt: 'Trovoada na pradaria', it: 'Temporale sulla prateria', pl: 'Burza nad prerią', tr: 'Bozkırda gök gürültülü fırtına', uk: 'Гроза над прерією', hi: 'प्रेयरी पर आंधी-तूफ़ान' },
     place: { de: 'Sommer in den Great Plains, Nordamerika', en: 'Summer on the Great Plains, North America', nl: 'Zomer op de Great Plains, Noord-Amerika', es: 'Verano en las Grandes Llanuras, Norteamérica', fr: 'Été dans les Grandes Plaines, Amérique du Nord', ru: 'Лето на Великих равнинах, Северная Америка', 'zh-Hans': '北美洲大平原的夏天', ko: '북아메리카 대평원의 여름', ja: '北アメリカ、グレートプレーンズの夏', ar: 'الصيف في السهول الكبرى، أمريكا الشمالية', pt: 'Verão nas Grandes Planícies, América do Norte', it: 'Estate nelle Grandi Pianure, Nord America', pl: 'Lato na Wielkich Równinach, Ameryka Północna', tr: 'Büyük Ovalar’da yaz, Kuzey Amerika', uk: 'Літо на Великих рівнинах, Північна Америка', hi: 'ग्रेट प्लेन्स में गर्मी, उत्तरी अमेरिका' }
+  },
+  {
+    id: 'summer-beach',
+    group: 'season',
+    aspect: 'panorama',
+    art: () => import('../baked/summer-beach'),
+    title: { de: 'Sommer am Strand', en: 'Summer at the beach', nl: 'Zomer aan het strand', es: 'Verano en la playa', fr: 'L’été à la plage', ru: 'Лето на пляже', 'zh-Hans': '夏日海滩', ko: '여름 해변', ja: '夏の海辺', ar: 'الصيف على الشاطئ', pt: 'Verão na praia', it: 'Estate al mare', pl: 'Lato na plaży', tr: 'Plajda yaz', uk: 'Літо на пляжі', hi: 'समुद्र तट पर गर्मी' },
+    place: { de: 'Ein Sandstrand am Meer im Sommer', en: 'A sandy beach by the sea in summer', nl: 'Een zandstrand aan zee in de zomer', es: 'Una playa de arena junto al mar en verano', fr: 'Une plage de sable au bord de la mer en été', ru: 'Песчаный пляж у моря летом', 'zh-Hans': '夏天的海边沙滩', ko: '여름날 바닷가의 모래사장', ja: '夏の海辺の砂浜', ar: 'شاطئ رملي على البحر في الصيف', pt: 'Uma praia de areia à beira-mar no verão', it: 'Una spiaggia di sabbia sul mare d’estate', pl: 'Piaszczysta plaża nad morzem latem', tr: 'Yazın deniz kenarında kumlu bir plaj', uk: 'Піщаний пляж біля моря влітку', hi: 'गर्मियों में समुद्र किनारे रेतीला तट' }
+  },
+  {
+    id: 'volcano',
+    group: 'landscape',
+    aspect: 'square',
+    art: () => import('../baked/volcano'),
+    title: { de: 'Vulkan bei Nacht', en: 'Volcano at night', nl: 'Vulkaan bij nacht', es: 'Volcán de noche', fr: 'Volcan la nuit', ru: 'Вулкан ночью', 'zh-Hans': '夜晚的火山', ko: '밤의 화산', ja: '夜の火山', ar: 'بركان في الليل', pt: 'Vulcão à noite', it: 'Vulcano di notte', pl: 'Wulkan nocą', tr: 'Gece yanardağ', uk: 'Вулкан уночі', hi: 'रात में ज्वालामुखी' },
+    place: { de: 'Aktive Vulkane, etwa auf Hawaii, Island oder Sizilien', en: 'Active volcanoes, as in Hawaii, Iceland or Sicily', nl: 'Actieve vulkanen, zoals op Hawaï, IJsland of Sicilië', es: 'Volcanes activos, como en Hawái, Islandia o Sicilia', fr: 'Volcans actifs, comme à Hawaï, en Islande ou en Sicile', ru: 'Действующие вулканы, например на Гавайях, в Исландии или на Сицилии', 'zh-Hans': '活火山，例如在夏威夷、冰岛或西西里岛', ko: '하와이, 아이슬란드, 시칠리아 같은 곳의 활화산', ja: 'ハワイ、アイスランド、シチリアなどの活火山', ar: 'براكين نشطة، كما في هاواي أو آيسلندا أو صقلية', pt: 'Vulcões ativos, como no Havai, na Islândia ou na Sicília', it: 'Vulcani attivi, come alle Hawaii, in Islanda o in Sicilia', pl: 'Czynne wulkany, np. na Hawajach, Islandii lub Sycylii', tr: 'Hawaii, İzlanda ya da Sicilya’daki gibi etkin yanardağlar', uk: 'Діючі вулкани, як-от на Гаваях, в Ісландії чи на Сицилії', hi: 'सक्रिय ज्वालामुखी, जैसे हवाई, आइसलैंड या सिसिली में' }
   }
 ];
