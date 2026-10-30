@@ -66,5 +66,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/tea-ceremony'),
     title: { de: 'Teezeremonie', en: 'Tea ceremony', nl: 'Theeceremonie', es: 'Ceremonia del té', fr: 'Cérémonie du thé', ru: 'Чайная церемония', 'zh-Hans': '茶道', ko: '다도', ja: '茶の湯', ar: 'مراسم الشاي', pt: 'Cerimónia do chá', it: 'Cerimonia del tè', pl: 'Ceremonia herbaciana', tr: 'Çay seremonisi', uk: 'Чайна церемонія', hi: 'चाय समारोह' },
     place: { de: 'Ein Teeraum mit Blick in den Garten', en: 'A tea room looking onto a garden', nl: 'Een theekamer met uitzicht op de tuin', es: 'Una sala de té con vista al jardín', fr: 'Un pavillon de thé ouvert sur le jardin', ru: 'Чайная комната с видом на сад', 'zh-Hans': '面向庭院的茶室', ko: '정원이 보이는 다실', ja: '庭に面した茶室', ar: 'غرفة شاي تطل على حديقة', pt: 'Uma sala de chá com vista para o jardim', it: 'Una sala da tè affacciata sul giardino', pl: 'Pokój herbaciany z widokiem na ogród', tr: 'Bahçeye bakan bir çay odası', uk: 'Чайна кімната з видом на сад', hi: 'बगीचे की ओर खुलता एक चाय कक्ष' }
+  },
+  {
+    id: 'rooftop-garden',
+    group: 'scene',
+    aspect: 'tall',
+    art: () => import('../baked/rooftop-garden'),
+    title: { de: 'Dachgarten', en: 'Rooftop garden', nl: 'Daktuin', es: 'Jardín en la azotea', fr: 'Jardin sur le toit', ru: 'Сад на крыше', 'zh-Hans': '屋顶花园', ko: '옥상 정원', ja: '屋上庭園', ar: 'حديقة على السطح', pt: 'Jardim no terraço', it: 'Giardino sul tetto', pl: 'Ogród na dachu', tr: 'Çatı bahçesi', uk: 'Сад на даху', hi: 'छत का बगीचा' },
+    place: { de: 'Ein Dach in der Stadt am Abend', en: 'A city rooftop in the evening', nl: 'Een dak in de stad bij avond', es: 'Una azotea de la ciudad al atardecer', fr: 'Un toit en ville, le soir', ru: 'Городская крыша вечером', 'zh-Hans': '傍晚的城市屋顶', ko: '저녁 무렵 도시의 옥상', ja: '夕暮れの街の屋上', ar: 'سطح في المدينة مساءً', pt: 'Um terraço na cidade ao entardecer', it: 'Un tetto in città, la sera', pl: 'Dach w mieście wieczorem', tr: 'Akşam şehirde bir çatı', uk: 'Міський дах увечері', hi: 'शाम को शहर की एक छत' }
+  },
+  {
+    id: 'pizza',
+    group: 'scene',
+    aspect: 'square',
+    art: () => import('../baked/pizza'),
+    title: { de: 'Pizza', en: 'Pizza', nl: 'Pizza', es: 'Pizza', fr: 'Pizza', ru: 'Пицца', 'zh-Hans': '比萨', ko: '피자', ja: 'ピザ', ar: 'بيتزا', pt: 'Pizza', it: 'Pizza', pl: 'Pizza', tr: 'Pizza', uk: 'Піца', hi: 'पिज़्ज़ा' },
+    place: { de: 'Frisch aus dem Holzofen', en: 'Fresh from a wood-fired oven', nl: 'Vers uit de houtoven', es: 'Recién salida del horno de leña', fr: 'Tout juste sortie du four à bois', ru: 'Прямо из дровяной печи', 'zh-Hans': '刚从柴火炉里出来', ko: '장작 화덕에서 막 나온', ja: '薪窯から焼きたて', ar: 'طازجة من فرن الحطب', pt: 'Acabada de sair do forno a lenha', it: 'Appena sfornata dal forno a legna', pl: 'Prosto z pieca opalanego drewnem', tr: 'Odun fırınından yeni çıkmış', uk: 'Щойно з дров’яної печі', hi: 'लकड़ी के तंदूर से ताज़ा निकली' }
   }
 ];
