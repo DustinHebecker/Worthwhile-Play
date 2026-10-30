@@ -66,7 +66,6 @@ export const snowyPines: Motif = {
     { shape: { rect: [0, 0, 100, 100] }, fill: { gradient: ['n', 'b', 'v', 'a'], from: [0, 4], to: [0, 52], soft: 0.6 } },
     { shape: { ellipse: [60, 52, 70, 14] }, fill: { gradient: ['a', 'c'], from: [0, 38], to: [0, 47], soft: 0.6 } },
     { shape: { rect: [0, 0, 100, 30] }, fill: { scatter: 'w', density: 0.03, salt: 41 }, min: 40 },
-    { shape: { rect: [0, 0, 100, 36] }, fill: { scatter: 'm', density: 0.025, salt: 43 }, min: 48 },
     { shape: { ellipse: [76, 12, 1, 1] }, fill: 'w', keep: true },
     { shape: { ellipse: [36, 8, 1, 1] }, fill: 'm', keep: true, min: 48 },
     // Far wooded hills in the dusk.
@@ -91,7 +90,8 @@ export const snowyPines: Motif = {
     { shape: { rect: [66.5, 33.5, 3.5, 7] }, fill: 'h' },
     { shape: { rect: [50.5, 52.5, 10, 6] }, fill: 'y', keep: true },
     { shape: { rect: [55, 52.5, 1, 6] }, fill: 'h', min: 48 },
-    { shape: { rect: [50.8, 52.8, 3.6, 2.6] }, fill: 'm', min: 48 },
+    { shape: { rect: [50.8, 52.8, 4.6, 3.4] }, fill: 'm', min: 48 },
+    { shape: { ellipse: [57, 64, 8, 1.4] }, fill: 'm', clip: 'snow', min: 48 },
     { shape: { rect: [64.5, 51.5, 6, 11] }, fill: 'o', shade: { light: 'y', dir: 'w', mode: 'band', amount: 0.4 }, keep: true },
     { shape: { ellipse: [69.5, 28.5, 3.8, 2.8] }, fill: 'g', shade: { light: 'a', dir: 'nw', mode: 'band', amount: 0.3 } },
     { shape: { ellipse: [74.5, 23, 5.2, 3] }, fill: 'g', shade: { light: 'a', dir: 'nw', mode: 'band', amount: 0.3 } },
@@ -111,7 +111,6 @@ export const snowyPines: Motif = {
     { shape: { poly: [[88, 53.6], [90.0, 59.2], [92.2, 63.4], [90.7, 61.0], [89.3, 59.5], [88, 58.1], [86.7, 59.5], [85.3, 61.0], [83.8, 63.4], [86.0, 59.2]], smooth: 1 }, fill: 'w', shade: { dark: 'l', dir: 'nw', mode: 'band', amount: 0.3 } },
     { shape: { poly: [[16, 92], [44, 84], [50, 86], [22, 95]] }, fill: 's', clip: 'snow' },
     { shape: { poly: [[30, 86], [52, 76], [56, 78], [34, 88]] }, fill: 's', clip: 'snow', min: 40 },
-    { shape: { all: true }, fill: { scatter: 'w', density: 0.05, salt: 42 }, clip: 'snow', min: 48 },
     // A trail of footprints leading to the cabin.
     { shape: { line: [[54, 100], [58, 88], [62, 76], [61, 68]], width: 1.2 }, fill: 's', clip: 'snow' },
     { shape: { line: [[57, 100], [61, 88], [64.5, 76], [63.5, 68]], width: 1 }, fill: 'l', clip: 'snow', min: 48 },

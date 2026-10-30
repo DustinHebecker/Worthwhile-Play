@@ -85,7 +85,6 @@ export const volcano: Motif = {
     { name: 'cone', shape: { poly: [[-6, 96], [14, 80], [30, 58], [40, 40], [44, 35.5], [54, 35.5], [59, 40], [70, 58], [86, 78], [106, 92], [106, 106], [-6, 106]], smooth: 1 }, fill: 'e', shade: { light: 'x', dark: 'k', dir: 'n', width: 2 } },
     { shape: { poly: [[56, 38], [70, 58], [86, 78], [106, 92], [106, 106], [70, 106], [74, 86], [62, 60]], smooth: 1 }, fill: 'k', clip: 'cone' },
     { shape: { poly: [[24, 70], [34, 58], [30, 76], [18, 88]], smooth: 1 }, fill: 'a', clip: 'cone', min: 48 },
-    { shape: { all: true }, fill: { scatter: 'a', density: 0.1, salt: 72 }, clip: 'cone', min: 40 },
     // Fire fountaining from the crater.
     { shape: { ellipse: [49, 36, 7, 2.5] }, fill: 'o', shade: { light: 'm', dir: 'n', mode: 'band', amount: 0.5 } },
     { shape: { poly: [[42, 36.5], [43, 26], [46, 29], [49, 17], [52, 28], [55, 22], [56, 36.5]], smooth: 1 }, fill: 'o', shade: { light: 'y', dark: 'r', dir: 'n' } },
@@ -113,7 +112,6 @@ export const volcano: Motif = {
     { name: 'field', shape: { poly: [[-2, 92], [20, 88], [44, 91], [70, 87], [102, 90], [102, 102], [-2, 102]], smooth: 1 }, fill: 'k', shade: { light: 'u', dir: 'n', width: 1 } },
     { shape: { line: [[4, 96], [14, 93], [22, 97]], width: 1 }, fill: 'r', clip: 'field' },
     { shape: { line: [[76, 95], [86, 92.5], [96, 96]], width: 1 }, fill: 'o', clip: 'field' },
-    { shape: { line: [[48, 98], [56, 95], [60, 98]], width: 1 }, fill: 'r', clip: 'field', min: 40 },
-    { shape: { all: true }, fill: { scatter: 'e', density: 0.12, salt: 73 }, clip: 'field', min: 40 }
+    { shape: { line: [[48, 98], [56, 95], [60, 98]], width: 1 }, fill: 'r', clip: 'field', min: 40 }
   ]
 };

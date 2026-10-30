@@ -70,15 +70,12 @@ export const baobabAvenue: Motif = {
     { shape: { ellipse: [24, 30, 17, 2.6] }, fill: 'm', shade: { light: 'i', dir: 's', mode: 'band', amount: 0.4 } },
     { shape: { ellipse: [78, 38, 15, 2.4] }, fill: 'm', shade: { light: 'i', dir: 's', mode: 'band', amount: 0.4 } },
     { shape: { ellipse: [60, 22, 10, 1.4] }, fill: 'a', min: 40 },
-    { shape: { rect: [0, 0, 100, 18] }, fill: { scatter: 'i', density: 0.02, salt: 121 }, min: 48 },
     // Dry grassland on both sides, a pond catching the pink sky.
     { name: 'land', shape: { rect: [0, 66, 100, 34] }, fill: { gradient: ['g', 'e', 'e', 'd'], from: [0, 66], to: [0, 98], soft: 0.6 } },
-    { shape: { all: true }, fill: { scatter: 'g', density: 0.1, salt: 122 }, clip: 'land', min: 40 },
     { shape: { ellipse: [16, 76, 14, 2.6] }, fill: 'p', shade: { light: 'i', dark: 'm', dir: 'n', mode: 'band', amount: 0.3 } },
     { shape: { ellipse: [86, 79, 10, 2] }, fill: 'p', shade: { dark: 'm', dir: 'n', mode: 'band', amount: 0.3 }, min: 40 },
     // The red dirt road running straight into the glow.
     { name: 'road', shape: { poly: [[48.6, 66], [51.4, 66], [76, 101], [24, 101]] }, fill: { gradient: ['t', 't', 'r'], from: [0, 66], to: [0, 100], soft: 0.6 } },
-    { shape: { all: true }, fill: { scatter: 't', density: 0.08, salt: 123 }, clip: 'road', min: 40 },
     { shape: { line: [[50, 70], [50, 100]], width: 1 }, fill: 't', clip: 'road', min: 48 },
     { shape: { poly: [[50, 72], [53, 72], [62, 101], [50, 101]] }, fill: 'k', clip: 'road', min: 99 },
     // Baobabs lining the road, far ones small, near ones towering.

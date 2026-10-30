@@ -41,6 +41,7 @@ export const mangroves: Motif = {
     hi: 'दुनिया भर के उष्णकटिबंधीय तट'
   },
   aspect: 'wide',
+  size: [40, 48, 56],
   backdrop: '#f2c4e6',
   palette: {
     s: ['#7fbde6', 'skyBlue', 1],
@@ -73,7 +74,6 @@ export const mangroves: Motif = {
     { shape: { all: true }, fill: { scatter: 'h', density: 0.06, salt: 81 }, clip: 'mud', min: 48 },
     { name: 'water', shape: { poly: [[0, 38], [30, 36.5], [60, 37.5], [100, 36], [100, 42], [76, 44], [62, 50], [58, 58], [66, 66], [62, 75], [36, 75], [44, 66], [42, 56], [30, 48], [0, 46]], smooth: 1 }, fill: { gradient: ['l', 's', 't', 'u'], from: [0, 37], to: [0, 74], soft: 0.6 } },
     { shape: { line: [[10, 41], [26, 40.5]], width: 1 }, fill: 'w', clip: 'water', min: 48 },
-    { shape: { line: [[70, 39.5], [86, 39]], width: 1 }, fill: 'w', clip: 'water', min: 64 },
     { shape: { poly: [[0, 46], [30, 48], [42, 56], [36, 58], [24, 51], [0, 49]], smooth: 1 }, fill: 'h', min: 48 },
     // Mangrove trees: dark crowns above, roots arching down into the mud.
     { name: 'crownL', shape: { poly: [[-4, -4], [50, -4], [52, 6], [46, 14], [38, 19], [28, 22], [16, 21], [6, 24], [-4, 22]], smooth: 1 }, fill: 'd', shade: { light: 'g', dir: 'se', width: 2 } },
@@ -107,8 +107,6 @@ export const mangroves: Motif = {
     { shape: { line: [[81.0, 31.5], [87.8, 34.1], [93.2, 37.3], [97.0, 40.7], [99.2, 44.3], [100.0, 48.0]], width: 1.6 }, fill: 'b', min: 48 },
     { shape: { line: [[22, 20], [24, 30], [22, 36]], width: 1 }, fill: 'n', min: 48 },
     { shape: { line: [[80, 17], [82, 27], [80, 32]], width: 1 }, fill: 'n', min: 48 },
-    { shape: { line: [[6, 30], [10, 26], [16, 34]], width: 1 }, fill: 'k', min: 64 },
-    { shape: { line: [[88, 30], [94, 26], [99, 36]], width: 1 }, fill: 'k', min: 64 },
     // Hanging leaves and seedlings.
     { shape: { line: [[14, 22], [14, 25]], width: 1 }, fill: 'd', min: 48 },
     { shape: { line: [[30, 22.5], [30, 25.5]], width: 1 }, fill: 'd', min: 48 },
@@ -124,8 +122,6 @@ export const mangroves: Motif = {
     { shape: { line: [[46, 48.5], [43.5, 43], [46.5, 38.5], [44.5, 34.5]], width: 2.2 }, fill: 'w', keep: true },
     { shape: { ellipse: [45, 34, 2.4, 1.8] }, fill: 'w', keep: true },
     { shape: { poly: [[43.5, 33.2], [37, 34.6], [43.5, 35.2]] }, fill: 'y', keep: true },
-    { shape: { line: [[48.5, 65], [47.5, 66]], width: 1 }, fill: 'y', min: 64 },
-    { shape: { line: [[54, 65], [55, 66]], width: 1 }, fill: 'y', min: 64 },
     // Little breathing roots poking out of the mud in front.
     { shape: { line: [[6, 66], [6, 63]], width: 1 }, fill: 'h' },
     { shape: { line: [[10, 70], [10, 67]], width: 1 }, fill: 'h', min: 48 },

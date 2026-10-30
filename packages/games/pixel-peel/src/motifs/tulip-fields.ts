@@ -44,6 +44,7 @@ export const tulipFields: Motif = {
     hi: 'नीदरलैंड्स में वसंत'
   },
   aspect: 'wide',
+  size: [40, 48, 56],
   backdrop: '#d9c7a0',
   palette: {
     s: ['#62a8e2', 'skyBlue', 1],
@@ -71,7 +72,7 @@ export const tulipFields: Motif = {
     { shape: { ellipse: [26, 6.5, 7, 3.2] }, fill: 'w' },
     { shape: { ellipse: [62, 6, 9, 2.6] }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.35 } },
     { shape: { ellipse: [88, 14, 10, 2.4] }, fill: 'w', min: 48 },
-    { shape: { ellipse: [44, 16, 6, 1.6] }, fill: 'w', min: 64 },
+    { shape: { ellipse: [44, 16, 6, 1.6] }, fill: 'w', min: 56 },
     // A flat horizon: a dark tree line with a farmhouse where the rows meet.
     { shape: { poly: [[0, 31], [0, 27.5], [6, 25.5], [12, 27], [20, 25], [28, 27.5], [36, 26.5], [44, 27.5], [52, 25.5], [60, 26.5], [66, 23], [72, 24], [90, 24], [94, 21.5], [100, 23], [100, 31]], smooth: 1 }, fill: 'd', shade: { light: 'e', dir: 'n' } },
     { shape: { ellipse: [68, 22.5, 4, 4.5] }, fill: 'd', shade: { light: 'e', dir: 'nw' } },
@@ -99,17 +100,12 @@ export const tulipFields: Motif = {
     { shape: { poly: [VP, [100, 46], [100, 36]] }, fill: 'r' },
     { shape: { poly: [VP, [100, 36], [100, 29.6]] }, fill: 'c' },
     // Texture in the near rows: darker and lighter blooms, leaves showing between them.
-    { shape: { all: true }, fill: { scatter: 'h', density: 0.22, salt: 11 }, clip: 'r5', min: 48 },
-    { shape: { all: true }, fill: { scatter: 'q', density: 0.2, salt: 12 }, clip: 'r6', min: 64 },
     { shape: { all: true }, fill: { scatter: 'q', density: 0.28, salt: 13 }, clip: 'r7' },
     { shape: { all: true }, fill: { scatter: 'x', density: 0.26, salt: 14 }, clip: 'r8' },
-    { shape: { all: true }, fill: { scatter: 'h', density: 0.24, salt: 15 }, clip: 'r9', min: 48 },
     { shape: { all: true }, fill: { scatter: 'h', density: 0.24, salt: 16 }, clip: 'r10' },
-    { shape: { all: true }, fill: { scatter: 'q', density: 0.2, salt: 17 }, clip: 'r11', min: 48 },
     { shape: { all: true }, fill: { scatter: 'a', density: 0.3, salt: 18 }, clip: 'r12' },
-    { shape: { rect: [0, 44, 100, 31] }, fill: { scatter: 'e', density: 0.06, salt: 19 }, clip: 'field', min: 64 },
     // Soil paths between the rows and grassy banks along the ditch.
-    { shape: { line: [[60.8, 31.1], [0, 38.4]], width: 1 }, fill: 'n', min: 64 },
+    { shape: { line: [[60.8, 31.1], [0, 38.4]], width: 1 }, fill: 'n', min: 56 },
     { shape: { line: [[60.8, 32.3], [0, 44]], width: 1 }, fill: 'n', min: 48 },
     { shape: { line: [[60.8, 34.1], [0, 52]], width: 1 }, fill: 'n' },
     { shape: { line: [[60.8, 36.5], [0, 63]], width: 1 }, fill: 'n' },
@@ -122,7 +118,7 @@ export const tulipFields: Motif = {
     { shape: { poly: [VP, [63, 80], [67.5, 80]] }, fill: 'e', shade: { light: 'c', dir: 'w', mode: 'band', amount: 0.4 } },
     { shape: { poly: [VP, [80, 80], [84.5, 80]] }, fill: 'e', shade: { light: 'c', dir: 'e', mode: 'band', amount: 0.4 } },
     { shape: { line: [[77.5, 40], [76, 70]], width: 1 }, fill: 'w', clip: 'canal', min: 48 },
-    { shape: { poly: [[76.5, 30], [80.5, 30], [80, 34], [77, 34]] }, fill: 'x', clip: 'canal', min: 64 },
+    { shape: { poly: [[76.5, 30], [80.5, 30], [80, 34], [77, 34]] }, fill: 'x', clip: 'canal', min: 56 },
     // Big red tulips in front, against the yellow and white rows.
     { shape: { line: [[8, 62], [7, 76]], width: 1.6 }, fill: 'd' },
     { shape: { line: [[21, 58], [22, 76]], width: 1.4 }, fill: 'd' },
