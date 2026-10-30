@@ -50,5 +50,29 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/peacock'),
     title: { de: 'Pfau', en: 'Peacock', nl: 'Pauw', es: 'Pavo real', fr: 'Paon', ru: 'Павлин', 'zh-Hans': '孔雀', ko: '공작', ja: 'クジャク', ar: 'الطاووس', pt: 'Pavão', it: 'Pavone', pl: 'Paw', tr: 'Tavus kuşu', uk: 'Павич', hi: 'मोर' },
     place: { de: 'Wälder und Felder in Südasien', en: 'Forests and farmland of South Asia', nl: 'Bossen en akkers in Zuid-Azië', es: 'Bosques y campos del sur de Asia', fr: 'Forêts et campagnes d’Asie du Sud', ru: 'Леса и поля Южной Азии', 'zh-Hans': '南亚的森林与农田', ko: '남아시아의 숲과 농지', ja: '南アジアの森や農地', ar: 'الغابات والأراضي الزراعية في جنوب آسيا', pt: 'Florestas e campos do Sul da Ásia', it: 'Foreste e campagne dell’Asia meridionale', pl: 'Lasy i pola Azji Południowej', tr: 'Güney Asya’nın ormanları ve tarlaları', uk: 'Ліси й поля Південної Азії', hi: 'दक्षिण एशिया के वन और खेत' }
+  },
+  {
+    id: 'jellyfish',
+    group: 'animal',
+    aspect: 'tall',
+    art: () => import('../baked/jellyfish'),
+    title: { de: 'Quallen', en: 'Jellyfish', nl: 'Kwallen', es: 'Medusas', fr: 'Méduses', ru: 'Медузы', 'zh-Hans': '水母', ko: '해파리', ja: 'クラゲ', ar: 'قناديل البحر', pt: 'Águas-vivas', it: 'Meduse', pl: 'Meduzy', tr: 'Denizanaları', uk: 'Медузи', hi: 'जेलीफ़िश' },
+    place: { de: 'In allen Weltmeeren, von der Oberfläche bis in die Tiefsee', en: 'Every ocean, from the surface to the deep sea', nl: 'Alle oceanen, van het oppervlak tot de diepzee', es: 'Todos los océanos, de la superficie a las profundidades', fr: 'Tous les océans, de la surface aux grands fonds', ru: 'Все океаны, от поверхности до глубин', 'zh-Hans': '世界各大洋，从海面到深海', ko: '모든 바다, 수면에서 심해까지', ja: '世界中の海、海面から深海まで', ar: 'كل المحيطات، من السطح إلى أعماق البحار', pt: 'Todos os oceanos, da superfície ao mar profundo', it: 'Tutti gli oceani, dalla superficie agli abissi', pl: 'Wszystkie oceany, od powierzchni po głębiny', tr: 'Yüzeyden derin denize kadar tüm okyanuslar', uk: 'Усі океани, від поверхні до глибин', hi: 'सभी महासागर, सतह से गहरे समुद्र तक' }
+  },
+  {
+    id: 'bison',
+    group: 'animal',
+    aspect: 'wide',
+    art: () => import('../baked/bison'),
+    title: { de: 'Amerikanischer Bison', en: 'American bison', nl: 'Amerikaanse bizon', es: 'Bisonte americano', fr: 'Bison d’Amérique', ru: 'Американский бизон', 'zh-Hans': '美洲野牛', ko: '아메리카들소', ja: 'アメリカバイソン', ar: 'البيسون الأمريكي', pt: 'Bisão-americano', it: 'Bisonte americano', pl: 'Bizon amerykański', tr: 'Amerika bizonu', uk: 'Американський бізон', hi: 'अमेरिकी बाइसन' },
+    place: { de: 'Prärien und Grasland in Nordamerika', en: 'Prairies and grasslands of North America', nl: 'Prairies en graslanden van Noord-Amerika', es: 'Praderas y pastizales de Norteamérica', fr: 'Prairies et plaines herbeuses d’Amérique du Nord', ru: 'Прерии и луга Северной Америки', 'zh-Hans': '北美洲的大草原', ko: '북아메리카의 대초원과 초지', ja: '北アメリカのプレーリーと草原', ar: 'البراري والمراعي في أمريكا الشمالية', pt: 'Pradarias e campos da América do Norte', it: 'Praterie del Nord America', pl: 'Prerie i łąki Ameryki Północnej', tr: 'Kuzey Amerika’nın preryaları ve otlakları', uk: 'Прерії та луки Північної Америки', hi: 'उत्तरी अमेरिका के प्रेयरी और घास के मैदान' }
+  },
+  {
+    id: 'monarch-butterfly',
+    group: 'animal',
+    aspect: 'square',
+    art: () => import('../baked/monarch-butterfly'),
+    title: { de: 'Monarchfalter', en: 'Monarch butterflies', nl: 'Monarchvlinders', es: 'Mariposas monarca', fr: 'Papillons monarques', ru: 'Бабочки-монархи', 'zh-Hans': '帝王蝶', ko: '제주왕나비', ja: 'オオカバマダラ', ar: 'فراشات الملك', pt: 'Borboletas-monarca', it: 'Farfalle monarca', pl: 'Monarchy wędrowne', tr: 'Monark kelebekleri', uk: 'Метелики-монархи', hi: 'मोनार्क तितलियाँ' },
+    place: { de: 'Nordamerika; Winterquartiere in Mexiko und Kalifornien', en: 'North America; wintering in Mexico and California', nl: 'Noord-Amerika; overwinteren in Mexico en Californië', es: 'Norteamérica; invernan en México y California', fr: 'Amérique du Nord ; hivernage au Mexique et en Californie', ru: 'Северная Америка; зимовки в Мексике и Калифорнии', 'zh-Hans': '北美洲；在墨西哥和加利福尼亚越冬', ko: '북아메리카, 멕시코와 캘리포니아에서 월동', ja: '北アメリカ、メキシコとカリフォルニアで越冬', ar: 'أمريكا الشمالية، وتقضي الشتاء في المكسيك وكاليفورنيا', pt: 'América do Norte; passam o inverno no México e na Califórnia', it: 'Nord America; svernano in Messico e in California', pl: 'Ameryka Północna; zimują w Meksyku i Kalifornii', tr: 'Kuzey Amerika; kışı Meksika ve Kaliforniya’da geçirir', uk: 'Північна Америка; зимують у Мексиці та Каліфорнії', hi: 'उत्तरी अमेरिका; सर्दियाँ मेक्सिको और कैलिफ़ोर्निया में' }
   }
 ];
