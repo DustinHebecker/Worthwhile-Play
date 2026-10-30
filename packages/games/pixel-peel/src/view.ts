@@ -4,7 +4,7 @@ import { LOCALES, type Locale } from './art/types';
 import { exposureOf, parseMove, replayCursor, shotsLeft, step, updateExposure, type Cursor, type Exposure, type Outcome, type Table } from './engine';
 import { createInitial } from './generate';
 import { hint as computeHint, type HintResult } from './hint';
-import { findMotif } from './motifs/index';
+import { findCard } from './catalogue';
 import { canUndo, resetState, restart, tableOfState, undo, undoTo, type Hit, type Move, type PaletteEntry, type PeelState, type Shooter } from './rules';
 import { fitCell } from './layout';
 import { PeelQueue, SLOW_TIMING, TIMING } from './peel';
@@ -188,8 +188,8 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const symbolName = (key: string) => t(`symbol.${SYMBOLS[entry(key).i % SYMBOLS.length] ?? 'dot'}`);
   const shooterText = (s: Shooter) => t('shooter.text', { colour: colourName(s.c), n: s.n });
   const sentence = (text: string) => text.charAt(0).toLocaleUpperCase(bcp47Tag(t.locale)) + text.slice(1);
-  const motifTitle = () => findMotif(state.motif)?.title[locale] ?? t('picture.generic');
-  const motifPlace = () => findMotif(state.motif)?.place[locale] ?? '';
+  const motifTitle = () => findCard(state.motif)?.title[locale] ?? t('picture.generic');
+  const motifPlace = () => findCard(state.motif)?.place[locale] ?? '';
   const shooterOf = (o: Outcome): Shooter | null => (o.shooter ? { c: keyOfCode(o.shooter.c), n: o.shooter.n } : null);
 
   // --- DOM ---------------------------------------------------------------------------------------------------

@@ -10,6 +10,10 @@ import { hint } from '../src/hint';
 import { runPolicy } from '../src/policies';
 import { createPixelPeel, inkFor, peelOf, type PeelMode } from '../src/view';
 import { stateOf } from './helpers';
+import { loadAllArt } from '../src/catalogue';
+
+// A game plays baked art loaded on demand (`prepare`); these tests start games directly.
+await loadAllArt();
 
 HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
 

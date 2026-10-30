@@ -1,47 +1,73 @@
+import { readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { decodeRows } from '../src/art/bake';
-import { heightOf, minPixels, type Tier } from '../src/art/raster';
-import { colourStats, isLandscape, widthFor, type ArtDifficulty } from '../src/art/sizes';
-import { COLOUR_NAMES, GROUPS, LOCALES, type PaletteSpec } from '../src/art/types';
+import { minPixels, type Tier } from '../src/art/raster';
+import { ART_DIFFICULTIES, colourStats, heightOf, sizeClass, sizeProblems, widthFor, type ArtDifficulty } from '../src/art/sizes';
+import { COLOUR_NAMES, GROUPS, LOCALES, type BakedArt, type PaletteSpec } from '../src/art/types';
+import { artOf, CATALOGUE, findCard, loadAllArt } from '../src/catalogue';
 import { pictureFor } from '../src/generate';
 import { messages } from '../src/messages';
-import { BAKED } from '../src/motifs/baked';
 import { MOTIFS } from '../src/motifs/index';
 import { deltaE } from '../src/symbols';
 
-/** The authoring rules of design v2 § 1.4 that are tests, at every difficulty with its width and tier. */
+/**
+ * The motif data (docs/design/pixel-peel-motifs.md § 6): every motif of every batch, automatically. The authoring
+ * rules of design v2 § 1.4 and § 15.3 are checked on the baked pictures a game plays (cheap: no rasterising);
+ * motifs.slow.test.ts checks that the baked pictures equal the rasteriser's output.
+ */
 const LEVELS: readonly { d: ArtDifficulty; tier: Tier; colours: [number, number]; minDeltaE: number }[] = [
   { d: 'easy', tier: 1, colours: [10, 12], minDeltaE: 18 },
   { d: 'medium', tier: 2, colours: [13, 16], minDeltaE: 12 },
   { d: 'hard', tier: 3, colours: [15, 20], minDeltaE: 12 }
 ];
 const BACKDROP_DELTA_E = 15;
+const dir = (path: string) => fileURLToPath(new URL(path, import.meta.url));
+const filesIn = (path: string) => readdirSync(dir(path)).filter((f) => f.endsWith('.ts')).map((f) => f.slice(0, -3)).sort();
 
-describe('motif collection (design v2 § 9)', () => {
-  it('has at least 16 motifs (20 planned): seasons, landscapes, animals, scenes; unique ids that are not "any"', () => {
-    expect(MOTIFS.length).toBeGreaterThanOrEqual(16);
+await loadAllArt();
+
+describe('motif collection (design v2 § 9, docs/design/pixel-peel-motifs.md)', () => {
+  it('has at least 20 motifs in start-screen group order (seasons, landscapes, animals, scenes, landmarks); unique ids, none starting with "any"', () => {
+    expect(MOTIFS.length).toBeGreaterThanOrEqual(20);
     const ids = MOTIFS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).not.toContain('any');
+    for (const id of ids) expect(id.startsWith('any'), id).toBe(false);
     const ranks = MOTIFS.map((m) => GROUPS.indexOf(m.group));
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
-    for (const group of GROUPS) expect(MOTIFS.some((m) => m.group === group), group).toBe(true);
+    for (const group of ['season', 'landscape', 'animal', 'scene'] as const) expect(MOTIFS.some((m) => m.group === group), group).toBe(true);
   });
 
-  it('keeps every v1 motif id, so v1 saves keep their titles', () => {
-    for (const id of ['cherry-blossom', 'summer-meadow', 'autumn-forest', 'winter-village', 'desert-dunes', 'fjord', 'rice-terraces', 'red-fox', 'elephant', 'koala', 'llama', 'tiger']) {
+  it('keeps every v1 and v2 motif id, so older saves keep their titles', () => {
+    for (const id of ['cherry-blossom', 'summer-meadow', 'autumn-forest', 'winter-village', 'desert-dunes', 'fjord', 'rice-terraces', 'coral-reef', 'aurora', 'red-fox', 'elephant', 'koala', 'llama', 'tiger', 'polar-bear', 'hummingbird', 'emperor-penguin', 'reading-nook', 'market-stall', 'kitchen-window']) {
       expect(MOTIFS.some((m) => m.id === id), id).toBe(true);
     }
+  });
+
+  it('the cards a game knows are generated from the motifs: same order, ids, groups, aspects, titles and places (run the bake)', () => {
+    expect(CATALOGUE.map((c) => c.id)).toEqual(MOTIFS.map((m) => m.id));
+    for (const motif of MOTIFS) {
+      const card = findCard(motif.id)!;
+      expect({ group: card.group, aspect: card.aspect, title: card.title, place: card.place }, motif.id).toEqual({ group: motif.group, aspect: motif.aspect, title: motif.title, place: motif.place });
+    }
+  });
+
+  it('one generated cards file per batch and one baked file per motif, nothing stale (run the full bake)', () => {
+    expect(filesIn('../src/motifs/cards')).toEqual(filesIn('../src/motifs/batches'));
+    expect(filesIn('../src/motifs/baked')).toEqual(MOTIFS.map((m) => m.id).sort());
+    for (const name of filesIn('../src/motifs/batches')) expect(name, 'batch file name: two digits, a dash, a name').toMatch(/^\d\d-[a-z0-9]+(?:-[a-z0-9]+)*$/);
   });
 });
 
 for (const motif of MOTIFS) {
   describe(`motif ${motif.id}`, () => {
     const entries = Object.entries(motif.palette) as [string, PaletteSpec][];
+    const art = (): BakedArt => artOf(motif.id)!;
 
     it('has valid data: id, palette keys and names, tiers with merge chains ending in tier 1', () => {
       expect(motif.id).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
       expect(motif.id.length).toBeLessThanOrEqual(32);
+      expect(GROUPS).toContain(motif.group);
       expect(motif.backdrop).toMatch(/^#[0-9a-f]{6}$/);
       expect(entries.length).toBeGreaterThanOrEqual(15);
       expect(entries.length).toBeLessThanOrEqual(20);
@@ -63,19 +89,30 @@ for (const motif of MOTIFS) {
       expect(motif.layers.length).toBeGreaterThan(5);
     });
 
+    it('its baked art matches the motif: backdrop and palette in order', () => {
+      expect(art(), 'baked art (run scripts/render-motifs.ts --bake)').toBeDefined();
+      expect(art().backdrop).toBe(motif.backdrop);
+      expect(art().palette).toEqual(entries.map(([k, spec]) => [k, spec[0], spec[1]]));
+    });
+
+    it('sizes: a usable size override (if any), more pixels with each difficulty, large-area pictures at least as large as the others', () => {
+      if (motif.size) expect(sizeProblems(motif.aspect, motif.size)).toEqual([]);
+      const widths = ART_DIFFICULTIES.map((d) => widthFor(motif, d));
+      expect(sizeProblems(motif.aspect, widths)).toEqual([]);
+      const cells = (w: number) => w * heightOf(motif, w);
+      // Hard has at least as many cells as a 48 × 48 square for large-area pictures, as a 48 × 36 one for the rest.
+      expect(cells(widths[2]!)).toBeGreaterThanOrEqual(sizeClass(motif.group) === 'large' ? 2048 : 1728);
+    });
+
     for (const level of LEVELS) {
       const w = widthFor(motif, level.d);
-      it(`${level.d} at ${w} cells: ${level.colours[0]}–${level.colours[1]} colours, each ≥ ${minPixels(w)} pixels, distinguishable, mostly filled, colours that matter`, () => {
-        // The baked picture is what a game plays (motifs.slow.test.ts checks that it equals the rasteriser's output).
-        const baked = BAKED[motif.id]?.[LEVELS.indexOf(level)];
-        expect(baked, 'baked (run scripts/render-motifs.ts --bake)').toBeDefined();
-        const rows = decodeRows(baked!)!;
+      it(`${level.d} at ${w} × ${heightOf(motif, w)}: ${level.colours[0]}–${level.colours[1]} colours, each ≥ ${minPixels(w)} pixels, distinguishable, mostly filled, colours that matter`, () => {
+        const rows = decodeRows(art().rows[LEVELS.indexOf(level)]!)!;
         expect(rows).toHaveLength(heightOf(motif, w));
         for (const row of rows) expect(row).toHaveLength(w);
-        // A game uses the baked rows, never the rasteriser (which is far too slow for the start on a phone).
         const picture = pictureFor(motif, level.d);
         expect(picture.rows).toEqual(rows);
-        // Exactly the palette's keys of this tier are played: no colour merged away (the start-screen label relies on it).
+        // Exactly the palette's keys of this tier are played: no colour merged away (the title line relies on it).
         const tierKeys = entries.filter(([, spec]) => spec[2] <= level.tier).map(([k]) => k);
         expect(picture.palette.map((p) => p.key)).toEqual(tierKeys);
         expect(picture.palette.length).toBeGreaterThanOrEqual(level.colours[0]);
@@ -104,27 +141,14 @@ for (const motif of MOTIFS) {
       });
     }
 
-    it('uses more pixels on hard: at least 48 wide, landscapes at least 56', () => {
-      expect(widthFor(motif, 'hard')).toBeGreaterThanOrEqual(isLandscape(motif) ? 56 : 48);
-      expect(widthFor(motif, 'medium')).toBeLessThan(widthFor(motif, 'hard'));
-      expect(widthFor(motif, 'easy')).toBeLessThan(widthFor(motif, 'medium'));
-      if (motif.aspect === 'wide') for (const d of ['easy', 'medium', 'hard'] as const) expect(widthFor(motif, d) % 4, d).toBe(0);
-    });
-
-    it('has a title (≤ 32 characters) and a place in all 16 locales; the start-screen label is the title', () => {
+    it('has a title (≤ 32 characters) and a place (≤ 120 characters) in all 16 locales; the start-screen label is the title', () => {
       for (const locale of LOCALES) {
         expect(motif.title[locale].trim(), `${locale} title`).not.toBe('');
         expect(motif.title[locale].length, `${locale} title`).toBeLessThanOrEqual(32);
         expect(motif.place[locale].trim(), `${locale} place`).not.toBe('');
+        expect(motif.place[locale].length, `${locale} place`).toBeLessThanOrEqual(120);
         expect(messages[locale]![`motif.${motif.id}`], locale).toBe(motif.title[locale]);
       }
     });
   });
 }
-
-describe('baked pictures (design v2 § 1.7)', () => {
-  it('there is one baked picture per motif and difficulty', () => {
-    expect(Object.keys(BAKED).sort()).toEqual(MOTIFS.map((m) => m.id).sort());
-    for (const motif of MOTIFS) expect(BAKED[motif.id], motif.id).toHaveLength(LEVELS.length);
-  });
-});

@@ -12,6 +12,10 @@ import { widthFor } from '../src/art/sizes';
 import { MOTIFS } from '../src/motifs/index';
 import { apply, DIFFICULTIES, initialPosition, isPeelState, LIMITS, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
 import { oracleSolvable } from './oracle';
+import { loadAllArt } from '../src/catalogue';
+
+// A game plays baked art loaded on demand (`prepare`); these tests start games directly.
+await loadAllArt();
 
 /** Replays a witness and measures it (design v2 § 2.2). */
 function witnessStats(picture: Picture, lanes: Shooter[][], slots: number, witness: readonly Move[]) {

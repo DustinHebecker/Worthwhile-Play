@@ -7,6 +7,10 @@ import { MOTIFS } from '../src/motifs/index';
 import { POLICIES, runPolicy } from '../src/policies';
 import { DIFFICULTIES, isPeelState, LIMITS, tableOfState, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
 import { doomOf, QUICK_ORACLE } from './doom';
+import { loadAllArt } from '../src/catalogue';
+
+// A game plays baked art loaded on demand (`prepare`); these tests start games directly.
+await loadAllArt();
 
 /**
  * The long generator tests (ADR 0021: `*.slow.test.ts` runs in `pnpm test` and CI, not under Stryker): every motif at

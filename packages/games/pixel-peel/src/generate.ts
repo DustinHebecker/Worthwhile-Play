@@ -1,12 +1,9 @@
 import { createRng, normalizeSeed, type Rng } from '@wp/game-core';
 import { decodeRows } from './art/bake';
-import { heightOf, rasterise, type Tier } from './art/raster';
-import { ART_DIFFICULTIES, widthFor } from './art/sizes';
-import type { Motif } from './art/types';
+import type { Tier } from './art/raster';
+import { artOf, drawMotif, toChoice } from './catalogue';
 import { cloneCells, createFrontIndex, engineOf, exposedCounts, fullCells, hitsOf, indexFronts, launch, replayCursor, startCursor, step, tableOf, type Cells, type Engine, type Table } from './engine';
 import { identitiesOf } from './hint';
-import { BAKED } from './motifs/baked';
-import { MOTIFS, findMotif } from './motifs/index';
 import { POLICIES, runPolicy, type Budget, type PolicyId } from './policies';
 import { provable } from './prove';
 import { keyOf } from './solver';
@@ -20,7 +17,7 @@ import { toDifficulty, type Difficulty, type Move, type PeelState, type Picture,
  */
 
 export interface Level {
-  /** Palette tier (the width comes from the motif, `widthFor`). */
+  /** Palette tier (the size comes from the motif's baked rows, `art/sizes.ts`). */
   tier: Tier;
   lanes: number;
   slots: number;
@@ -56,27 +53,25 @@ export const LEVELS: Readonly<Record<Difficulty, Level>> = {
 };
 
 const decoded = new Map<string, string[]>();
+const LEVEL_INDEX: Readonly<Record<Difficulty, number>> = { easy: 0, medium: 1, hard: 2 };
 
 /**
- * The played picture of a motif at a difficulty (a fresh copy): the baked picture when it is there and fits, else
- * the rasteriser (memoised).
+ * The played picture of a motif at a difficulty (a fresh copy), from its baked art. The art must be loaded
+ * (`prepare`/`loadArt` in `catalogue.ts`); a game never rasterises (far too slow for the start on a phone).
  */
-export function pictureFor(motif: Motif, difficulty: Difficulty): Picture {
-  const w = widthFor(motif, difficulty);
-  const h = heightOf(motif, w);
+export function pictureFor(motif: { readonly id: string }, difficulty: Difficulty): Picture {
+  const art = artOf(motif.id);
+  if (!art) throw new Error(`pixel-peel: the art of "${motif.id}" is not loaded; await prepare() before newGame()`);
   const key = `${motif.id}|${difficulty}`;
   let rows = decoded.get(key);
   if (!rows) {
-    const data = BAKED[motif.id]?.[ART_DIFFICULTIES.indexOf(difficulty)];
-    const baked = data ? decodeRows(data) : undefined;
-    rows = baked && baked.length === h && baked.every((r) => r.length === w) ? baked : rasterise(motif, w, LEVELS[difficulty].tier).rows;
+    rows = decodeRows(art.rows[LEVEL_INDEX[difficulty]] as string);
+    if (!rows?.length || rows.some((r) => r.length !== (rows as string[])[0]!.length)) throw new Error(`pixel-peel: the baked rows of "${motif.id}" (${difficulty}) are malformed`);
     decoded.set(key, rows);
   }
   const used = new Set(rows.join(''));
-  const palette = Object.entries(motif.palette)
-    .filter(([k]) => used.has(k))
-    .map(([k, spec]) => ({ key: k, hex: spec[0], name: spec[1] as string }));
-  return { w, h, rows: [...rows], palette, backdrop: motif.backdrop };
+  const palette = art.palette.filter(([k]) => used.has(k)).map(([k, hex, name]) => ({ key: k, hex, name: name as string }));
+  return { w: (rows[0] as string).length, h: rows.length, rows: [...rows], palette, backdrop: art.backdrop };
 }
 
 interface Draw {
@@ -362,7 +357,7 @@ export function openingGuard(table: Table, witness: readonly Move[], budget: Bud
 }
 
 export interface Generated {
-  motif: Motif;
+  motif: { readonly id: string };
   picture: Picture;
   lanes: Shooter[][];
   slots: number;
@@ -378,7 +373,7 @@ export interface Generated {
 }
 
 /** Generates one game for a motif and difficulty (design v2 § 3.4). */
-export function generate(motif: Motif, difficulty: Difficulty, rng: Rng, seed = 0): Generated {
+export function generate(motif: { readonly id: string }, difficulty: Difficulty, rng: Rng, seed = 0): Generated {
   const level = LEVELS[difficulty];
   const picture = pictureFor(motif, difficulty);
   const engine = engineOf(picture);
@@ -415,15 +410,12 @@ export function witnessSolves(picture: Picture, lanes: Shooter[][], slots: numbe
   return replayCursor(table, witness)?.cells.left === 0;
 }
 
-/** Resolves the start-screen choice: `any` or a known motif id; anything else counts as `any`. */
-export const toChoice = (value: unknown): string => (typeof value === 'string' && findMotif(value) ? value : 'any');
-
 export function createInitial(seed: number, difficulty: unknown = 'easy', choice: unknown = 'any'): PeelState {
   const s = normalizeSeed(seed);
   const d = toDifficulty(difficulty);
   const c = toChoice(choice);
   const rng = createRng(s);
-  const motif = c === 'any' ? (MOTIFS[rng.int(0, MOTIFS.length - 1)] as Motif) : (findMotif(c) as Motif);
+  const motif = drawMotif(rng, c);
   const g = generate(motif, d, rng, s);
   // Solvable by construction; checked once more, so a generator bug can never ship an unsolvable game.
   if (!witnessSolves(g.picture, g.lanes, g.slots, g.witness)) throw new Error(`pixel-peel: the witness of ${motif.id}/${d}/${s} does not solve`);

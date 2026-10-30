@@ -5,6 +5,10 @@ import { hint } from '../src/hint';
 import { MOTIFS } from '../src/motifs/index';
 import { picker } from '../src/policies';
 import { play, tableOfState, type PeelState } from '../src/rules';
+import { loadAllArt } from '../src/catalogue';
+
+// A game plays baked art loaded on demand (`prepare`); these tests start games directly.
+await loadAllArt();
 
 /**
  * Wall-clock sanity budgets (ADR 0021: `*.slow.test.ts`, never under Stryker, whose instrumentation slows code down).

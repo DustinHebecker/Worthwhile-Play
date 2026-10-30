@@ -9,6 +9,10 @@ import { initialPosition, play, positionAt, tableOfState, type PeelState } from 
 import { prove } from '../src/prove';
 import { refObviousPlay } from './reference';
 import { solve, stateOf } from './helpers';
+import { loadAllArt } from '../src/catalogue';
+
+// A game plays baked art loaded on demand (`prepare`); these tests start games directly.
+await loadAllArt();
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const fixture = (name: string) => (JSON.parse(readFileSync(`${__dirname}/fixtures/${name}.json`, 'utf8')) as { state: PeelState }).state;
