@@ -1,6 +1,6 @@
 # Design: Tower Defense and Strategy/TD hybrid modes
 
-Status: **Draft for owner decision** (Phase 1 — no implementation yet). Open decisions are collected in [§ 14](#14-open-decisions).
+Status: **In implementation** (owner 2026-10-31: "start TD and the hybrid on top of the strategy game"). The recommendations of [§ 14](#14-open-decisions) are the working defaults until the owner changes one. [§ 15](#15-revision-2026-10-31-building-on-the-shipped-engine) maps this design onto the engine as shipped (ADR 0009) and **supersedes** the parts of §§ 3–5 and 12 it names.
 Scope: game `tower-defense` (M7) and game `strategy-td-hybrid` with four modes (M7).
 Binding inputs: [implementation brief](../spec/implementation-brief.md) (sections *Tower Defense*, *Shared Strategy / Tower Defense engine*, *Strategy / Tower Defense hybrid*, *Laser Circuit*, *Determinism*, *Universal resumability*, *Definition of Done*), [reference conversation](../product/reference-conversation.md) (Prompts 2–3), ADRs 0001–0007.
 
@@ -462,3 +462,72 @@ Recommendation first. These need the owner's decision before implementation.
 - **Watching vs. playing**: phase-based waves risk feeling passive. Mitigated by short waves, instant resolve and dense build decisions; to be checked in a playtest of the training map before producing more maps.
 - **Balance is the main effort**, not code: the harness (§ 11.3) is the instrument that keeps "five distinct towers" true as numbers change.
 - **Hybrid symmetry**: symmetric maps are fair but make AI mirroring strong; asymmetric maps need per-side balance tests.
+
+---
+
+## 15. Revision 2026-10-31: building on the shipped engine
+
+The strategy engine (`@wp/strategy-engine`, ADR 0009) shipped with Relay Command. It differs from what §§ 3–5 and 12 assumed. TD and the hybrids use it as it is and ask only for small, generic extensions (§ 15.5).
+
+### 15.1 Working defaults
+
+The owner asked to start without answering D1–D17 one by one. The recommendations of § 14 are therefore the working defaults. **D2 and D3 change form** because of the engine (§ 15.2), and **D12 and D13 are settled by ADR 0009**: there is no power grid in TD, and the shared base towers live in `strategy-engine/src/content`, while TD ships its own ruleset with its numbers and branches.
+
+Catalogue position (owner, 2026-10-31): **Tower Defense at place 4, the hybrid at place 7** of the overall list (`apps/web/src/registry.ts`). The owner did not say which game goes to which place; TD comes first because the hybrid builds on it.
+
+### 15.2 Map and movement on the engine grid (replaces § 3.1)
+
+- The engine moves units cell by cell (8 neighbours, integer movement points, A* with deterministic tie-breaks). There is no polyline progress; smooth motion is interpolated in the view from `move` events (`fx, fy → x, y`).
+- **Fixed paths without engine changes:** the TD ruleset has its own terrain table. `=` *road* has cost 2. `b` *build pad* is passable (so a tower can stand there) but costs 200 per step, so a unit never leaves the road while the road is open (the engine's detour limit is far below it). Scenery is impassable (`^`, `~`). Towers may only be placed on pads, so the road is never blocked → no mazing, and no full-block check is needed.
+- **Splits:** a wave group carries a route (list of waypoints). The TD layer gives each unit `move` to its next waypoint and the following one on its `order-ended: arrived` event. Routing by weighted round robin stays deterministic and shows in the preview.
+- **Air:** air units ignore terrain cost (`AIR_COST`) and fly straight to their waypoints; air routes are authored as their own waypoint lists.
+- **Leak:** a unit reaching the core's goal cell is removed by the TD layer, and core integrity drops by its threat value. The core itself is not an engine entity in TD (no HP fight).
+
+### 15.3 Waves on the engine (replaces § 12 R-WAV-1 for now)
+
+A wave runs as `runTicks(world, ruleset, commands, 1)` per tick. Between ticks the TD layer spawns due units on free spawn cells (`spawn()` with `world.nextId`) and removes leaked units. If the spawn cell is taken, the unit waits and is shown as queued.
+
+**Measured** (Node, vitest, 2026-10-31): a 15 × 40 corridor with 18 towers and 200 heavy units (60 alive at once) over 2 000 ticks took 0.15 ms per tick, 0.3 s for the whole wave. "Resolve instantly" is therefore synchronous, and 1×/2×/4× playback costs nothing. The structured clone per `runTicks` call is included in that figure.
+
+### 15.4 Tower and enemy roster on engine primitives (replaces §§ 4.3 and 5 where they differ)
+
+The engine damage model is a **percentage per armour class** (`vs`: infantry, light, heavy, structure, air) with a minimum of 1, not flat armour. The trade-offs of § 5 are expressed through that table. For example, Gatling deals 25 % against heavy, Cannon 130 % against heavy but 0 against air.
+
+| Family | L1 (engine features) | Branch A | Branch B | Engine support |
+|---|---|---|---|---|
+| Gun | `direct` | Gatling: cooldown 1, small damage, weak vs heavy | Cannon: big hits, strong vs heavy, **no air** | ✓ |
+| Artillery | `ballistic`, flight, splash, `minRange` | Howitzer: long range, bigger dead zone | Mortar: splash 2 + `slowed` | ✓ |
+| Laser | `beam` with ramp | Focus: higher ramp and more stacks | Prism: line beam piercing every enemy on it (+ mirrors later) | Focus ✓ · Prism needs **E1** |
+| Support | `ballistic` slow pulse, 1 damage, splash (Stasis base) | Stasis field: bigger, longer slow | Amplifier: neighbours fire faster / Repair: heals towers | A ✓ · B needs **E2** |
+| Specialist | EMP: `disabled` pulse | Interceptor: high damage, **air only** | Disruptor: wider, longer EMP, no damage | ✓ |
+
+An upgrade replaces the tower entity's `kind` with the branch archetype in the TD ruleset. The entity keeps its id and cell, and its health is scaled to the new maximum. Targeting priority uses the engine doctrine (`weakest`, `nearest`, `armor`).
+
+Enemies are engine archetypes in the TD ruleset:
+- unarmed ground units: Walker (infantry), Runner (light, fast), Swarm (infantry, tiny), Brute (heavy, slow);
+- Glider (air);
+- **Raider**, armed: it fires at towers in passing, so tower health and repair matter;
+- Colossus (heavy, armed, final wave).
+
+**Deferred until the engine supports them:** shields (Warden), healers (Mender) and the Corroder branch (mark / armour shred). These need **E3**.
+
+### 15.5 Requests to the strategy engine (replaces the long list of § 12)
+
+Everything else in § 12 already exists (determinism, plain JSON, integer math, events, `worldHash`, `isValidWorld`, splash, beam ramp, `minRange`, status effects, armour table, layers, sides and teams, economy, production, AI observation). Still missing, smallest first:
+
+| Id | Request | Needed for | Interim |
+|---|---|---|---|
+| E0 | `spawnUnits(world, ruleset, specs)` and `removeEntities(world, ids)`, pure and validated (or `ModeDefinition.spawns`) | waves, leaks | the TD layer uses `spawn()` and filters `entities` itself (works, but bypasses validation) |
+| E1 | Beam option `pierce`: a beam hits every hostile unit on the grid line from the tower through its target up to its range (later: 45° mirror entities) | Prism | Prism branch not offered |
+| E2 | Archetype `aura`: friendly structures within radius get −x % cooldown, or heal y HP per n ticks | Amplifier / Repair | Support B not offered |
+| E3 | Status kinds `marked` (+x % damage taken) and `shielded` (absorbs first n damage, regenerates) | Corroder, Warden enemy | not offered |
+| E4 | `runTicks` hook for per-tick spawns (avoids one clone per tick) | performance on large hybrid maps | measured fine without it |
+
+The owner relays these to the strategy context (engine owner, ADR 0009). If preferred, this context implements E0–E3 as an engine PR reviewed by the strategy context.
+
+### 15.6 Increments
+
+1. **TD core:** ruleset, the training map (6 waves), the build/wave phase machine on the engine, upgrades and branches, economy, leaks, victory and defeat, the checkpoint retry; unit and property tests (determinism, chunking invariance, save/restore at any tick, conservation, termination).
+2. **TD view:** canvas map, HUD, keyboard/touch, 16 locales, contract and e2e tests; three 12-wave maps; balance harness; catalogue place 4.
+3. **Engine extensions** E0–E3 (via the strategy context), then Prism, Amplifier/Repair, Corroder, Warden.
+4. **Hybrid** `strategy-td-hybrid`: VS Small → External Small → External Large → VS Large on the engine economy (`produce`, yards, Supply), catalogue place 7.
