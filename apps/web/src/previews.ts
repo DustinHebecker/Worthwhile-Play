@@ -124,6 +124,17 @@ const PREVIEWS: Record<string, () => string> = {
       C(18, 47, 7.5, 'p1 fn') + T(18, 47.5, 10, 't tsm ts') + C(24, 41, 2, 'o') +
       C(77, 14, 7.5, 'p2 fn') + T(77, 14.5, 10, 't tsm ts') + tri(83.5, 7.5, 2.4, 'o');
   },
+  // Tower Defense: a winding road over build pads, towers of different shapes beside it (square gun,
+  // diamond laser with its beam, octagonal artillery, round support) and wave units on the road.
+  'tower-defense': () => {
+    const road = R(6, 9, 64, 8, 'c') + R(62, 9, 8, 26, 'c') + R(22, 27, 48, 8, 'c') + R(22, 27, 8, 28, 'c') + R(22, 47, 70, 8, 'c');
+    const pads = R(4, 5, 88, 54, 'e', 3);
+    const towers =
+      R(36, 19.5, 6, 6, 'a') + P('M52 19l3.5 3.5-3.5 3.5-3.5-3.5z', 'a') + ngon(46, 41, 3.8, 8, 'a') + C(76, 40, 3.2, 'o') +
+      L(52, 22.5, 66, 30.5, 'ab');
+    const units = C(14, 13, 2.2, 'p2') + C(26, 13, 2.2, 'p2') + C(66, 20, 2.2, 'p2') + C(66, 31, 2.2, 'p2') + C(50, 31, 2.2, 'p2') + C(26, 42, 2.2, 'p2');
+    return pads + road + towers + units;
+  },
   // Nonogram: the 5×5 grid with stacked number clues above and beside it, most rows filled in, one cell crossed out.
   nonogram: () => {
     const s = 8, x0 = 38, y0 = 21;

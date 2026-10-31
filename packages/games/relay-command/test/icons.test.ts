@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { archetypeOf, needsDeploy } from '@wp/strategy-engine';
-import { drawIcon, mix, PROFILE, TOP, VIEWS } from '../src/icons';
+import { drawIcon, mix, PROFILE, TOP, VIEWS } from '@wp/strategy-art';
 import { RULESET } from '../src/rules';
 import { recorder, withPath2D } from './canvas';
 
