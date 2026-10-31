@@ -1,7 +1,7 @@
 import type { MessageKey } from './en';
 
 export const pt: Record<MessageKey, string> = {
-  title: 'Holdline',
+  title: 'Tower Defense',
   tagline: 'Tower defense como jogo de planejamento: veja a próxima onda, construa e observe se o seu plano se sustenta.',
   rules:
     'Construa torres nas plataformas ao lado da estrada e melhore-as seguindo um de dois ramos. Antes de cada onda você vê exatamente o que vem; nada acontece até você iniciar a onda. Unidades que chegam ao fim da estrada reduzem a integridade do núcleo. Resista a todas as ondas para vencer. Uma onda perdida pode ser repetida a partir da sua construção.',

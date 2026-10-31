@@ -4,7 +4,7 @@
  * Counts are written as "Label: n" so no language needs plural forms.
  */
 export const en = {
-  title: 'Holdline',
+  title: 'Tower Defense',
   tagline: 'Tower defence as a planning game: see the next wave, build, then watch your plan hold.',
   rules:
     'Build towers on the pads beside the road and upgrade them along one of two branches. Before each wave you see exactly what is coming; nothing happens until you start the wave. Units that reach the end of the road cost core integrity. Hold every wave to win. A lost wave can be retried from its build.',

@@ -445,7 +445,7 @@ Recommendation first. These need the owner's decision before implementation.
 | D7 | Content v1 | training + 3 maps · 1 map only · 6+ maps | **training + 3 maps**, 3 difficulties |
 | D8 | Seed role | authored wave variants · procedural waves · procedural maps | **authored variants per wave slot** |
 | D9 | Setting & style | abstract geometric constructs · sci-fi military · fantasy | **abstract geometric** (no assets, non-violent, IP-safe) |
-| D10 | Display names | e.g. TD: "Holdline", "Waypoint", "Bastion Grid"; hybrid: "Crossfire", "Two Fronts" | owner's choice; ids stay `tower-defense`, `strategy-td-hybrid` |
+| D10 | Display names | e.g. TD: "Holdline", "Waypoint", "Bastion Grid"; hybrid: "Crossfire", "Two Fronts" | **Decided (owner 2026-10-31):** "Tower Defense"; "Hold the Line" for the hybrid. Ids stay `tower-defense`, `strategy-td-hybrid` |
 | D11 | Prism mechanic | mirror pylons on sockets (Laser Circuit reuse) · simple chain lightning | **mirror pylons** |
 | D12 | Power grid | none in TD v1 · Support provides power to Lasers | **none in v1**; relay/power only in hybrid/strategy if wanted |
 | D13 | Shared ruleset data location | engine package `rulesets/` · separate data package · duplicated per game (forbidden-ish) | **separate data package, orchestrator-owned**, this context authors content |
@@ -528,7 +528,7 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
 ### 15.6 Map size and title (2026-10-31)
 
 - Maps are **7 cells wide** (training ground 7 × 13): 7 × 44 px fits a 360 px phone with its page margins, so every cell keeps the 44 px touch target without zoom or rotation. Wider maps would need a zoomed view; the 12-wave maps keep 7 columns and grow in height.
-- Working title **"Holdline"** (D10 still open with the owner; the id stays `tower-defense`).
+- Title (owner, 2026-10-31): **"Tower Defense"** (genre name; transliterated or translated in non-Latin scripts). **"Hold the Line"** is the candidate name for the hybrid game.
 - Translations of all 16 locales are AI-assisted; the subagents' notes on wording to check (gendered announcements, target phrases, invented unit names) are kept for a native-speaker review.
 
 ### 15.7 Increments

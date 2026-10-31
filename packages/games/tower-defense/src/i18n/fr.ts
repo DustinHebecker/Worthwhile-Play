@@ -1,7 +1,7 @@
 import type { MessageKey } from './en';
 
 export const fr: Record<MessageKey, string> = {
-  title: 'Holdline',
+  title: 'Tower Defense',
   tagline: 'La défense de tours en jeu de planification : voyez la prochaine vague, construisez, puis regardez votre plan tenir.',
   rules:
     "Construisez des tours sur les emplacements au bord de la route et améliorez-les selon l'une de deux branches. Avant chaque vague, vous voyez exactement ce qui arrive ; rien ne se passe tant que vous ne lancez pas la vague. Les unités qui atteignent le bout de la route entament l'intégrité du noyau. Contenez toutes les vagues pour gagner. Une vague perdue peut être rejouée depuis sa phase de construction.",

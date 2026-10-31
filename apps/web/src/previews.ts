@@ -124,7 +124,7 @@ const PREVIEWS: Record<string, () => string> = {
       C(18, 47, 7.5, 'p1 fn') + T(18, 47.5, 10, 't tsm ts') + C(24, 41, 2, 'o') +
       C(77, 14, 7.5, 'p2 fn') + T(77, 14.5, 10, 't tsm ts') + tri(83.5, 7.5, 2.4, 'o');
   },
-  // Tower Defense (Holdline): a winding road over build pads, towers of different shapes beside it (square gun,
+  // Tower Defense: a winding road over build pads, towers of different shapes beside it (square gun,
   // diamond laser with its beam, octagonal artillery, round support) and wave units on the road.
   'tower-defense': () => {
     const road = R(6, 9, 64, 8, 'c') + R(62, 9, 8, 26, 'c') + R(22, 27, 48, 8, 'c') + R(22, 27, 8, 28, 'c') + R(22, 47, 70, 8, 'c');

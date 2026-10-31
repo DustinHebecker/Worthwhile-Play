@@ -1,7 +1,7 @@
 import type { MessageKey } from './en';
 
 export const tr: Record<MessageKey, string> = {
-  title: 'Holdline',
+  title: 'Tower Defense',
   tagline: 'Planlama oyunu olarak kule savunması: sonraki dalgayı gör, inşa et, sonra planının dayanıp dayanmadığını izle.',
   rules:
     'Yolun yanındaki inşa alanlarına kuleler kur ve onları iki daldan biri boyunca geliştir. Her dalgadan önce tam olarak neyin geleceğini görürsün; dalgayı başlatana kadar hiçbir şey olmaz. Yolun sonuna ulaşan birimler çekirdek bütünlüğünü azaltır. Kazanmak için her dalgaya karşı dayan. Kaybedilen bir dalga, kendi inşa aşamasından yeniden denenebilir.',

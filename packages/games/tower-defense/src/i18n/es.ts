@@ -1,7 +1,7 @@
 import type { MessageKey } from './en';
 
 export const es: Record<MessageKey, string> = {
-  title: 'Holdline',
+  title: 'Tower Defense',
   tagline: 'Defensa de torres como juego de planificación: mira la próxima oleada, construye y observa si tu plan resiste.',
   rules:
     'Construye torres en las plataformas junto al camino y mejóralas siguiendo una de dos ramas. Antes de cada oleada ves exactamente lo que viene; no pasa nada hasta que inicias la oleada. Las unidades que llegan al final del camino restan integridad al núcleo. Resiste todas las oleadas para ganar. Una oleada perdida se puede reintentar desde su fase de construcción.',

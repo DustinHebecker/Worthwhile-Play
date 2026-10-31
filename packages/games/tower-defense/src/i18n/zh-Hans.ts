@@ -1,7 +1,7 @@
 import type { MessageKey } from './en';
 
 export const zhHans: Record<MessageKey, string> = {
-  title: 'Holdline',
+  title: '塔防',
   tagline: '以规划为核心的塔防：先看清下一波，再建造，然后看你的计划能否守住。',
   rules:
     '在道路旁的建造位上建塔，并沿两条分支之一升级。每一波之前，你都能准确看到将要来的单位；在你开始这一波之前，什么都不会发生。抵达道路尽头的单位会消耗核心完整度。守住每一波即可获胜。失守的一波可以从它的建造阶段重试。',

@@ -1,7 +1,7 @@
 import type { MessageKey } from './en';
 
 export const nl: Record<MessageKey, string> = {
-  title: 'Holdline',
+  title: 'Tower Defense',
   tagline: 'Torenverdediging als planningsspel: bekijk de volgende golf, bouw, en zie of je plan standhoudt.',
   rules:
     'Bouw torens op de bouwplaatsen naast de weg en verbeter ze langs een van twee takken. Voor elke golf zie je precies wat er komt; er gebeurt niets tot je de golf start. Eenheden die het einde van de weg bereiken, kosten kernintegriteit. Doorsta elke golf om te winnen. Een verloren golf kun je opnieuw proberen vanaf de opbouw ervoor.',
