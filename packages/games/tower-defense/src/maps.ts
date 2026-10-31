@@ -42,44 +42,42 @@ const g = (kind: EnemyKind, count: number, every: number, at = 0, route = 0): Sp
  */
 export const TRAINING: TdMap = {
   id: 'training',
-  w: 9,
-  h: 15,
+  w: 7,
+  h: 13,
   rows: [
-    'bbbb=bbbb',
-    'bbbb=bbbb',
-    'b^bb=bb^b',
-    'b====bbbb',
-    'b=bbbbbbb',
-    'b=bb^bbbb',
-    'b=bbbbbbb',
-    'b=======b',
-    'bbbbbbb=b',
-    'bb^bbbb=b',
-    'bbb=====b',
-    'bbb=bbbbb',
-    'b^b=bb^bb',
-    'bbb=bbbbb',
-    'bbb=bbbbb'
+    'bbb=bbb',
+    'bbb=bbb',
+    'b^b=bb^',
+    'b===bbb',
+    'b=bbbbb',
+    'b=bb^bb',
+    'b=====b',
+    'bbbbb=b',
+    'b^bbb=b',
+    'bb====b',
+    'bb=bbbb',
+    'b^=bb^b',
+    'bb=bbbb'
   ],
   routes: [
     {
       layer: 'ground',
       points: [
-        [4, 0],
-        [4, 3],
+        [3, 0],
+        [3, 3],
         [1, 3],
-        [1, 7],
-        [7, 7],
-        [7, 10],
-        [3, 10],
-        [3, 14]
+        [1, 6],
+        [5, 6],
+        [5, 9],
+        [2, 9],
+        [2, 12]
       ]
     },
     {
       layer: 'air',
       points: [
-        [4, 0],
-        [3, 14]
+        [3, 0],
+        [2, 12]
       ]
     }
   ],

@@ -31,7 +31,7 @@ const pads = (s: TdState): [number, number][] => {
 
 /** A reasonable fixed build next to the training road. */
 const SOLID: BuildCommand[] = [
-  { t: 'place', kind: 'gun', x: 3, y: 2 },
+  { t: 'place', kind: 'gun', x: 2, y: 2 },
   { t: 'place', kind: 'gun', x: 2, y: 4 }
 ];
 
@@ -83,7 +83,7 @@ describe('new game', () => {
 
 describe('build commands', () => {
   it('places a tower on a pad and charges its price', () => {
-    const s = applyCommand(newGame(1), { t: 'place', kind: 'gun', x: 3, y: 2 });
+    const s = applyCommand(newGame(1), { t: 'place', kind: 'gun', x: 2, y: 2 });
     expect(s.world.entities).toHaveLength(1);
     expect(s.credits).toBe(TRAINING.startCredits - TOWERS.gun!.price);
     expect(s.log[0]).toHaveLength(1);
@@ -91,19 +91,19 @@ describe('build commands', () => {
 
   it('refuses illegal placements without changing the state', () => {
     const s = newGame(1);
-    expect(checkCommand(s, { t: 'place', kind: 'gun', x: 4, y: 0 })).toBe('not-a-pad');
+    expect(checkCommand(s, { t: 'place', kind: 'gun', x: 3, y: 0 })).toBe('not-a-pad');
     expect(checkCommand(s, { t: 'place', kind: 'gun', x: 1, y: 2 })).toBe('not-a-pad');
-    expect(checkCommand(s, { t: 'place', kind: 'gatling', x: 3, y: 2 })).toBe('unknown-kind');
-    expect(checkCommand(s, { t: 'place', kind: 'constructor', x: 3, y: 2 })).toBe('unknown-kind');
-    const one = applyCommand(s, { t: 'place', kind: 'gun', x: 3, y: 2 });
-    expect(checkCommand(one, { t: 'place', kind: 'gun', x: 3, y: 2 })).toBe('occupied');
+    expect(checkCommand(s, { t: 'place', kind: 'gatling', x: 2, y: 2 })).toBe('unknown-kind');
+    expect(checkCommand(s, { t: 'place', kind: 'constructor', x: 2, y: 2 })).toBe('unknown-kind');
+    const one = applyCommand(s, { t: 'place', kind: 'gun', x: 2, y: 2 });
+    expect(checkCommand(one, { t: 'place', kind: 'gun', x: 2, y: 2 })).toBe('occupied');
     const poor = { ...s, credits: 50 };
-    expect(checkCommand(poor, { t: 'place', kind: 'gun', x: 3, y: 2 })).toBe('credits');
-    expect(applyCommand(poor, { t: 'place', kind: 'gun', x: 3, y: 2 })).toBe(poor);
+    expect(checkCommand(poor, { t: 'place', kind: 'gun', x: 2, y: 2 })).toBe('credits');
+    expect(applyCommand(poor, { t: 'place', kind: 'gun', x: 2, y: 2 })).toBe(poor);
   });
 
   it('upgrades only along the branch tree and the branch choice is final', () => {
-    let s = applyCommand({ ...newGame(1), credits: 2000 }, { t: 'place', kind: 'gun', x: 3, y: 2 });
+    let s = applyCommand({ ...newGame(1), credits: 2000 }, { t: 'place', kind: 'gun', x: 2, y: 2 });
     const id = s.world.entities[0]!.id;
     expect(checkCommand(s, { t: 'upgrade', id, kind: 'gatling-2' })).toBe('not-an-upgrade');
     s = applyCommand(s, { t: 'upgrade', id, kind: 'cannon' });
@@ -131,7 +131,7 @@ describe('build commands', () => {
 
   it('refunds everything bought in this build phase and 70 % of older investments', () => {
     const s0 = newGame(1);
-    let s = applyCommand(s0, { t: 'place', kind: 'gun', x: 3, y: 2 });
+    let s = applyCommand(s0, { t: 'place', kind: 'gun', x: 2, y: 2 });
     const id = s.world.entities[0]!.id;
     expect(applyCommand(s, { t: 'sell', id }).credits).toBe(s0.credits);
     s = resolveWave(startWave(s)).state;
@@ -144,7 +144,7 @@ describe('build commands', () => {
   });
 
   it('sets a target priority as the tower doctrine', () => {
-    let s = applyCommand(newGame(1), { t: 'place', kind: 'gun', x: 3, y: 2 });
+    let s = applyCommand(newGame(1), { t: 'place', kind: 'gun', x: 2, y: 2 });
     const id = s.world.entities[0]!.id;
     s = applyCommand(s, { t: 'target', id, priority: 'armor' });
     expect(s.world.entities[0]!.doctrine?.priority).toBe('armor');
@@ -152,7 +152,7 @@ describe('build commands', () => {
 
   it('accepts no build command during a wave', () => {
     const s = startWave(newGame(1));
-    expect(checkCommand(s, { t: 'place', kind: 'gun', x: 3, y: 2 })).toBe('phase');
+    expect(checkCommand(s, { t: 'place', kind: 'gun', x: 2, y: 2 })).toBe('phase');
   });
 });
 
@@ -192,16 +192,16 @@ describe('waves', () => {
     let s = newGame(3, 'standard');
     const plan: BuildCommand[][] = [
       [
-        { t: 'place', kind: 'gun', x: 3, y: 2 },
+        { t: 'place', kind: 'gun', x: 2, y: 2 },
         { t: 'place', kind: 'gun', x: 2, y: 4 }
       ],
-      [{ t: 'place', kind: 'laser', x: 2, y: 6 }],
-      [{ t: 'place', kind: 'artillery', x: 4, y: 5 }],
+      [{ t: 'place', kind: 'laser', x: 2, y: 5 }],
+      [{ t: 'place', kind: 'artillery', x: 3, y: 5 }],
       [{ t: 'upgrade', id: 1, kind: 'cannon' }],
-      [{ t: 'place', kind: 'specialist', x: 6, y: 8 }],
+      [{ t: 'place', kind: 'specialist', x: 4, y: 7 }],
       [
         { t: 'upgrade', id: 5, kind: 'interceptor' },
-        { t: 'place', kind: 'gun', x: 6, y: 9 }
+        { t: 'place', kind: 'gun', x: 4, y: 8 }
       ]
     ];
     for (const cmds of plan) {
@@ -310,7 +310,7 @@ describe('properties', () => {
       }),
       { numRuns: 300 }
     );
-    const s = applyCommand(newGame(1), { t: 'place', kind: 'gun', x: 3, y: 2 });
+    const s = applyCommand(newGame(1), { t: 'place', kind: 'gun', x: 2, y: 2 });
     expect(isValidState(clone(s))).toBe(true);
     const cases: ((t: TdState) => void)[] = [
       (t) => (t.credits = -1),

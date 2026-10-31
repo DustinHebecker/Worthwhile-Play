@@ -227,6 +227,9 @@ importers:
       '@wp/game-timeline':
         specifier: workspace:*
         version: link:../../packages/games/timeline
+      '@wp/game-tower-defense':
+        specifier: workspace:*
+        version: link:../../packages/games/tower-defense
       '@wp/game-visual-search':
         specifier: workspace:*
         version: link:../../packages/games/visual-search

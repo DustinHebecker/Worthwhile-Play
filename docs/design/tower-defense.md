@@ -525,7 +525,13 @@ Everything else in § 12 already exists (determinism, plain JSON, integer math, 
 
 The owner relays these to the strategy context (engine owner, ADR 0009). If preferred, this context implements E0–E3 as an engine PR reviewed by the strategy context.
 
-### 15.6 Increments
+### 15.6 Map size and title (2026-10-31)
+
+- Maps are **7 cells wide** (training ground 7 × 13): 7 × 44 px fits a 360 px phone with its page margins, so every cell keeps the 44 px touch target without zoom or rotation. Wider maps would need a zoomed view; the 12-wave maps keep 7 columns and grow in height.
+- Working title **"Holdline"** (D10 still open with the owner; the id stays `tower-defense`).
+- Translations of all 16 locales are AI-assisted; the subagents' notes on wording to check (gendered announcements, target phrases, invented unit names) are kept for a native-speaker review.
+
+### 15.7 Increments
 
 1. **TD core:** ruleset, the training map (6 waves), the build/wave phase machine on the engine, upgrades and branches, economy, leaks, victory and defeat, the checkpoint retry; unit and property tests (determinism, chunking invariance, save/restore at any tick, conservation, termination).
 2. **TD view:** canvas map, HUD, keyboard/touch, 16 locales, contract and e2e tests; three 12-wave maps; balance harness; catalogue place 4.
