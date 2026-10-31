@@ -77,7 +77,8 @@ export interface WaveRun {
   walkers: Walker[];
 }
 
-export type Phase = 'build' | 'wave' | 'won' | 'lost';
+/** `lost`: the core fell (the wave can be retried); `ended`: the player ended the game after a loss (final). */
+export type Phase = 'build' | 'wave' | 'won' | 'lost' | 'ended';
 
 export interface Stats {
   killed: number;
@@ -361,8 +362,12 @@ function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
     run.pending = [];
   }
   if (s.core <= 0) {
+    // The wave is over: what is left of it leaves the map (a lost state holds no running wave).
     s.core = 0;
     s.phase = 'lost';
+    s.run = null;
+    s.world.entities = s.world.entities.filter((e) => e.side !== 1);
+    s.world.projectiles = [];
     return s;
   }
   if (run.pending.length === 0 && run.walkers.length === 0 && w.projectiles.length === 0) endWave(s);
@@ -400,6 +405,11 @@ function endWave(s: TdState): void {
   s.log.push([]);
 }
 
+/** After a defeat the player may end the game instead of retrying: final, no retry afterwards. */
+export function endGame(state: TdState): TdState {
+  return state.phase === 'lost' ? { ...structuredClone(state), phase: 'ended' } : state;
+}
+
 /** After a defeat: back to the build phase of the lost wave, exactly as it was locked. */
 export function retryWave(state: TdState): TdState {
   if (state.phase !== 'lost' || !state.checkpoint) return state;
@@ -433,7 +443,7 @@ const isCommand = (v: unknown): v is BuildCommand => {
     case 'sell':
       return isInt(v.id, 1);
     case 'target':
-      return (TARGET_PRIORITIES as readonly unknown[]).includes(v.priority);
+      return isInt(v.id, 1) && (TARGET_PRIORITIES as readonly unknown[]).includes(v.priority);
     default:
       return false;
   }
@@ -445,17 +455,20 @@ function isValidCore(v: unknown): v is TdCore {
   if (!map) return false;
   if (!(DIFFICULTIES as readonly unknown[]).includes(v.difficulty) || !isInt(v.seed, 0, 0xffffffff)) return false;
   if (!isArrayOf(v.variants, (x): x is number => isInt(x)) || v.variants.length !== map.waves.length || v.variants.some((x, i) => x >= (map.waves[i]?.length ?? 0))) return false;
-  if (!['build', 'wave', 'won', 'lost'].includes(v.phase as string) || !isInt(v.wave, 0, map.waves.length - 1)) return false;
+  if (!['build', 'wave', 'won', 'lost', 'ended'].includes(v.phase as string) || !isInt(v.wave, 0, map.waves.length - 1)) return false;
   if (!isInt(v.credits, 0, 1_000_000) || !isInt(v.core, 0, 1000)) return false;
   if (!isValidWorld(v.world, TD_RULESET) || v.world.sides !== 2) return false;
   const world = v.world;
   if (world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.rows.join('')) return false;
   if (!isRecord(v.stats) || !['killed', 'leaked', 'spent', 'retries'].every((k) => isInt((v.stats as Record<string, unknown>)[k], -1_000_000, 1_000_000))) return false;
   const towers = world.entities.filter((e) => e.side === 0);
-  if (towers.some((e) => !Object.hasOwn(TOWERS, e.kind)) || world.entities.some((e) => e.side === 1 && !isEnemyKind(e.kind))) return false;
+  // Towers only of known kinds and only on build pads.
+  if (towers.some((e) => !Object.hasOwn(TOWERS, e.kind) || map.rows[e.y]?.[e.x] !== 'b') || world.entities.some((e) => e.side === 1 && !isEnemyKind(e.kind))) return false;
+  // Exactly one record per tower (commands look records up by tower id).
   if (
-    !isArrayOf(v.towers, (r): r is TowerRecord => isRecord(r) && isInt(r.id, 1) && isInt(r.invested, 0) && isInt(r.fresh, 0) && (r.fresh as number) <= (r.invested as number)) ||
+    !isArrayOf(v.towers, (r): r is TowerRecord => isRecord(r) && isInt(r.id, 1) && isInt(r.invested, 0, 1_000_000) && isInt(r.fresh, 0, 1_000_000) && (r.fresh as number) <= (r.invested as number)) ||
     v.towers.length !== towers.length ||
+    new Set(v.towers.map((r) => r.id)).size !== v.towers.length ||
     v.towers.some((r) => !towers.some((e) => e.id === r.id))
   )
     return false;
@@ -466,13 +479,21 @@ function isValidCore(v: unknown): v is TdCore {
     if (!isArrayOf(run.pending, (p): p is PendingSpawn => isRecord(p) && isInt(p.at, 0) && typeof p.kind === 'string' && isEnemyKind(p.kind) && isInt(p.route, 0, map.routes.length - 1))) return false;
     if (!isArrayOf(run.walkers, (x): x is Walker => isRecord(x) && isInt(x.id, 1) && isInt(x.route, 0, map.routes.length - 1) && isInt(x.leg, 1, (map.routes[x.route as number]?.points.length ?? 1) - 1))) return false;
     if (run.walkers.length !== enemies.length || enemies.some((e) => !(run.walkers as Walker[]).some((x) => x.id === e.id))) return false;
+    // A wave never holds more units than its schedule (bounds the work a crafted save can cause).
+    const scheduled = waveSchedule(v as unknown as TdCore, v.wave as number).length;
+    if (run.pending.length + run.walkers.length > scheduled) return false;
   } else if (v.run !== null || enemies.length > 0 || world.projectiles.length > 0) return false;
   return true;
 }
 
 export function isValidState(v: unknown): v is TdState {
   if (!isRecord(v) || v.v !== 1 || !isValidCore(v)) return false;
-  if (v.checkpoint !== null && !isValidCore(v.checkpoint)) return false;
+  if (v.checkpoint !== null) {
+    // The checkpoint is this game at the lock of its current (or, between waves, its last) wave.
+    const c = v.checkpoint;
+    if (!isValidCore(c) || c.phase !== 'build' || c.mapId !== v.mapId || c.difficulty !== v.difficulty || c.seed !== v.seed) return false;
+    if (JSON.stringify(c.variants) !== JSON.stringify(v.variants) || (c.wave !== v.wave && c.wave !== (v.wave as number) - 1)) return false;
+  }
   if (!isArrayOf(v.log, (l): l is BuildCommand[] => isArrayOf(l, isCommand)) || v.log.length !== (v.wave as number) + 1) return false;
   return true;
 }

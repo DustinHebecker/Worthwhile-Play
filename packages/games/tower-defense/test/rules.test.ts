@@ -7,6 +7,7 @@ import { BASE_TOWERS, TOWERS } from '../src/ruleset';
 import {
   applyCommand,
   checkCommand,
+  endGame,
   incomeAfter,
   interestOf,
   isPad,
@@ -224,6 +225,15 @@ describe('waves', () => {
     while (s.phase === 'build') s = resolveWave(startWave(s)).state;
     expect(s.phase).toBe('lost');
     expect(s.core).toBe(0);
+    // A lost game is a valid save (review of PR #97: it was discarded on reload).
+    expect(s.run).toBeNull();
+    expect(s.world.entities.some((e) => e.side === 1)).toBe(false);
+    expect(isValidState(clone(s))).toBe(true);
+    // Ending the game is final.
+    const ended = endGame(s);
+    expect(ended.phase).toBe('ended');
+    expect(isValidState(clone(ended))).toBe(true);
+    expect(retryWave(ended)).toBe(ended);
     const retry = retryWave(s);
     expect(retry.phase).toBe('build');
     expect(retry.wave).toBe(s.checkpoint!.wave);
@@ -346,6 +356,13 @@ describe('properties', () => {
     );
   });
 
+  it('a crafted running wave with more units than its schedule is rejected', () => {
+    const s = clone(stepWave(startWave(newGame(1)), 5).state);
+    expect(isValidState(s)).toBe(true);
+    s.run!.pending = Array.from({ length: 1000 }, () => ({ at: 0, kind: 'walker' as const, route: 0 }));
+    expect(isValidState(s)).toBe(false);
+  });
+
   it('P7 isValidState never throws and rejects junk and tampered saves', () => {
     fc.assert(
       fc.property(fc.anything(), (v) => {
@@ -358,11 +375,25 @@ describe('properties', () => {
     const cases: ((t: TdState) => void)[] = [
       (t) => (t.credits = -1),
       (t) => (t.phase = 'won' as never),
-      (t) => (t.world.entities[0]!.kind = 'colossus'),
+      (t) => (t.world.entities[0]!.kind = 'crawler'),
       (t) => (t.towers = []),
       (t) => (t.mapId = 'nope'),
       (t) => (t.log = []),
-      (t) => (t.world.map = { ...t.world.map, terrain: t.world.map.terrain.replace('=', 'b') })
+      (t) => (t.world.map = { ...t.world.map, terrain: t.world.map.terrain.replace('=', 'b') }),
+      // Review of PR #97: a duplicate record (a sale of the other tower then crashed), a tower on the
+      // road, a checkpoint of another game, a target command without a tower id.
+      (t) => {
+        t.world.entities.push({ ...t.world.entities[0]!, id: t.world.nextId, x: 2, y: 4 });
+        t.world.nextId++;
+        t.towers.push({ ...t.towers[0]! });
+      },
+      (t) => {
+        t.world.entities[0]!.x = 3;
+        t.world.entities[0]!.y = 2;
+      },
+      (t) => (t.checkpoint = { ...clone(newGame(1)), mapId: 'fork' } as never),
+      (t) => (t.checkpoint = clone(newGame(2)) as never),
+      (t) => t.log[0]!.push({ t: 'target', priority: 'nearest' } as never)
     ];
     for (const tamper of cases) {
       const t = clone(s);

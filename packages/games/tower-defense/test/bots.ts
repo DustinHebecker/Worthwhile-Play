@@ -54,7 +54,7 @@ export interface Outcome {
 
 /**
  * Threat the next wave lets through, each leak weighted by the share of health it kept, measured
- * with an unbreakable core: a lost wave is still graded, and wearing a Colossus down counts as
+ * with an unbreakable core: a lost wave is still graded, and wearing a Siege crawler down counts as
  * progress before it is stopped.
  */
 const evaluate = (s: TdState): number => {

@@ -98,7 +98,7 @@ export const TRAINING: TdMap = {
  * are the ground routes and `air` the air routes the groups are spread over (round robin in
  * authoring order). The second variant of a slot sends every group to the next lane instead, so the
  * seed changes where the pressure comes from, never how much there is. Waves 4, 8 and 12 mix
- * archetypes that need different answers; wave 12 brings the Colossus.
+ * archetypes that need different answers; wave 12 brings the Siege crawler.
  */
 type G = readonly [EnemyKind, number, number, number];
 const TWELVE: readonly (readonly G[])[] = [
@@ -113,7 +113,7 @@ const TWELVE: readonly (readonly G[])[] = [
   [['glider', 10, 12, 0], ['walker', 16, 6, 20], ['runner', 10, 6, 80]],
   [['brute', 6, 24, 0], ['raider', 6, 16, 30], ['glider', 6, 14, 60]],
   [['swarm', 40, 2, 0], ['brute', 4, 30, 40], ['runner', 12, 5, 100]],
-  [['colossus', 1, 1, 60], ['brute', 4, 30, 0], ['raider', 6, 16, 20], ['glider', 8, 12, 40], ['swarm', 20, 3, 120]]
+  [['crawler', 1, 1, 60], ['brute', 4, 30, 0], ['raider', 6, 16, 20], ['glider', 8, 12, 40], ['swarm', 20, 3, 120]]
 ];
 
 function twelve(lanes: readonly number[], air: readonly number[], percent = 100): WaveDef[][] {
@@ -124,7 +124,7 @@ function twelve(lanes: readonly number[], air: readonly number[], percent = 100)
       return {
         groups: slot.map(([kind, count, every, at]) => {
           const route = kind === 'glider' ? air[sky++ % air.length]! : lanes[lane++ % lanes.length]!;
-          return g(kind, kind === 'colossus' ? count : Math.ceil((count * percent) / 100), every, at, route);
+          return g(kind, kind === 'crawler' ? count : Math.ceil((count * percent) / 100), every, at, route);
         })
       };
     });

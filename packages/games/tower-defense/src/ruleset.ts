@@ -127,12 +127,12 @@ const TOWER_WEAPONS: Readonly<Record<string, WeaponSpec>> = {
   'stasis-2': weapon({ damage: 1, range: 4, cooldown: 6, delivery: 'ballistic', flight: 1, splash: 2, vs: vs(100, 100, 100, 100), effect: slow(20) }),
   snare: weapon({ damage: 1, range: 5, cooldown: 6, delivery: 'ballistic', flight: 1, splash: 0, vs: vs(100, 100, 100, 100), effect: slow(30) }),
   'snare-2': weapon({ damage: 1, range: 6, cooldown: 4, delivery: 'ballistic', flight: 1, splash: 0, vs: vs(100, 100, 100, 100), effect: slow(40) }),
-  // Specialist: EMP stops units briefly. Interceptor = air only; Disruptor = wide, long EMP.
+  // Specialist: EMP stops units briefly. Interceptor = air only; Blackout = wide, long EMP.
   specialist: weapon({ damage: 1, range: 3, cooldown: 24, delivery: 'ballistic', flight: 2, splash: 1, vs: vs(100, 100, 100, 100), effect: stun(6) }),
   interceptor: weapon({ damage: 40, range: 6, cooldown: 6, vs: vs(0, 0, 0, 150) }),
   'interceptor-2': weapon({ damage: 70, range: 7, cooldown: 6, vs: vs(0, 0, 0, 150) }),
-  disruptor: weapon({ damage: 1, range: 4, cooldown: 30, delivery: 'ballistic', flight: 2, splash: 2, vs: vs(100, 100, 100, 100), effect: stun(12) }),
-  'disruptor-2': weapon({ damage: 1, range: 4, cooldown: 26, delivery: 'ballistic', flight: 2, splash: 2, vs: vs(100, 100, 100, 100), effect: stun(18) })
+  blackout: weapon({ damage: 1, range: 4, cooldown: 30, delivery: 'ballistic', flight: 2, splash: 2, vs: vs(100, 100, 100, 100), effect: stun(12) }),
+  'blackout-2': weapon({ damage: 1, range: 4, cooldown: 26, delivery: 'ballistic', flight: 2, splash: 2, vs: vs(100, 100, 100, 100), effect: stun(18) })
 };
 
 const def = (kind: string, family: Family, level: 1 | 2 | 3, branch: Branch | null, price: number, next: readonly string[] = []): TowerDef => ({
@@ -166,18 +166,18 @@ export const TOWERS: Readonly<Record<string, TowerDef>> = Object.fromEntries(
     def('stasis-2', 'support', 3, 'a', 175),
     def('snare', 'support', 2, 'b', 125, ['snare-2']),
     def('snare-2', 'support', 3, 'b', 175),
-    def('specialist', 'specialist', 1, null, 150, ['interceptor', 'disruptor']),
+    def('specialist', 'specialist', 1, null, 150, ['interceptor', 'blackout']),
     def('interceptor', 'specialist', 2, 'a', 150, ['interceptor-2']),
     def('interceptor-2', 'specialist', 3, 'a', 220),
-    def('disruptor', 'specialist', 2, 'b', 150, ['disruptor-2']),
-    def('disruptor-2', 'specialist', 3, 'b', 220)
+    def('blackout', 'specialist', 2, 'b', 150, ['blackout-2']),
+    def('blackout-2', 'specialist', 3, 'b', 220)
   ].map((d) => [d.kind, d])
 );
 
 /** Level-1 kind of each family (what can be placed). */
 export const BASE_TOWERS: readonly string[] = FAMILIES;
 
-export const ENEMY_KINDS = ['walker', 'runner', 'swarm', 'brute', 'glider', 'raider', 'colossus'] as const;
+export const ENEMY_KINDS = ['walker', 'runner', 'swarm', 'brute', 'glider', 'raider', 'crawler'] as const;
 export type EnemyKind = (typeof ENEMY_KINDS)[number];
 
 const ENEMY_ARCHETYPES: readonly Archetype[] = [
@@ -188,7 +188,7 @@ const ENEMY_ARCHETYPES: readonly Archetype[] = [
   enemy('glider', 30, 'air', 1),
   // Armed: fires at towers within reach while it walks past.
   enemy('raider', 70, 'light', 2, weapon({ damage: 4, range: 2, cooldown: 4, vs: vs(0, 0, 0, 0, 100) })),
-  enemy('colossus', 1500, 'heavy', 2, weapon({ damage: 12, range: 2, cooldown: 6, vs: vs(0, 0, 0, 0, 100) }))
+  enemy('crawler', 1500, 'heavy', 2, weapon({ damage: 12, range: 2, cooldown: 6, vs: vs(0, 0, 0, 0, 100) }))
 ];
 
 export const ENEMIES: Readonly<Record<EnemyKind, EnemyDef>> = {
@@ -198,7 +198,7 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemyDef>> = {
   brute: { kind: 'brute', threat: 3, bounty: 15 },
   glider: { kind: 'glider', threat: 2, bounty: 6 },
   raider: { kind: 'raider', threat: 2, bounty: 10 },
-  colossus: { kind: 'colossus', threat: 10, bounty: 100 }
+  crawler: { kind: 'crawler', threat: 10, bounty: 100 }
 };
 
 export const isEnemyKind = (kind: string): kind is EnemyKind => (ENEMY_KINDS as readonly string[]).includes(kind);

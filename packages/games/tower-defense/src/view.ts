@@ -8,6 +8,8 @@ import {
   checkCommand,
   DEFAULT_DIFFICULTY,
   DIFFICULTIES,
+  endGame,
+  INTEREST_PERCENT,
   incomeAfter,
   interestOf,
   mapOf,
@@ -65,6 +67,9 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   scheme?.addEventListener?.('change', onScheme);
   // …and in the new size when the board is resized (rotation, window size).
   const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => draw()) : undefined;
+  // A zoom changes the device pixel ratio without resizing the board: redraw sharp.
+  const onWindowResize = (): void => draw();
+  globalThis.addEventListener?.('resize', onWindowResize);
 
   const raf: ((cb: (t: number) => void) => number) | undefined = typeof requestAnimationFrame === 'function' ? requestAnimationFrame.bind(globalThis) : undefined;
   const caf: ((id: number) => void) | undefined = typeof cancelAnimationFrame === 'function' ? cancelAnimationFrame.bind(globalThis) : undefined;
@@ -180,7 +185,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     // Interest is paid after every wave but the last, on what is left when the wave starts.
     const paysInterest = state.phase === 'build' && state.wave < waveCount(state) - 1;
     interest.hidden = !paysInterest;
-    interest.textContent = paysInterest ? t('hud.interest', { n: interestOf(state.credits) }) : '';
+    interest.textContent = paysInterest ? t('hud.interest', { n: interestOf(state.credits), p: INTEREST_PERCENT }) : '';
     container.dataset.phase = state.phase;
     container.dataset.tick = String(state.run?.tick ?? 0);
     container.dataset.waveIndex = String(state.wave);
@@ -269,7 +274,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     const running = state.phase === 'wave';
     previewTitle.textContent = t(running ? 'preview.titleRunning' : 'preview.title');
     clear(previewList);
-    preview.hidden = state.phase === 'won' || state.phase === 'lost';
+    preview.hidden = state.phase === 'won' || state.phase === 'lost' || state.phase === 'ended';
     if (preview.hidden) return;
     const map = mapOf(state);
     for (const row of wavePreview(state, state.wave)) {
@@ -296,9 +301,9 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     playButton.textContent = t(playing ? 'controls.pause' : 'controls.play');
     speedButton.textContent = t('controls.speed', { n: speed });
     retryButton.textContent = t('controls.retry', { n: (state.checkpoint?.wave ?? state.wave) + 1 });
-    status.hidden = p !== 'won' && p !== 'lost' && status.textContent === '';
     if (p === 'won') status.textContent = t('status.won', { total: waveCount(state), core: state.core });
     else if (p === 'lost') status.textContent = t('status.lost', { n: state.wave + 1 });
+    else if (p === 'ended') status.textContent = t('status.ended', { n: state.wave + 1 });
     status.hidden = status.textContent === '';
   };
 
@@ -505,8 +510,10 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     commit(next, t('announce.retry', { n: next.wave + 1 }));
   };
 
+  /** Ending the game after a loss is final (no retry afterwards), so `finished` is reported once. */
   const onGiveUp = (): void => {
-    if (state.phase !== 'lost') return;
+    if (state.phase !== 'lost' || hostPaused) return;
+    commit(endGame(state), t('status.ended', { n: state.wave + 1 }));
     context.finished({ outcome: 'lost', stats: { core: state.core, killed: state.stats.killed, leaked: state.stats.leaked, retries: state.stats.retries } });
   };
 
@@ -571,6 +578,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
       stopLoop();
       scheme?.removeEventListener?.('change', onScheme);
       resize?.disconnect();
+      globalThis.removeEventListener?.('resize', onWindowResize);
       disposeKeyboard();
       clear(root);
     }

@@ -90,7 +90,7 @@ export const ENEMY_ICON: Readonly<Record<string, readonly [string, number]>> = {
   brute: ['warden', 0.95],
   glider: ['kite', 0.8],
   raider: ['lancer', 0.85],
-  colossus: ['warden', 1.35]
+  crawler: ['warden', 1.35]
 };
 
 export interface Frame {
@@ -174,7 +174,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     g.lineWidth = 1.5;
     for (let i = 0; i < def.level; i++) {
       g.beginPath();
-      g.arc(cx - cell * 0.18 + i * cell * 0.18, cy + cell * 0.4, cell * 0.06, 0, TAU);
+      g.arc(cx - cell * 0.18 + i * cell * 0.18, cy + cell * 0.36, cell * 0.06, 0, TAU);
       if (def.branch === 'b') g.stroke();
       else g.fill();
     }
@@ -204,7 +204,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.fillStyle = palette.enemy;
       g.fill();
     }
-    if (e.kind === 'colossus') {
+    if (e.kind === 'crawler') {
       g.strokeStyle = palette.enemy;
       g.lineWidth = 2;
       g.beginPath();

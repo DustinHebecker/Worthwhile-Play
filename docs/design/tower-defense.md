@@ -114,7 +114,7 @@ All maps are available from the start (no unlock gating). Maps are hand-authored
 | Warden | regenerating shield | EMP, lasers (bonus vs shields), burst | slow-and-small damage that never breaks the shield |
 | Mender | heals nearby enemies | focus fire, Cannon burst, Howitzer reach | spread-out low damage |
 | Glider | flying, own air lane | Gun, Laser, Interceptor | Artillery and Cannon (ground only) |
-| Colossus (final) | armour + shield + high HP | combined arms | any monoculture |
+| Siege crawler (final) | armour + shield + high HP | combined arms | any monoculture |
 
 ### 4.3 Damage model (provisional, tuned by simulation)
 
@@ -122,7 +122,7 @@ All maps are available from the start (no unlock gating). Maps are hand-authored
 - **Armour** (flat, per hit): `dealt = max(raw − armour × k, ⌈raw × 20 %⌉)` with `k = 1` for kinetic, `0.5` for explosive, `0` for energy. Many small hits suffer, few large hits do not → Gatling vs Cannon is a real choice.
 - **Shield**: absorbs all damage first; energy deals ×1.5 to shields; regenerates after `n` ticks without being hit; EMP removes it and blocks regeneration for a duration.
 - **Status effects**: slow (strongest applies, no additive stacking), stun (with immunity window afterwards — prevents permanent lock and guarantees termination), armour shred (stacks up to a cap), shield-block, mark (bonus damage taken). All durations in ticks.
-- **Leaks**: an enemy reaching the core removes its `threat` value from core integrity (Walker 1, Brute 3, Colossus 10 …) and is removed.
+- **Leaks**: an enemy reaching the core removes its `threat` value from core integrity (Walker 1, Brute 3, Siege crawler 10 …) and is removed.
 
 ---
 
@@ -218,7 +218,7 @@ Hard requirement checked in CI (§ 11.3): every branch is the best credit-effici
 - `pauseable: true`. Closing at any moment is safe:
   - build phase: state = map, towers, credits, wave index, RNG state;
   - wave phase: additionally tick, enemies, projectiles, active effects, spawn cursor. The **exact tick** is serialized; nothing is rolled back.
-- `requestSave()` after every build command, at wave start (lock), every 100 ticks (5 simulated seconds) during a wave, at wave end. The host additionally serializes on `visibilitychange`/`pagehide`. Correctness never depends on these saves being frequent — any snapshot is exact.
+- `requestSave()` after every build command, at wave start (lock), every 40 ticks (5 simulated seconds at 8 ticks per second) during a wave, at wave end. The host additionally serializes on `visibilitychange`/`pagehide`. Correctness never depends on these saves being frequent — any snapshot is exact.
 - **Command log** (build commands per wave) is part of the state. Together with `seed + difficulty + mapId` it is a complete bug-repro artefact and the input for golden replays.
 - After a defeat the player may **restart from the beginning of the failed wave** (checkpoint = the state at the last lock; [D5](#14-open-decisions)). Retries are shown factually in the summary, never as shame.
 - `finished()` once on victory/defeat; the summary shows factual values (core integrity left, credits spent per family, waves). No stars, no "come back tomorrow".
@@ -499,7 +499,7 @@ The engine damage model is a **percentage per armour class** (`vs`: infantry, li
 | Artillery | `ballistic`, flight, splash, `minRange` | Howitzer: long range, bigger dead zone | Mortar: splash 2 + `slowed` | ✓ |
 | Laser | `beam` with ramp | Focus: higher ramp and more stacks | Prism: line beam piercing every enemy on it (+ mirrors later) | Focus ✓ · Prism needs **E1** |
 | Support | `ballistic` slow pulse, 1 damage, splash (Stasis base) | Stasis field: bigger, longer slow | Amplifier: neighbours fire faster / Repair: heals towers | A ✓ · B needs **E2** |
-| Specialist | EMP: `disabled` pulse | Interceptor: high damage, **air only** | Disruptor: wider, longer EMP, no damage | ✓ |
+| Specialist | EMP: `disabled` pulse | Interceptor: high damage, **air only** | Blackout: wider, longer EMP, no damage | ✓ |
 
 An upgrade replaces the tower entity's `kind` with the branch archetype in the TD ruleset. The entity keeps its id and cell, and its health is scaled to the new maximum. Targeting priority uses the engine doctrine (`weakest`, `nearest`, `armor`).
 
@@ -507,7 +507,7 @@ Enemies are engine archetypes in the TD ruleset:
 - unarmed ground units: Walker (infantry), Runner (light, fast), Swarm (infantry, tiny), Brute (heavy, slow);
 - Glider (air);
 - **Raider**, armed: it fires at towers in passing, so tower health and repair matter;
-- Colossus (heavy, armed, final wave).
+- Siege crawler (heavy, armed, final wave).
 
 **Deferred until the engine supports them:** shields (Warden), healers (Mender) and the Corroder branch (mark / armour shred). These need **E3**.
 
@@ -536,7 +536,7 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
 - **Maps:** Training ground (7 × 13, 6 waves), Fork (two lanes around a rocky middle), Long bend (one long serpentine, 30 % more units), Twin approach (two entries, two air routes, 50 more start credits). Every 12-wave map uses the same wave plan; its second variant per wave sends each group to the other lane, so the seed changes where the pressure comes from, never how much. The map is chosen on the start screen (ADR 0017 setting `map`).
 - **Pace:** road cost 16, so a Walker moves one cell per second at 1× (8 ticks per second) and slowed units half that. The first numbers (3 cells per second) gave towers too little time.
 - **Economy:** start 300 credits (Twin 350), wave income 65–120, bounties, **10 % interest** on credits unspent at wave start (D6).
-- **Balance harness** (`test/balance.long.test.ts`, CI long job, about 2½ minutes). A planner bot looks one wave ahead: before each wave it tries every family on the best pads and every upgrade, and keeps the action that saves the most threat per credit. It grades leaks by threat × health kept, so wearing a Colossus down counts. Asserted:
+- **Balance harness** (`test/balance.long.test.ts`, CI long job, about 2½ minutes). A planner bot looks one wave ahead: before each wave it tries every family on the best pads and every upgrade, and keeps the action that saves the most threat per credit. It grades leaks by threat × health kept, so wearing a Siege crawler down counts. Asserted:
   - the mixed planner wins every map on Relaxed and Standard with at least half the core left;
   - random building loses every 12-wave map on Standard;
   - every single-family defence ends Standard at least 8 core points worse than the mix, or loses.

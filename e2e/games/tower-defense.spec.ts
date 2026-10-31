@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 const game = (page: Page) => root(page).locator('.wp-tower-defense');
@@ -58,6 +58,11 @@ test('tower-defense: an undefended game is lost, can be retried, and ends calmly
     await root(page).getByTestId('instant').click();
   }
   await expect(game(page)).toHaveAttribute('data-phase', 'lost');
+  // A lost game is saved like any other: after a reload it continues with Retry (review of PR #97).
+  await expect.poll(async () => ((await readSave(page, 'tower-defense')) as { state?: { phase?: string } } | undefined)?.state?.phase).toBe('lost');
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(game(page)).toHaveAttribute('data-phase', 'lost');
   await root(page).getByTestId('retry').click();
   await expect(game(page)).toHaveAttribute('data-phase', 'build');
   await root(page).getByTestId('start').click();
@@ -65,6 +70,9 @@ test('tower-defense: an undefended game is lost, can be retried, and ends calmly
   await expect(game(page)).toHaveAttribute('data-phase', 'lost');
   await root(page).getByTestId('give-up').click();
   await expect(page.getByTestId('finished')).toBeVisible();
+  // Ending the game is final: no retry any more.
+  await expect(game(page)).toHaveAttribute('data-phase', 'ended');
+  await expect(root(page).getByTestId('retry')).toBeHidden();
 });
 
 test('tower-defense: the map is chosen on the start screen and kept in the save', async ({ page }) => {
