@@ -1,6 +1,6 @@
 .wp-tower-defense {
-  --td-road: #e3ddcf;
-  --td-pad: #f3f1ea;
+  --td-road: #cdbf9c;
+  --td-pad: #f6f4ef;
   --td-rock: #8d8a80;
   display: flex;
   flex-direction: column;
@@ -10,7 +10,7 @@
   .wp-tower-defense {
     --td-road: #4a473f;
     --td-pad: #2b2c27;
-    --td-rock: #5f5d55;
+    --td-rock: #121210;
   }
 }
 .td-hud {

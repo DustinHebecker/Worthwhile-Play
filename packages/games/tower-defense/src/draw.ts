@@ -22,8 +22,8 @@ export interface Palette {
 
 const FALLBACK: Palette = {
   surface: '#ffffff',
-  road: '#e3ddcf',
-  pad: '#f3f1ea',
+  road: '#cdbf9c',
+  pad: '#f6f4ef',
   rock: '#8d8a80',
   ink: '#1d1d1b',
   muted: '#5c5b55',
@@ -62,6 +62,9 @@ export interface Frame {
   /** Shells that landed in the last tick, with splash radius in cells. */
   blasts: readonly (readonly [number, number, number])[];
   selected: { x: number; y: number } | null;
+  /** Road entries (spawn cells) and the end of the road (the core). */
+  entries: readonly (readonly [number, number])[];
+  goal: readonly [number, number];
   hpMax: (kind: string) => number;
   splashOf: (kind: string) => number;
 }
@@ -170,6 +173,27 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
         g.stroke();
       }
       g.globalAlpha = 1;
+    }
+  }
+  // Entry: a chevron pointing into the road. Core: a double ring.
+  g.strokeStyle = palette.ink;
+  g.lineWidth = Math.max(2, cell * 0.05);
+  for (const [x, y] of f.entries) {
+    const cx = (x + 0.5) * cell;
+    const cy = (y + 0.5) * cell;
+    g.beginPath();
+    g.moveTo(cx - cell * 0.22, cy - cell * 0.12);
+    g.lineTo(cx, cy + cell * 0.1);
+    g.lineTo(cx + cell * 0.22, cy - cell * 0.12);
+    g.stroke();
+  }
+  {
+    const cx = (f.goal[0] + 0.5) * cell;
+    const cy = (f.goal[1] + 0.5) * cell;
+    for (const r of [0.36, 0.22]) {
+      g.beginPath();
+      g.arc(cx, cy, cell * r, 0, TAU);
+      g.stroke();
     }
   }
   const pos = (e: Entity): [number, number] => {

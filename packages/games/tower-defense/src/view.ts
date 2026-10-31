@@ -53,6 +53,16 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   let disposeKeyboard: () => void = () => {};
   let builtFor = '';
 
+  // The map is drawn with the theme's colours: read them again when the colour scheme changes.
+  const scheme = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : undefined;
+  const onScheme = (): void => {
+    palette = null;
+    draw();
+  };
+  scheme?.addEventListener?.('change', onScheme);
+  // …and in the new size when the board is resized (rotation, window size).
+  const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => draw()) : undefined;
+
   const raf: ((cb: (t: number) => void) => number) | undefined = typeof requestAnimationFrame === 'function' ? requestAnimationFrame.bind(globalThis) : undefined;
   const caf: ((id: number) => void) | undefined = typeof cancelAnimationFrame === 'function' ? cancelAnimationFrame.bind(globalThis) : undefined;
 
@@ -298,7 +308,10 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     palette ??= readPalette(container);
     const alpha = context.reducedMotion || !playing ? 1 : Math.min(1, acc);
-    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, hpMax, splashOf });
+    const map = mapOf(state);
+    const entries = map.routes.filter((r) => r.layer === 'ground').map((r) => r.points[0]!);
+    const goal = map.routes[0]!.points.at(-1)!;
+    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goal, hpMax, splashOf });
   };
 
   const render = (): void => {
@@ -491,7 +504,10 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     beams = [];
     blasts = [];
     status.textContent = '';
-    if (!container.isConnected) root.appendChild(container);
+    if (!container.isConnected) {
+      root.appendChild(container);
+      resize?.observe(board);
+    }
     render();
   };
 
@@ -521,6 +537,8 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     },
     dispose() {
       stopLoop();
+      scheme?.removeEventListener?.('change', onScheme);
+      resize?.disconnect();
       disposeKeyboard();
       clear(root);
     }
