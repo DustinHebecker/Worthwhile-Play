@@ -1,0 +1,134 @@
+/* Sense of Time. All rules are scoped under .wp-timeline and use logical properties (RTL-safe). The timeline itself is
+   never mirrored (past on the left, like every numeric axis); the card follows the reading direction. Ranges are
+   hatched with a bold outline, windows are brackets with a label, marks are symbols with text: never colour alone. */
+.wp-timeline {
+  --tl-true: #8a3b2f; --tl-guess: #2d5d9b; --tl-anchor: #5f5a50; --tl-window: #3e5f2a; --tl-line: #3e3a33;
+  display: grid; gap: 0.75rem; max-width: 80rem; margin-inline: auto; min-width: 0; overflow-wrap: anywhere;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-timeline { --tl-true: #f0a294; --tl-guess: #8db7f0; --tl-anchor: #c9c2b4; --tl-window: #b9d68f; --tl-line: #e8e2d6; }
+}
+.wp-timeline p { margin: 0; }
+.wp-timeline h2 { margin: 0; font-size: 1.2rem; line-height: 1.35; }
+.wp-timeline h3, .wp-timeline h4 { margin: 0; font-size: 1.02rem; }
+.wp-timeline .tl-heading:focus { outline-offset: 4px; }
+.wp-timeline button { min-height: var(--wp-touch); min-width: var(--wp-touch); }
+.wp-timeline .tl-primary { font-weight: 700; }
+.wp-timeline [aria-disabled='true'] { opacity: 0.7; }
+.wp-timeline .tl-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.wp-timeline .tl-muted, .wp-timeline .tl-progress, .wp-timeline .tl-foot { color: var(--wp-muted); font-size: 0.93rem; }
+.wp-timeline .tl-foot { font-size: 0.85rem; }
+.wp-timeline .tl-head { display: grid; gap: 0.25rem; }
+.wp-timeline bdi { unicode-bidi: isolate; }
+
+/* Layout: card (inline start, about a third) and the timeline panel from 48rem; stacked on phones. */
+.wp-timeline .tl-layout { display: grid; gap: 0.8rem; min-width: 0; }
+@media (min-width: 48rem) {
+  .wp-timeline .tl-layout { grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr); align-items: start; }
+  .wp-timeline .tl-panel { position: sticky; inset-block-start: 0.5rem; }
+}
+.wp-timeline[data-phase='summary'] .tl-layout { grid-template-columns: minmax(0, 1fr); }
+.wp-timeline[data-phase='summary'] .tl-panel { display: none; }
+.wp-timeline .tl-card, .wp-timeline .tl-panel {
+  display: grid; gap: 0.6rem; align-content: start; padding: 0.8rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface); min-width: 0;
+}
+@media (max-width: 47.99rem) {
+  .wp-timeline .tl-sticky {
+    position: sticky; inset-block-end: 0; z-index: 2; padding-block: 0.5rem; margin-inline: -0.8rem; padding-inline: 0.8rem;
+    background: var(--wp-surface); border-block-start: 1px solid var(--wp-border);
+  }
+}
+
+/* Card content. */
+.wp-timeline .tl-prompt { font-weight: 600; }
+.wp-timeline .tl-hint { font-size: 0.95rem; }
+.wp-timeline .tl-verdict { font-size: 1.08rem; font-weight: 700; }
+.wp-timeline .tl-insight { padding: 0.5rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); }
+.wp-timeline .tl-entry { display: grid; gap: 0.3rem; }
+.wp-timeline .tl-field { font-weight: 600; }
+.wp-timeline .tl-entry-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.wp-timeline .tl-year { box-sizing: border-box; inline-size: 8rem; min-block-size: var(--wp-touch); font: inherit; padding-inline: 0.5rem; text-align: start; }
+.wp-timeline .tl-unit { min-block-size: var(--wp-touch); font: inherit; max-inline-size: 100%; }
+.wp-timeline .tl-means { font-size: 0.95rem; min-block-size: 1.4em; }
+.wp-timeline .tl-means[data-state='invalid'] { font-style: italic; }
+.wp-timeline .tl-means[data-state='invalid']::before { content: '⚠ '; }
+.wp-timeline .tl-fieldset { display: grid; gap: 0.3rem; margin: 0; padding: 0.4rem 0.6rem 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+.wp-timeline .tl-fieldset legend { font-weight: 600; }
+.wp-timeline .tl-choice { display: flex; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch); cursor: pointer; }
+.wp-timeline .tl-choice input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0; flex: none; }
+.wp-timeline .tl-sym { font-weight: 700; }
+.wp-timeline .tl-summary-list, .wp-timeline .tl-order-review, .wp-timeline .tl-option-lines { display: grid; gap: 0.35rem; margin: 0; padding-inline-start: 1.3rem; }
+.wp-timeline .tl-about { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.2rem 0.6rem 0.5rem; }
+.wp-timeline .tl-about summary { min-block-size: var(--wp-touch); box-sizing: border-box; display: flex; align-items: center; cursor: pointer; }
+.wp-timeline .tl-about-h { display: inline; }
+.wp-timeline .tl-about-item { display: grid; gap: 0.3rem; padding-block: 0.4rem; }
+.wp-timeline .tl-about-item + .tl-about-item { border-block-start: 1px dashed var(--wp-border); }
+.wp-timeline .tl-clock { font-size: 0.95rem; font-style: italic; }
+.wp-timeline .tl-sources-h { font-size: 0.85rem; font-weight: 600; color: var(--wp-muted); }
+.wp-timeline .tl-sources { margin: 0; padding-inline-start: 1.1rem; font-size: 0.82rem; color: var(--wp-muted); text-align: start; }
+.wp-timeline .tl-tip { padding: 0.5rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); }
+
+/* Order list: vertical, oldest on top (text labels, no colour code). */
+.wp-timeline .tl-end-label { font-weight: 700; font-size: 0.93rem; }
+.wp-timeline .tl-order { display: grid; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.wp-timeline .tl-order-card {
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 0.4rem; padding: 0.3rem;
+  border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface-2); position: relative;
+}
+.wp-timeline .tl-order-card.tl-picked { outline: 3px dashed var(--wp-focus); outline-offset: 1px; }
+.wp-timeline .tl-order-card.tl-dragging { z-index: 3; box-shadow: 0 4px 12px rgb(0 0 0 / 25%); opacity: 0.95; }
+.wp-timeline .tl-insert-before { box-shadow: 0 -4px 0 var(--wp-focus); }
+.wp-timeline .tl-insert-after { box-shadow: 0 4px 0 var(--wp-focus); }
+.wp-timeline .tl-handle { cursor: grab; touch-action: none; font-size: 1.2rem; }
+.wp-timeline .tl-pos { font-weight: 700; min-inline-size: 1.4em; text-align: center; }
+.wp-timeline .tl-moves { display: flex; gap: 0.25rem; }
+/* Phones: the move buttons go under the title, so the title keeps most of the width. */
+@media (max-width: 30rem) {
+  .wp-timeline .tl-order-card { grid-template-columns: auto auto minmax(0, 1fr); }
+  .wp-timeline .tl-moves { grid-column: 3; justify-content: flex-end; }
+}
+.wp-timeline .tl-sub { margin-block-start: 0.3rem; }
+
+/* The timeline (always left to right). */
+.wp-timeline .tl-axis { display: grid; gap: 0.4rem; min-width: 0; }
+.wp-timeline .tl-plot { position: relative; inline-size: 100%; min-width: 0; touch-action: none; cursor: crosshair; user-select: none; }
+.wp-timeline .tl-svg { display: block; inline-size: 100%; overflow: visible; }
+.wp-timeline .tl-line { stroke: var(--tl-line); stroke-width: 2.5; }
+.wp-timeline .tl-tick { stroke: var(--tl-line); stroke-width: 1.5; }
+.wp-timeline .tl-svg text { font-family: var(--wp-font); fill: var(--wp-text); paint-order: stroke; stroke: var(--wp-surface); stroke-width: 3px; stroke-linejoin: round; }
+.wp-timeline .tl-tick-label { font-size: 11.5px; }
+.wp-timeline .tl-mark-label { font-size: 12px; font-weight: 600; }
+.wp-timeline .tl-mark-symbol { font-size: 16px; font-weight: 700; }
+.wp-timeline .tl-leader { stroke: var(--wp-muted); stroke-width: 1; stroke-dasharray: 2 2; }
+.wp-timeline .tl-mark-guess .tl-mark-symbol, .wp-timeline .tl-mark-guess .tl-mark-label { fill: var(--tl-guess); }
+.wp-timeline .tl-mark-target .tl-mark-symbol, .wp-timeline .tl-mark-target .tl-mark-label { fill: var(--tl-true); }
+.wp-timeline .tl-mark-anchor .tl-mark-symbol, .wp-timeline .tl-mark-anchor .tl-mark-label { fill: var(--tl-anchor); font-weight: 400; }
+.wp-timeline .tl-range { stroke: var(--tl-true); stroke-width: 2.5; }
+.wp-timeline .tl-hatch-line { stroke: var(--tl-true); stroke-width: 2; }
+.wp-timeline .tl-bracket { fill: none; stroke: var(--tl-window); stroke-width: 2.5; stroke-dasharray: 6 3; }
+.wp-timeline .tl-slider {
+  position: absolute; inset-block-start: 48px; transform: translateX(-50%); inline-size: var(--wp-touch); block-size: var(--wp-touch);
+  display: grid; place-items: center; border-radius: 50%; color: var(--tl-guess); font-size: 1.5rem; line-height: 1; cursor: grab; touch-action: none;
+}
+.wp-timeline .tl-slider[hidden] { display: none; }
+.wp-timeline .tl-slider[data-state='empty'] { color: var(--wp-muted); }
+.wp-timeline .tl-slider:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 0; }
+.wp-timeline .tl-axis-shows, .wp-timeline .tl-axis-hint { font-size: 0.85rem; color: var(--wp-muted); }
+.wp-timeline .tl-legend { display: flex; flex-wrap: wrap; gap: 0.2rem 1rem; margin: 0; padding: 0; list-style: none; font-size: 0.88rem; }
+.wp-timeline .tl-legend[hidden] { display: none; }
+.wp-timeline .tl-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; }
+.wp-timeline .tl-tool-row { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.wp-timeline .tl-tool { font-weight: 700; padding-inline: 0.5rem; }
+.wp-timeline .tl-view { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.8rem; margin: 0; padding: 0.1rem 0.5rem 0.3rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+.wp-timeline .tl-view-opt { display: inline-flex; align-items: center; gap: 0.3rem; min-block-size: var(--wp-touch); cursor: pointer; }
+.wp-timeline .tl-view-opt input { inline-size: 1.2rem; block-size: 1.2rem; margin: 0; }
+
+@media (forced-colors: active) {
+  .wp-timeline .tl-line, .wp-timeline .tl-tick, .wp-timeline .tl-range, .wp-timeline .tl-hatch-line, .wp-timeline .tl-bracket, .wp-timeline .tl-leader { stroke: CanvasText; }
+  .wp-timeline .tl-svg text { fill: CanvasText; stroke: Canvas; }
+  .wp-timeline .tl-slider { color: Highlight; forced-color-adjust: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-timeline * { transition: none !important; }
+}

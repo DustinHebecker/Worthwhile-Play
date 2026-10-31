@@ -1,0 +1,301 @@
+import { describe, expect, it } from 'vitest';
+import {
+  BASE_RULESET,
+  createWorld,
+  DEFAULT_DOCTRINE,
+  isValidDoctrine,
+  isValidWorld,
+  NEUTRAL,
+  resolveTurn,
+  runTicks,
+  STRATEGY_RULESET,
+  validateCommand,
+  type Command,
+  type Doctrine,
+  type Scenario,
+  type World
+} from '../src';
+import { mapOf, open } from './helpers';
+
+const net = STRATEGY_RULESET;
+const base = BASE_RULESET;
+const worldOf = (map: Scenario['map'], entities: Scenario['entities']): World => createWorld({ map, sides: 2, entities, seed: 1 }, net);
+const unit = (w: World, id: number) => w.entities.find((e) => e.id === id)!;
+const doctrine = (d: Partial<Doctrine>): Doctrine => ({ ...DEFAULT_DOCTRINE, ...d });
+
+describe('doctrines (D6)', () => {
+  it('a doctrine is set together with an order, costs the same slot and persists out of contact', () => {
+    const w = worldOf(open(14, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 3, y: 0 }]);
+    const cmd: Command = { side: 0, unit: 2, order: { type: 'move', x: 12, y: 0 }, doctrine: doctrine({ retreatBelow: 50, priority: 'armor' }) };
+    const { world, events } = resolveTurn(w, net, [[cmd]]);
+    expect(events.filter((e) => e.t === 'order')).toHaveLength(1);
+    expect(unit(world, 2).doctrine).toEqual(doctrine({ retreatBelow: 50, priority: 'armor' }));
+    // Later turns: out of contact, the doctrine stays.
+    const later = resolveTurn(resolveTurn(world, net, [[]]).world, net, [[]]).world;
+    expect(unit(later, 2).doctrine).toEqual(doctrine({ retreatBelow: 50, priority: 'armor' }));
+  });
+
+  it('retreat: a hit that takes the unit below the threshold switches it to regroup, back into coverage', () => {
+    const w = worldOf(open(16, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 10, y: 0 },
+      { side: 1, kind: 'warden', x: 13, y: 0 }
+    ]);
+    const u = unit(w, 2);
+    u.doctrine = doctrine({ retreatBelow: 50 });
+    u.order = { type: 'move', x: 15, y: 0 };
+    u.hp = 21;
+    const { world, events } = resolveTurn(w, net, [[]]);
+    expect(events.some((e) => e.t === 'hit' && e.id === 2)).toBe(true);
+    expect(['regroup', 'hold']).toContain(unit(world, 2).order.type);
+    expect(unit(world, 2).x).toBeLessThan(10);
+  });
+
+  it('regroup walks to the nearest covered cell and then holds', () => {
+    const w = worldOf(open(16, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'outrider', x: 9, y: 0 }]);
+    unit(w, 2).order = { type: 'regroup' };
+    const after = resolveTurn(resolveTurn(w, net, [[]]).world, net, [[]]).world;
+    expect(unit(after, 2).x).toBe(5);
+    expect(unit(after, 2).order).toEqual({ type: 'hold' });
+  });
+
+  it('target priority picks armour over weaker infantry, or simply the nearest', () => {
+    const w = worldOf(open(6, 3), [
+      { side: 0, kind: 'tower-gun', x: 0, y: 1 },
+      { side: 1, kind: 'rifles', x: 3, y: 1 },
+      { side: 1, kind: 'warden', x: 1, y: 0 }
+    ]);
+    unit(w, 2).hp = 5;
+    const fire = (d: Partial<Doctrine>) => {
+      const copy = structuredClone(w);
+      unit(copy, 1).doctrine = doctrine(d);
+      const ev = runTicks(copy, base, [], 1).events.find((e) => e.t === 'fire');
+      return ev && ev.t === 'fire' ? ev.target : undefined;
+    };
+    expect(fire({})).toBe(2);
+    expect(fire({ priority: 'armor' })).toBe(3);
+    expect(fire({ priority: 'nearest' })).toBe(3);
+    expect(fire({ priority: 'infantry' })).toBe(2);
+    expect(fire({ priority: 'structures' })).toBe(2);
+  });
+
+  it('return fire only: holds fire until hit, then answers for a turn', () => {
+    const w = worldOf(open(5, 1), [{ side: 0, kind: 'warden', x: 0, y: 0 }, { side: 1, kind: 'lancer', x: 3, y: 0 }]);
+    unit(w, 1).doctrine = doctrine({ holdFire: true });
+    unit(w, 2).doctrine = doctrine({ holdFire: true });
+    const quiet = runTicks(w, base, [], 6);
+    expect(quiet.events.filter((e) => e.t === 'fire')).toEqual([]);
+    unit(w, 2).doctrine = DEFAULT_DOCTRINE;
+    const fight = runTicks(w, base, [], 4);
+    const shooters = fight.events.filter((e) => e.t === 'fire').map((e) => e.t === 'fire' && [e.tick, e.id]);
+    expect(shooters[0]).toEqual([1, 2]);
+    expect(shooters).toContainEqual([2, 1]);
+  });
+
+  it('seek cover: a holding unit steps onto an adjacent forest or building cell', () => {
+    const w = worldOf(mapOf('...', '..f', '...'), [{ side: 0, kind: 'rifles', x: 1, y: 1 }]);
+    unit(w, 1).doctrine = doctrine({ seekCover: true });
+    const { world } = runTicks(w, base, [], 6);
+    expect([unit(world, 1).x, unit(world, 1).y]).toEqual([2, 1]);
+    // Without the doctrine it stays put.
+    unit(w, 1).doctrine = DEFAULT_DOCTRINE;
+    expect(unit(runTicks(w, base, [], 6).world, 1).x).toBe(1);
+  });
+
+  it('escort follows a friendly unit within two cells and stops when it is gone', () => {
+    const w = worldOf(open(14, 1), [{ side: 0, kind: 'outrider', x: 10, y: 0 }, { side: 0, kind: 'rifles', x: 0, y: 0 }]);
+    const after = resolveTurn(w, base, [[{ side: 0, unit: 2, order: { type: 'escort', target: 1 } }]]).world;
+    expect(Math.abs(unit(after, 2).x - 10)).toBeGreaterThan(2);
+    let world = after;
+    for (let i = 0; i < 3; i++) world = resolveTurn(world, base, [[]]).world;
+    expect((unit(world, 2).x - 10) ** 2).toBeLessThanOrEqual(4);
+    const gone = resolveTurn({ ...world, entities: world.entities.filter((e) => e.id !== 1) }, base, [[]]).world;
+    expect(unit(gone, 2).order).toEqual({ type: 'hold' });
+  });
+
+  it('patrol alternates between its two ends', () => {
+    const w = worldOf(open(8, 1), [{ side: 0, kind: 'outrider', x: 0, y: 0 }]);
+    let world = resolveTurn(w, base, [[{ side: 0, unit: 1, order: { type: 'patrol', x: 6, y: 0, rx: 0, ry: 0 } }]]).world;
+    const seen = new Set<number>();
+    for (let i = 0; i < 8; i++) {
+      world = resolveTurn(world, base, [[]]).world;
+      seen.add(unit(world, 1).x);
+    }
+    expect(seen.has(0) || seen.has(1)).toBe(true);
+    expect(seen.has(6) || seen.has(5)).toBe(true);
+    expect(unit(world, 1).order.type).toBe('patrol');
+  });
+
+  it('validates new orders and doctrines', () => {
+    const w = worldOf(open(6, 1), [{ side: 0, kind: 'rifles', x: 0, y: 0 }, { side: 1, kind: 'rifles', x: 5, y: 0 }, { side: 0, kind: 'command-post', x: 2, y: 0 }]);
+    const v = (c: Command) => validateCommand(w, base, c);
+    expect(v({ side: 0, unit: 1, order: { type: 'escort', target: 3 } })).toEqual({ ok: true });
+    expect(v({ side: 0, unit: 1, order: { type: 'escort', target: 2 } })).toEqual({ ok: false, reason: 'bad-target' });
+    expect(v({ side: 0, unit: 1, order: { type: 'escort', target: 1 } })).toEqual({ ok: false, reason: 'bad-target' });
+    expect(v({ side: 0, unit: 1, order: { type: 'patrol', x: 4, y: 0, rx: 0, ry: 0 } })).toEqual({ ok: true });
+    expect(v({ side: 0, unit: 1, order: { type: 'patrol', x: 6, y: 0, rx: 0, ry: 0 } })).toEqual({ ok: false, reason: 'out-of-bounds' });
+    expect(v({ side: 0, unit: 1, order: { type: 'regroup' } })).toEqual({ ok: true });
+    expect(v({ side: 0, unit: 3, order: { type: 'regroup' } })).toEqual({ ok: false, reason: 'immobile' });
+    expect(v({ side: 0, unit: 1, order: { type: 'hold' }, doctrine: { ...DEFAULT_DOCTRINE, retreatBelow: 33 as never } })).toEqual({ ok: false, reason: 'bad-order' });
+    const bad = structuredClone(w);
+    delete bad.intel; // checked against the fog-free base ruleset (no economy either)
+    delete bad.supply;
+    unit(bad, 1).doctrine = { ...DEFAULT_DOCTRINE, priority: 'tallest' as never };
+    expect(isValidWorld(bad, base)).toBe(false);
+    const ok = structuredClone(w);
+    delete ok.intel;
+    delete ok.supply;
+    ok.tick = 5;
+    unit(ok, 1).doctrine = doctrine({ seekCover: true });
+    unit(ok, 1).hitAt = 3;
+    unit(ok, 1).order = { type: 'patrol', x: 4, y: 0, rx: 0, ry: 0 };
+    expect(isValidWorld(ok, base)).toBe(true);
+  });
+});
+
+describe('lost-contact doctrine (UX round after I5)', () => {
+  const worldWith = (lostContact: 'keep' | 'regroup' | 'finish') => {
+    const w = worldOf(open(20, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 7, y: 0 }]);
+    Object.assign(unit(w, 2), { order: { type: 'move', x: 18, y: 0 }, doctrine: doctrine({ lostContact }) });
+    return w;
+  };
+
+  it("'regroup': after a whole turn without contact the unit turns back, with a reported event", () => {
+    const w = worldWith('regroup');
+    const first = resolveTurn(w, net, [[]]);
+    const u = unit(first.world, 2);
+    // Still on its way in the first turn (it left coverage at x = 6 after one step), counter running.
+    expect(u.order.type === 'move' || u.order.type === 'regroup').toBe(true);
+    const second = resolveTurn(first.world, net, [[]]);
+    const events = [...first.events, ...second.events];
+    expect(events.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'lost-contact')).toBe(true);
+    expect(second.reported?.[0]?.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'lost-contact') || first.reported?.[0]?.some((e) => e.t === 'order-ended' && e.id === 2)).toBe(true);
+    const third = resolveTurn(second.world, net, [[]]);
+    expect(unit(third.world, 2).x).toBeLessThanOrEqual(5); // back in coverage (radius 5)
+    expect(isValidWorld(JSON.parse(JSON.stringify(third.world)), net)).toBe(true);
+  });
+
+  it("'keep': the unit carries on with its order out of contact", () => {
+    let w = worldWith('keep');
+    for (let i = 0; i < 4; i++) w = resolveTurn(w, net, [[]]).world;
+    expect(unit(w, 2)).toMatchObject({ order: { type: 'hold' }, x: 18 });
+    expect(unit(w, 2).noContact).toBe(net.ticksPerTurn);
+  });
+
+  it("'finish': the unit carries its order out, then returns once it holds and sees no enemy itself", () => {
+    let w = worldWith('finish');
+    const path: number[] = [];
+    let ended = false;
+    for (let i = 0; i < 10; i++) {
+      const r = resolveTurn(w, net, [[]]);
+      w = r.world;
+      path.push(unit(w, 2).x);
+      ended ||= r.events.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'turned-back');
+      // Out of every own unit's sight: the turning back is not reported to the side.
+      expect(r.reported![0]!.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'turned-back')).toBe(false);
+    }
+    // It reached its goal (18) out of contact, and only then came back into coverage. It turned back
+    // with its own reason, which is not reported unseen (it depends on what the unit sees; PR #29 review).
+    expect(Math.max(...path)).toBe(18);
+    expect(path.indexOf(18)).toBeLessThan(path.findIndex((x, i) => i > path.indexOf(18) && x < 18));
+    expect(ended).toBe(true);
+    expect(unit(w, 2).x).toBeLessThanOrEqual(5);
+    expect(isValidWorld(JSON.parse(JSON.stringify(w)), net)).toBe(true);
+  });
+
+  it("'finish': with an enemy in its own sight the unit stays where its order took it", () => {
+    const w = worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 15, y: 0 },
+      { side: 1, kind: 'command-post', x: 19, y: 0 }
+    ]);
+    Object.assign(unit(w, 2), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: 'finish', holdFire: true }) });
+    let world = w;
+    for (let i = 0; i < 3; i++) world = resolveTurn(world, net, [[]]).world;
+    expect(unit(world, 2)).toMatchObject({ x: 15, order: { type: 'hold' } });
+    // The same without the enemy in sight: it comes back.
+    const alone = structuredClone(w);
+    alone.entities = alone.entities.filter((e) => e.side === 0);
+    let back = alone;
+    for (let i = 0; i < 8; i++) back = resolveTurn(back, net, [[]]).world;
+    expect(unit(back, 2).x).toBeLessThanOrEqual(5);
+  });
+
+  it("'finish': a neutral post or an ally in sight does not hold the unit back; an enemy does", () => {
+    const at = (others: Scenario['entities'], teams?: number[]) => {
+      const w = createWorld({ map: open(20, 1), sides: 3, seed: 1, ...(teams && { teams }), entities: [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 15, y: 0 }, ...others] }, net);
+      Object.assign(unit(w, 2), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: 'finish', holdFire: true }) });
+      let world = w;
+      for (let i = 0; i < 8; i++) world = resolveTurn(world, net, [[]]).world;
+      return unit(world, 2).x;
+    };
+    expect(at([{ side: NEUTRAL, kind: 'command-post', x: 17, y: 0 }])).toBeLessThanOrEqual(5);
+    expect(at([{ side: 1, kind: 'rifles', x: 17, y: 0 }], [0, 0, 2])).toBeLessThanOrEqual(5);
+    expect(at([{ side: 2, kind: 'command-post', x: 17, y: 0 }], [0, 0, 2])).toBe(15);
+  });
+
+  it("'finish' tells the side nothing that depends on enemies it does not know of (review of PR #29)", () => {
+    // The unit holds out of contact; an enemy it alone would see is there or not. The side's
+    // reports must be the same either way while the unit is out of contact.
+    for (const lost of ['finish', 'regroup', 'keep'] as const) {
+      const make = (enemy: boolean) => {
+        const w = worldOf(open(24, 1), [
+          { side: 0, kind: 'command-post', x: 0, y: 0 },
+          { side: 0, kind: 'rifles', x: 15, y: 0 },
+          ...(enemy ? [{ side: 1, kind: 'rifles', x: 18, y: 0 }] : []),
+          { side: 1, kind: 'command-post', x: 23, y: 0 }
+        ]);
+        Object.assign(unit(w, 2), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: lost, holdFire: true }) });
+        for (const e of w.entities) if (e.side === 1) e.doctrine = doctrine({ holdFire: true });
+        w.intel = w.intel!.map((list, side) => (side === 0 ? list.filter((r) => r.side === 0 || r.kind === 'command-post') : list));
+        return w;
+      };
+      let a = make(true);
+      let b = make(false);
+      for (let turn = 0; turn < 2; turn++) {
+        const ra = resolveTurn(a, net, [[]]);
+        const rb = resolveTurn(b, net, [[]]);
+        expect(JSON.stringify(ra.reported![0]), `${lost} turn ${turn}`).toBe(JSON.stringify(rb.reported![0]));
+        a = ra.world;
+        b = rb.world;
+      }
+    }
+  });
+
+  it("'finish': the turning back is told to the side only while an own reporting unit sees the unit", () => {
+    const told = (observer: number) => {
+      const w = worldOf(open(20, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 9, y: 0 }, { side: 0, kind: 'rifles', x: observer, y: 0 }]);
+      Object.assign(unit(w, 2), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: 'finish', holdFire: true }) });
+      Object.assign(unit(w, 3), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: 'keep' }) });
+      let world = w;
+      const reported: string[] = [];
+      for (let i = 0; i < 3; i++) {
+        const r = resolveTurn(world, net, [[]]);
+        for (const e of r.reported![0]!) if (e.t === 'order-ended' && e.id === 2) reported.push(e.reason);
+        world = r.world;
+      }
+      return reported;
+    };
+    // An own squad inside coverage (radius 5) at x = 5 sees x = 9 (vision 4): the side is told.
+    expect(told(5)).toContain('turned-back');
+    // Nobody of its own sees it: not told (it would depend on what the unit alone saw).
+    expect(told(1)).not.toContain('turned-back');
+  });
+
+  it('a set-up relay out of contact stays set up (it does not pack up and drive home)', () => {
+    const w = worldOf(open(20, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'mast-truck', x: 12, y: 0 }]);
+    Object.assign(unit(w, 2), { order: { type: 'hold' }, deploy: net.ticksPerTurn, doctrine: doctrine({ lostContact: 'regroup' }) });
+    let world = w;
+    for (let i = 0; i < 3; i++) world = resolveTurn(world, net, [[]]).world;
+    expect(unit(world, 2)).toMatchObject({ x: 12, deploy: net.ticksPerTurn });
+  });
+
+  it('the doctrine needs the field; rulesets without a network never trigger it', () => {
+    expect(isValidDoctrine({ ...DEFAULT_DOCTRINE, lostContact: 'sometimes' })).toBe(false);
+    const w = createWorld({ map: open(20, 1), sides: 2, seed: 1, entities: [{ side: 0, kind: 'rifles', x: 0, y: 0, order: { type: 'move', x: 18, y: 0 } }] }, base);
+    w.entities[0]!.doctrine = doctrine({ lostContact: 'regroup' });
+    let world = w;
+    for (let i = 0; i < 7; i++) world = resolveTurn(world, base, [[]]).world; // one cell per two ticks
+    expect(world.entities[0]!.x).toBe(18);
+  });
+});

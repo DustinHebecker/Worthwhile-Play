@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { Deck } from '@wp/learning-content';
-import { SYMBOL_DECK } from '@wp/learning-content';
-import { DECKS, findItem, getDeck, lookupDeckItems } from '../src/decks';
+import { aiBasicsDeck, capitalsDeck, SYMBOL_DECK } from '@wp/learning-content';
+import { lookupDeckItems } from '../src/decks';
 import { metadata } from '../src/metadata';
 import { SYMBOL_IDS } from '../src/messages';
 import {
@@ -15,8 +15,14 @@ import {
   hasPendingMismatch,
   isFinished,
   isPair,
+  isValidLanguages,
   isValidMemoryState,
   matchedPairs,
+  migrateMemoryState,
+  MIN_PAIRS,
+  pairsFor,
+  VARIANT_DECK,
+  VARIANTS,
   MAX_MOVES,
   partnerOf,
   select,
@@ -36,7 +42,7 @@ const nonPartner = (state: MemoryState, position: number) => state.cards.findInd
 /** A word↔translation deck: fronts and backs differ, as in later learning decks. */
 const WORD_DECK: Deck = {
   schemaVersion: 1,
-  id: 'words',
+  id: 'user-words-1',
   title: { en: 'Words' },
   items: ['one', 'two', 'three', 'four', 'five', 'six', 'seven'].map((w, i) => ({
     id: `w${i}`,
@@ -65,27 +71,29 @@ describe('board configuration', () => {
   });
 });
 
-describe('deck registry', () => {
-  it('contains only the symbol deck, with a translation key for every item', () => {
-    expect(Object.keys(DECKS)).toEqual(['symbols']);
-    expect(getDeck('symbols')?.deck).toBe(SYMBOL_DECK);
-    expect(getDeck('symbols')?.descriptionKeyPrefix).toBe('symbol.');
+describe('deck lookup', () => {
+  it('knows the built-in decks and their item ids, and nothing else', () => {
     expect(SYMBOL_DECK.items.map((i) => i.id)).toEqual([...SYMBOL_IDS]);
     for (const id of SYMBOL_IDS) expect(metadata.messages.en?.[`symbol.${id}`]).toBeTruthy();
-  });
-
-  it('rejects unknown and prototype deck ids', () => {
-    expect(getDeck('nope')).toBeUndefined();
-    expect(getDeck('toString')).toBeUndefined();
-    expect(getDeck('__proto__')).toBeUndefined();
-    expect(lookupDeckItems('nope')).toBeUndefined();
     expect(lookupDeckItems('symbols')).toEqual([...SYMBOL_IDS]);
+    expect(lookupDeckItems('first-words')).toHaveLength(60);
+    expect(lookupDeckItems('flags')).toContain('jp');
+    expect(lookupDeckItems('nope')).toBeUndefined();
+    expect(lookupDeckItems('toString')).toBeUndefined();
+    expect(lookupDeckItems('__proto__')).toBeUndefined();
+    expect(lookupDeckItems('user-words-1')).toBeUndefined();
   });
 
-  it('finds items by id', () => {
-    const entry = getDeck('symbols');
-    expect(entry && findItem(entry, 'owl')?.front.symbol).toBe('🦉');
-    expect(entry && findItem(entry, 'missing')).toBeUndefined();
+  it('maps built-in variants to decks', () => {
+    expect(VARIANTS).toEqual(['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital', 'ai-term-definition', 'own']);
+    expect(VARIANT_DECK).toEqual({
+      symbols: 'symbols',
+      'picture-word': 'first-words',
+      'word-translation': 'first-words',
+      'flag-country': 'flags',
+      'country-capital': 'capitals',
+      'ai-term-definition': 'ai-basics'
+    });
   });
 });
 
@@ -100,7 +108,7 @@ describe('deal', () => {
     const expected = state.itemIds.flatMap((item): Card[] => [{ item, side: 'front' }, { item, side: 'back' }]);
     const key = (c: Card) => `${c.item}/${c.side}`;
     expect(state.cards.map(key).sort()).toEqual(expected.map(key).sort());
-    expect(state).toMatchObject({ seed: 123, difficulty, deckId: 'symbols', revealed: [], moves: 0 });
+    expect(state).toMatchObject({ seed: 123, difficulty, variant: 'symbols', deckId: 'symbols', languages: {}, revealed: [], moves: 0 });
     expect(state.matched).toEqual(new Array(pairs * 2).fill(false));
     expect(valid(state)).toBe(true);
   });
@@ -127,10 +135,30 @@ describe('deal', () => {
     expect(deal(SYMBOL_DECK, 'small', -1).cards).toEqual(deal(SYMBOL_DECK, 'small', 0xffff_ffff).cards);
   });
 
-  it('throws when the deck has too few items, but accepts exactly enough', () => {
-    expect(() => deal(WORD_DECK, 'medium', 1)).toThrow(RangeError);
+  it('throws when a built-in variant has too few items, but accepts exactly enough', () => {
+    expect(() => deal(WORD_DECK, 'medium', 1, { variant: 'picture-word', languages: { back: 'en' } })).toThrow(RangeError);
     const six = { ...WORD_DECK, items: WORD_DECK.items.slice(0, 6) };
-    expect(deal(six, 'small', 1).itemIds.sort()).toEqual(['w0', 'w1', 'w2', 'w3', 'w4', 'w5']);
+    expect(deal(six, 'small', 1, { variant: 'symbols' }).itemIds.sort()).toEqual(['w0', 'w1', 'w2', 'w3', 'w4', 'w5']);
+  });
+
+  it('plays user decks that are smaller than the board with all their items (at least two)', () => {
+    expect(pairsFor('own', 'medium', 7)).toBe(7);
+    expect(pairsFor('own', 'small', 60)).toBe(6);
+    expect(pairsFor('symbols', 'small', 3)).toBe(6);
+    const own = deal(WORD_DECK, 'medium', 1);
+    expect(own).toMatchObject({ variant: 'own', deckId: 'user-words-1', languages: {} });
+    expect(own.itemIds).toHaveLength(7);
+    expect(own.cards).toHaveLength(14);
+    expect(valid(own)).toBe(true);
+    const two = { ...WORD_DECK, items: WORD_DECK.items.slice(0, MIN_PAIRS) };
+    expect(deal(two, 'large', 3).itemIds).toHaveLength(2);
+    expect(() => deal({ ...WORD_DECK, items: WORD_DECK.items.slice(0, 1) }, 'small', 1)).toThrow(RangeError);
+  });
+
+  it('records the variant and content languages', () => {
+    const words = { ...WORD_DECK, id: 'first-words', items: Array.from({ length: 8 }, (_, i) => ({ id: `apple${i}`, front: { text: 'x' }, back: { text: 'y' } })) };
+    const s = deal(words, 'small', 4, { variant: 'word-translation', languages: { front: 'ja', back: 'de' } });
+    expect(s).toMatchObject({ variant: 'word-translation', deckId: 'first-words', languages: { front: 'ja', back: 'de' } });
   });
 });
 
@@ -320,6 +348,13 @@ describe('isValidMemoryState', () => {
     ['unknown difficulty', { ...base, difficulty: 'huge' }],
     ['mismatched difficulty', { ...base, difficulty: 'small' }],
     ['unknown deck', { ...base, deckId: 'nope' }],
+    ['deck of another variant', { ...base, deckId: 'flags' }],
+    ['unknown variant', { ...base, variant: 'cats' }],
+    ['missing variant', mutate(base, (s) => delete s.variant)],
+    ['missing languages', mutate(base, (s) => delete s.languages)],
+    ['languages for symbols', { ...base, languages: { back: 'de' } }],
+    ['languages not an object', { ...base, languages: 'de' }],
+    ['own variant with built-in deck id', { ...base, variant: 'own' }],
     ['non-string deck', { ...base, deckId: 1 }],
     ['prototype deck id', { ...base, deckId: 'constructor' }],
     ['unknown item id', mutate(base, (s) => ((s.itemIds as string[])[0] = 'dragon'))],
@@ -365,6 +400,100 @@ describe('isValidMemoryState', () => {
   ];
   it.each(cases)('rejects %s', (_, value) => {
     expect(valid(value)).toBe(false);
+  });
+
+  it('validates the recorded languages per variant', () => {
+    expect(isValidLanguages('symbols', {})).toBe(true);
+    expect(isValidLanguages('own', {})).toBe(true);
+    expect(isValidLanguages('own', { front: 'de' })).toBe(false);
+    expect(isValidLanguages('picture-word', { back: 'ja' })).toBe(true);
+    expect(isValidLanguages('picture-word', { back: 'sv' })).toBe(false);
+    expect(isValidLanguages('picture-word', { front: 'ja', back: 'ja' })).toBe(false);
+    expect(isValidLanguages('word-translation', { front: 'ja', back: 'de' })).toBe(true);
+    expect(isValidLanguages('word-translation', { front: 'de', back: 'de' })).toBe(false);
+    expect(isValidLanguages('word-translation', { front: 'ja' })).toBe(false);
+    expect(isValidLanguages('flag-country', { back: 'sv' })).toBe(true);
+    expect(isValidLanguages('flag-country', { back: 'not a tag' })).toBe(false);
+    expect(isValidLanguages('flag-country', { back: `en-${'x'.repeat(40)}` })).toBe(false);
+    expect(isValidLanguages('country-capital', { back: 'ja' })).toBe(true);
+    expect(isValidLanguages('country-capital', { back: 'sv' })).toBe(false); // no capital names in Swedish
+    expect(isValidLanguages('country-capital', { front: 'ja', back: 'ja' })).toBe(false);
+    expect(isValidLanguages('country-capital', {})).toBe(false);
+    expect(isValidLanguages('ai-term-definition', { back: 'hi' })).toBe(true);
+    expect(isValidLanguages('ai-term-definition', { back: 'sv' })).toBe(false); // no AI terms in Swedish
+    expect(isValidLanguages('ai-term-definition', { front: 'en', back: 'en' })).toBe(false);
+    expect(isValidLanguages('ai-term-definition', {})).toBe(false);
+    expect(isValidLanguages('symbols', { other: 'x' })).toBe(false);
+    expect(isValidLanguages('symbols', null)).toBe(false);
+  });
+
+  it('validates built-in word and flag games against their decks', () => {
+    const words = deal({ ...SYMBOL_DECK, id: 'first-words', items: (lookupDeckItems('first-words') ?? []).map((id) => ({ id, front: { text: id }, back: { text: id } })) }, 'small', 8, { variant: 'picture-word', languages: { back: 'ko' } });
+    expect(valid(words)).toBe(true);
+    expect(valid({ ...words, variant: 'word-translation' })).toBe(false);
+    expect(valid({ ...words, variant: 'word-translation', languages: { front: 'ko', back: 'en' } })).toBe(true);
+    expect(valid(mutate(words, (s) => ((s.itemIds as string[])[0] = 'dragon')))).toBe(false);
+    const flags = deal({ ...SYMBOL_DECK, id: 'flags', items: (lookupDeckItems('flags') ?? []).map((id) => ({ id, front: { text: id }, back: { text: id } })) }, 'large', 8, { variant: 'flag-country', languages: { back: 'de' } });
+    expect(valid(flags)).toBe(true);
+    expect(valid({ ...flags, deckId: 'first-words' })).toBe(false);
+  });
+
+  it('validates country ↔ capital games against the capitals deck', () => {
+    const capitals = deal(capitalsDeck('fr'), 'large', 8, { variant: 'country-capital', languages: { back: 'fr' } });
+    expect(capitals.deckId).toBe('capitals');
+    expect(valid(capitals)).toBe(true);
+    expect(valid(JSON.parse(JSON.stringify(capitals)))).toBe(true);
+    expect(lookupDeckItems('capitals')).toContain('jp');
+    // Another deck id, a language without capital names, or a card the deck does not have: rejected.
+    expect(valid({ ...capitals, deckId: 'flags' })).toBe(false);
+    expect(valid({ ...capitals, variant: 'flag-country' })).toBe(false);
+    expect(valid({ ...capitals, languages: { back: 'sv' } })).toBe(false);
+    expect(valid({ ...capitals, languages: {} })).toBe(false);
+    const swap = (from: string, to: string) =>
+      mutate(capitals, (s) => {
+        s.itemIds = (s.itemIds as string[]).map((id) => (id === from ? to : id));
+        s.cards = (s.cards as Card[]).map((c) => (c.item === from ? { ...c, item: to } : c));
+      });
+    const first = capitals.itemIds[0] as string;
+    expect(valid(swap(first, 'za'))).toBe(false); // in the flags deck, but without a capital
+    expect(valid(swap(first, 'xx'))).toBe(false);
+    const unused = (lookupDeckItems('capitals') ?? []).find((id) => !capitals.itemIds.includes(id)) as string;
+    expect(valid(swap(first, unused))).toBe(true);
+  });
+
+  it('validates AI term ↔ definition games against the AI basics deck', () => {
+    const ai = deal(aiBasicsDeck('es'), 'large', 21, { variant: 'ai-term-definition', languages: { back: 'es' } });
+    expect(ai.deckId).toBe('ai-basics');
+    expect(valid(ai)).toBe(true);
+    expect(valid(JSON.parse(JSON.stringify(ai)))).toBe(true);
+    expect(lookupDeckItems('ai-basics')).toContain('token');
+    // Another deck id or variant, a language without AI terms, or a card the deck does not have: rejected.
+    expect(valid({ ...ai, deckId: 'capitals' })).toBe(false);
+    expect(valid({ ...ai, variant: 'country-capital' })).toBe(false);
+    expect(valid({ ...ai, languages: { back: 'sv' } })).toBe(false);
+    expect(valid({ ...ai, languages: {} })).toBe(false);
+    const swap = (from: string, to: string) =>
+      mutate(ai, (s) => {
+        s.itemIds = (s.itemIds as string[]).map((id) => (id === from ? to : id));
+        s.cards = (s.cards as Card[]).map((c) => (c.item === from ? { ...c, item: to } : c));
+      });
+    const first = ai.itemIds[0] as string;
+    expect(valid(swap(first, 'de'))).toBe(false); // a capitals item
+    expect(valid(swap(first, 'robot'))).toBe(false);
+    const unused = (lookupDeckItems('ai-basics') ?? []).find((id) => !ai.itemIds.includes(id)) as string;
+    expect(valid(swap(first, unused))).toBe(true);
+  });
+
+  it('validates own-deck games structurally (the deck itself may be gone)', () => {
+    const own = deal(WORD_DECK, 'small', 2);
+    expect(valid(own)).toBe(true);
+    expect(valid({ ...own, deckId: 'symbols' })).toBe(false);
+    expect(valid({ ...own, deckId: 'User-Words' })).toBe(false);
+    expect(valid(mutate(own, (s) => ((s.itemIds as string[])[0] = '')))).toBe(false);
+    expect(valid(mutate(own, (s) => ((s.itemIds as string[])[0] = 'x'.repeat(201))))).toBe(false);
+    const big = deal({ ...WORD_DECK, items: Array.from({ length: 20 }, (_, i) => ({ id: `i${i}`, front: { text: 'a' }, back: { text: 'b' } })) }, 'small', 2);
+    expect(valid({ ...big, difficulty: 'medium' })).toBe(true); // 6 pairs is a valid smaller own-deck board
+    expect(valid({ ...deal(WORD_DECK, 'medium', 2), difficulty: 'small' })).toBe(false); // 7 pairs > 6
   });
 
   it('accepts the lowest consistent move counts exactly', () => {
@@ -448,5 +577,35 @@ describe('random legal play (property)', () => {
       }),
       { numRuns: 30 }
     );
+  });
+});
+
+describe('migrateMemoryState (v1 → v2)', () => {
+  const v1 = () => {
+    const state = play(deal(SYMBOL_DECK, 'medium', 31), [0, 1]) as unknown as Record<string, unknown>;
+    const copy = clone(state);
+    delete copy.variant;
+    delete copy.languages;
+    return copy;
+  };
+
+  it('adds the symbols variant and empty languages, keeping everything else unchanged', () => {
+    const old = v1();
+    const migrated = migrateMemoryState(old, 1);
+    expect(migrated).toEqual({ ...old, variant: 'symbols', languages: {} });
+    expect(valid(migrated)).toBe(true);
+    expect(migrated).toEqual(play(deal(SYMBOL_DECK, 'medium', 31), [0, 1]));
+  });
+
+  it('refuses unknown versions and non-objects', () => {
+    expect(migrateMemoryState(v1(), 2)).toBeUndefined();
+    expect(migrateMemoryState(v1(), 0)).toBeUndefined();
+    expect(migrateMemoryState(null, 1)).toBeUndefined();
+    expect(migrateMemoryState([], 1)).toBeUndefined();
+    expect(migrateMemoryState({ ...v1(), variant: 'own' }, 1)).toBeUndefined();
+  });
+
+  it('migrated junk is still rejected by validation', () => {
+    expect(valid(migrateMemoryState({ seed: 1 }, 1))).toBe(false);
   });
 });

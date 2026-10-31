@@ -29,7 +29,10 @@ jobs:
       - run: pnpm check:licenses
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm coverage
+      # The long AI-vs-AI suites (*.long.test.ts) and the slow suites (*.slow.test.ts: AI strength,
+      # statistics, oracle searches, seconds each) run in the `long` job below, without coverage
+      # instrumentation, which made them time out here (ADR 0021 amendment 2026-10-24).
+      - run: pnpm coverage --exclude '**/*.long.test.ts' --exclude '**/*.slow.test.ts'
       - name: Development build (no legal data; must still succeed)
         run: pnpm build
       - uses: actions/upload-artifact@v7
@@ -37,6 +40,37 @@ jobs:
           name: coverage
           path: coverage/
           retention-days: 7
+
+  long:
+    name: Long and slow suites (AI tournaments, strength, statistics, oracle searches)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The chess puzzle data file has its own job (full re-verification).
+      - run: pnpm vitest run $(git ls-files '*.long.test.ts' '*.slow.test.ts' ':!packages/games/chess/test/puzzle-data.slow.test.ts')
+
+  puzzles:
+    name: Chess puzzles (full re-verification)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm vitest run packages/games/chess/test/puzzle-data.slow.test.ts
+        env:
+          CHESS_VERIFY_PUZZLES: '1'
 
   e2e:
     name: E2E (Playwright, desktop + mobile, offline)
@@ -64,7 +98,7 @@ jobs:
 
   deploy:
     name: Deploy to Cloudflare
-    needs: [quality, e2e]
+    needs: [quality, long, puzzles, e2e]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15

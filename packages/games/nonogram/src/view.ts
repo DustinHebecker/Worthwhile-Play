@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   CROSSED,
@@ -27,6 +27,11 @@ const LONG_PRESS_MS = 450;
 
 const STATE_NAMES = ['unknown', 'filled', 'crossed'] as const;
 
+/** Boards from this edge length on offer a "larger cells" view (the fitted cells get small on phones). */
+const ZOOM_MIN_SIZE = 15;
+/** Per-device preference key for the larger-cells view (view only, never game state). */
+const ZOOM_PREF = 'largeCells';
+
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 export function createNonogram(context: GameContext): GameInstance<NonogramState> {
@@ -34,6 +39,8 @@ export function createNonogram(context: GameContext): GameInstance<NonogramState
   let state = createInitialState(0);
   let clues: Clues = cluesOf(state.solution, state.size);
   let paused = false;
+  /** Larger cells (board scrolls sideways inside its frame); a per-device view preference. */
+  let zoomed = context.preferences?.get(ZOOM_PREF) === true;
   /** Cell index that holds the roving tabindex. */
   let focusIndex = 0;
   let cellEls: HTMLElement[] = [];
@@ -58,7 +65,12 @@ export function createNonogram(context: GameContext): GameInstance<NonogramState
     modeButtons.cross
   );
   const board = h('div', { class: 'ng-board', role: 'grid', 'data-testid': 'ng-board' });
-  const scroller = h('div', { class: 'ng-scroll' }, board);
+  const scroller = h('div', { class: 'ng-scroll', 'data-testid': 'ng-scroll' }, board);
+  const zoomButton = h('button', { type: 'button', class: 'ng-zoom', 'data-testid': 'ng-zoom', onclick: () => toggleZoom() },
+    h('span', { class: 'ng-zoom-icon', 'aria-hidden': 'true' }, '⤢'),
+    t('zoom.larger')
+  );
+  const viewOptions = h('div', { class: 'ng-view-options' }, zoomButton);
   const checkButton = h('button', { type: 'button', 'data-testid': 'ng-check', 'aria-describedby': 'ng-check-help', onclick: () => runCheck() }, t('common.check'));
   const showButton = h('button', { type: 'button', 'data-testid': 'ng-show-mistakes', onclick: () => revealMistakes() }, t('action.showMistakes'));
   const checkResult = h('p', { class: 'ng-check-result', 'data-testid': 'ng-check-result' });
@@ -68,7 +80,7 @@ export function createNonogram(context: GameContext): GameInstance<NonogramState
     h('p', {}, t('keys.help'))
   );
   const controls = h('div', { class: 'ng-controls' }, modeGroup, h('div', { class: 'wp-row ng-actions' }, checkButton, showButton), checkResult);
-  const container = h('div', { class: 'wp-nonogram', dir: t.direction, lang: t.locale }, status, scroller, controls, help, live);
+  const container = h('div', { class: 'wp-nonogram', dir: t.direction, lang: bcp47Tag(t.locale) }, status, scroller, viewOptions, controls, help, live);
 
   // --- Labels --------------------------------------------------------------------------------
 
@@ -113,6 +125,21 @@ export function createNonogram(context: GameContext): GameInstance<NonogramState
   const runCheck = () => {
     if (paused) return;
     if (commit(check(state))) announce(live, checkResult.textContent ?? '');
+  };
+
+  /** View-only toggle: never changes the game state or requests a save. */
+  const toggleZoom = () => {
+    zoomed = !zoomed;
+    context.preferences?.set(ZOOM_PREF, zoomed);
+    syncZoom();
+    cellEls[focusIndex]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  };
+
+  const syncZoom = () => {
+    const available = state.size >= ZOOM_MIN_SIZE;
+    viewOptions.hidden = !available;
+    board.classList.toggle('is-zoomed', available && zoomed);
+    zoomButton.setAttribute('aria-pressed', String(zoomed));
   };
 
   const revealMistakes = () => {
@@ -170,6 +197,7 @@ export function createNonogram(context: GameContext): GameInstance<NonogramState
       board.appendChild(row);
     }
     disposeKeyboard = gridKeyboard(board, n);
+    syncZoom();
   };
 
   /** Syncs every dynamic attribute with `state` (no structural changes, so focus is kept). */

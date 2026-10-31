@@ -1,12 +1,13 @@
 /* App shell layout. Uses logical properties so the Arabic RTL layout mirrors automatically. */
-#app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
+/* minmax(0, 1fr): the page column never grows wider than the viewport because of a wide child (e.g. a long select). */
+#app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); }
 .app-header { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: 'brand nav lang'; align-items: center; gap: 0.5rem 1rem; padding: 0.75rem 1rem; border-block-end: 1px solid var(--wp-border); background: var(--wp-surface); }
 .app-header .brand { grid-area: brand; }
 .app-header nav { grid-area: nav; }
 .app-header .language-menu { grid-area: lang; }
 @media (max-width: 640px) { .app-header { grid-template-columns: 1fr auto; grid-template-areas: 'brand lang' 'nav nav'; } }
 .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; text-decoration: none; color: var(--wp-text); min-height: var(--wp-touch); }
-.brand-mark { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: var(--wp-accent); color: var(--wp-accent-contrast); }
+.brand-mark { display: block; width: 2.5rem; height: 2.5rem; object-fit: contain; }
 .app-header nav { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .language-menu { position: relative; }
 .language-menu summary { min-height: var(--wp-touch); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.7rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); cursor: pointer; list-style: none; font-weight: 600; }
@@ -22,20 +23,161 @@
 .app-header nav a[aria-current='page'] { background: var(--wp-surface-2); font-weight: 600; }
 .skip-link { position: absolute; inset-inline-start: -999px; }
 .skip-link:focus { inset-inline-start: 1rem; top: 0.5rem; background: var(--wp-surface); padding: 0.5rem; z-index: 10; }
-main { width: min(100%, 64rem); margin-inline: auto; padding: 1rem; }
+main { width: min(100%, 64rem); min-width: 0; margin-inline: auto; padding: 1rem; }
+main select { max-width: 100%; }
 main:focus { outline: none; }
 .app-footer { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: center; justify-content: center; padding: 1rem; border-block-start: 1px solid var(--wp-border); color: var(--wp-muted); font-size: 0.9rem; }
 .app-footer a { min-height: var(--wp-touch); display: inline-flex; align-items: center; }
 .hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-block: 0.5rem; }
 .lead { font-size: 1.1rem; color: var(--wp-muted); max-width: 46rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-block: 0.5rem 1rem; }
+.chip { min-height: 40px; padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.9rem; }
+.chip[aria-pressed='true'] { background: var(--wp-accent); color: var(--wp-accent-contrast); border-color: var(--wp-accent); font-weight: 600; }
+.chip[aria-pressed='true']::before { content: '✓ '; }
+/* The saved-game badge is one unbreakable pill: if it does not fit beside the title it moves to its own line as a whole. */
+.badge.saved { display: inline-flex; align-items: center; white-space: nowrap; max-inline-size: 100%; font-weight: 600; border-color: var(--wp-accent); font-size: 0.75rem; vertical-align: middle; }
 .game-grid { list-style: none; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
-.game-card { display: grid; gap: 0.35rem; height: 100%; padding: 1rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); text-decoration: none; }
+/* Card: the preview is a band across the top, then title, tagline and badges. */
+.game-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'preview' 'title' 'tagline' 'badges'; grid-template-rows: auto auto 1fr auto; gap: 0.35rem; align-content: start; height: 100%; padding: 1rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); text-decoration: none; }
 .game-card:hover { border-color: var(--wp-accent); }
-.game-card-title { font-weight: 700; font-size: 1.15rem; }
-.game-card-tagline { color: var(--wp-muted); }
+.game-card-title { grid-area: title; font-weight: 700; font-size: 1.15rem; overflow-wrap: anywhere; }
+.game-card-tagline { grid-area: tagline; color: var(--wp-muted); }
+.game-card .badges { grid-area: badges; }
+/* Full card width, 3:2 up to 7.5rem high (the drawing is centred); the height is known before paint, so no layout shift. */
+.game-card .game-preview { grid-area: preview; inline-size: 100%; block-size: auto; aspect-ratio: 96 / 64; max-block-size: 7.5rem; margin-block-end: 0.4rem; }
+/* Photo previews (PHOTOS in src/previews.ts): the <picture> wrapper adds no box, so the <img> is the card's preview band
+   exactly like an SVG drawing; like a drawing, the whole photo is shown and centred (owner feedback 2026-10-27: no
+   cropping on wide desktop cards). The
+   light/dark choice is the <source media> (prefers-color-scheme, the app's only theme switch). In forced-colours
+   mode the photo stays as it is (images are not recoloured) and keeps the CanvasText border of every preview. */
+.game-preview-picture { display: contents; }
+.game-preview--photo { object-fit: contain; }
+
+/* Game previews (src/previews.ts): flat sketches of each game's own screen, drawn from the design tokens and, where a
+   game has its own palette (lights, walls, crates, terrain…), from the same colours as the game. Decorative only. */
+.game-preview {
+  --pv-sun: #f6d36b; --pv-sun-ink: #3d2c00; --pv-wall: #6b6558; --pv-wall-line: #59544a; --pv-crate: #c98b3a; --pv-crate-edge: #6e4512;
+  --pv-done: #4f8f5b; --pv-done-edge: #1f4a29; --pv-wood: #d8b98a; --pv-wood-edge: #7a5a2e; --pv-frame: #6f5a43; --pv-hit: #0f6e6a; --pv-near: #b0560c;
+  --pv-cov: #d9d6cb; --pv-cov-edge: #a9a69b; --pv-n1: #1f4fa3; --pv-n2: #2b6b2f; --pv-star: #a86b00;
+  --pv-m0: #c62828; --pv-m1: #1565c0; --pv-m2: #2e7d32; --pv-m3: #a35f00; --pv-m4: #6a1b9a; --pv-m5: #00727d;
+  --pv-plain: #e7e3d4; --pv-road: #cfc8b4; --pv-forest: #b9d0ae; --pv-hill: #ddcfa8; --pv-water: #a9c7dd; --pv-mark: rgb(29 29 27 / 0.45);
+  --pv-land: #e7dfc8; --pv-land-edge: #b9ab84; --pv-river: #cfe3ec; --pv-wave: #b4d1de; --pv-boat-in: #f4e3c6;
+  --pv-s0: #d9b44a; --pv-s1: #8fb8d8; --pv-s2: #d99a7a; --pv-stone-edge: #2b2a26; --pv-platform: #6f6a5e; --pv-flow: #9cc9e0; --pv-hatch: #2f6f8f;
+  --pv-pc-face: #fffefa; --pv-pc-edge: #9a9890; --pv-pc-ink: #1d1d1b; --pv-pc-red: #b3261e; --pv-pc-back: var(--wp-accent); --pv-pc-back-line: #a9cfc0;
+  display: block; inline-size: 6rem; block-size: 4rem; border-radius: 6px; border: 1px solid var(--wp-border); background: var(--wp-bg); fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+@media (prefers-color-scheme: dark) {
+  .game-preview {
+    --pv-sun: #e7c65a; --pv-sun-ink: #2a1e00; --pv-wall: #4a4740; --pv-wall-line: #3b3933; --pv-crate: #d39a4c; --pv-crate-edge: #3d2507;
+    --pv-done: #6fb47c; --pv-done-edge: #143019; --pv-wood: #b8976a; --pv-wood-edge: #3c2a12; --pv-frame: #4d3f30; --pv-hit: #5cc4b8; --pv-near: #f0a95e;
+    --pv-cov: #43443d; --pv-cov-edge: #66675e; --pv-n1: #8db4f0; --pv-n2: #8fd19e; --pv-star: #f0c060;
+    --pv-m0: #ef9a9a; --pv-m1: #90caf9; --pv-m2: #a5d6a7; --pv-m3: #ffcc80; --pv-m4: #ce93d8; --pv-m5: #80deea;
+    --pv-plain: #3a3a32; --pv-road: #4a473d; --pv-forest: #2f4a33; --pv-hill: #514832; --pv-water: #2a4356; --pv-mark: rgb(236 235 228 / 0.45);
+    --pv-land: #34312a; --pv-land-edge: #5d5646; --pv-river: #1f3640; --pv-wave: #284653; --pv-boat-in: #3d2f1c;
+    --pv-s0: #8a6d16; --pv-s1: #355f80; --pv-s2: #8a4a2e; --pv-stone-edge: #f0eee6; --pv-platform: #8d877a; --pv-flow: #24546b; --pv-hatch: #8fd0ee;
+    --pv-pc-face: #2a2b27; --pv-pc-edge: #5d5e57; --pv-pc-ink: #ecebe4; --pv-pc-red: #ff8f84; --pv-pc-back: #24473d; --pv-pc-back-line: #6f9c8b;
+  }
+}
+/* Only the pure "text and flow" sketches follow the reading direction; boards, digits and letters never mirror. */
+[dir='rtl'] .game-preview--flow { transform: scaleX(-1); }
+/* Shared tokens. */
+.game-preview .c { fill: var(--wp-surface); stroke: var(--wp-muted); stroke-width: 0.8; }
+.game-preview .e { fill: var(--wp-surface-2); stroke: var(--wp-border); stroke-width: 0.8; }
+.game-preview .o { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.2; }
+.game-preview .ob { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.8; }
+.game-preview .d { fill: var(--wp-muted); }
+.game-preview .bd { fill: var(--wp-border); }
+.game-preview .hb { fill: var(--wp-bg); stroke: var(--wp-border); stroke-width: 0.8; }
+.game-preview .i { fill: var(--wp-text); }
+.game-preview .a { fill: var(--wp-accent); }
+.game-preview .sh { fill: var(--wp-accent); fill-opacity: 0.2; }
+.game-preview .w { fill: var(--wp-focus); }
+.game-preview .ok { fill: var(--wp-ok); }
+.game-preview .p1 { fill: var(--wp-p1); }
+.game-preview .p2 { fill: var(--wp-p2); }
+.game-preview .sf { fill: var(--wp-accent-contrast); }
+.game-preview .k { stroke: var(--wp-text); stroke-width: 2; }
+.game-preview .fn { stroke: var(--wp-text); stroke-width: 0.8; }
+.game-preview .g { stroke: var(--wp-muted); stroke-width: 1; }
+.game-preview .mu { stroke: var(--wp-muted); stroke-width: 1.6; }
+.game-preview .gk { stroke: var(--wp-muted); stroke-width: 2.2; }
+.game-preview .ln { stroke: var(--wp-muted); stroke-opacity: 0.55; stroke-width: 3; }
+.game-preview .tx { stroke: var(--wp-muted); stroke-width: 2.4; }
+.game-preview .al { stroke: var(--wp-accent); stroke-width: 2.5; }
+.game-preview .ab { stroke: var(--wp-accent); stroke-width: 1.4; }
+.game-preview .okl { stroke: var(--wp-ok); stroke-width: 1.6; }
+.game-preview .dn { stroke: var(--wp-danger); stroke-width: 1.2; }
+.game-preview .pr { stroke: var(--wp-focus); stroke-width: 1.6; }
+.game-preview .x1 { stroke: var(--wp-p1); stroke-width: 2.5; }
+.game-preview .x2 { stroke: var(--wp-p2); stroke-width: 2.5; }
+.game-preview .y2 { stroke: var(--wp-p2); stroke-width: 1.2; }
+.game-preview .sk { stroke: var(--wp-accent-contrast); stroke-width: 1.5; }
+.game-preview .skf { stroke: var(--wp-accent-contrast); stroke-opacity: 0.3; stroke-width: 1.1; }
+.game-preview .bl { stroke: var(--wp-border); stroke-width: 1.4; }
+.game-preview .ds { stroke-dasharray: 3 2.5; }
+.game-preview .dt { stroke-dasharray: 0.1 2.6; }
+/* Game palettes (the same colours the games use). */
+.game-preview .sun { fill: var(--pv-sun); stroke: var(--wp-border); stroke-width: 0.6; }
+.game-preview .sui { fill: var(--pv-sun-ink); }
+.game-preview .sus { stroke: var(--pv-sun-ink); stroke-width: 1.2; }
+.game-preview .wl { fill: var(--pv-wall); }
+.game-preview .wll { stroke: var(--pv-wall-line); stroke-width: 0.8; }
+.game-preview .cr { fill: var(--pv-crate); stroke: var(--pv-crate-edge); stroke-width: 1; }
+.game-preview .cre { stroke: var(--pv-crate-edge); stroke-width: 1; }
+.game-preview .cd { fill: var(--pv-done); stroke: var(--pv-done-edge); stroke-width: 1; }
+.game-preview .wd { fill: var(--pv-wood); stroke: var(--pv-wood-edge); stroke-width: 0.8; }
+.game-preview .fr { fill: var(--pv-frame); }
+.game-preview .wh { fill: var(--pv-hit); }
+.game-preview .wn { fill: var(--pv-near); }
+.game-preview .mc { fill: var(--pv-cov); stroke: var(--pv-cov-edge); stroke-width: 0.8; }
+.game-preview .st { fill: var(--pv-star); }
+.game-preview .m0 { fill: var(--pv-m0); } .game-preview .m1 { fill: var(--pv-m1); } .game-preview .m2 { fill: var(--pv-m2); }
+.game-preview .m3 { fill: var(--pv-m3); } .game-preview .m4 { fill: var(--pv-m4); } .game-preview .m5 { fill: var(--pv-m5); }
+.game-preview .chl { fill: #e9dfc8; } .game-preview .chd { fill: #a98c68; }
+.game-preview .pw { fill: #fbfbf7; stroke: #141414; stroke-width: 0.8; } .game-preview .pb { fill: #141414; stroke: #fbfbf7; stroke-width: 0.4; }
+.game-preview .lf { fill: #1e2430; } .game-preview .lgd { stroke: #343c4c; stroke-width: 0.7; }
+.game-preview .lgr { stroke: #3fd46a; stroke-width: 1.4; stroke-dasharray: 2.5 1.8; } .game-preview .lgf { fill: #3fd46a; }
+.game-preview .lmr { stroke: #c9ced8; stroke-width: 2; } .game-preview .lbk { fill: #59606e; stroke: #8b93a3; stroke-width: 0.6; }
+.game-preview .ltg { stroke: #c9ced8; stroke-width: 1.1; } .game-preview .lsel { fill: #283042; }
+.game-preview .tp { fill: var(--pv-plain); } .game-preview .trd { fill: var(--pv-road); } .game-preview .tf { fill: var(--pv-forest); }
+.game-preview .th { fill: var(--pv-hill); } .game-preview .tw { fill: var(--pv-water); } .game-preview .tm { stroke: var(--pv-mark); stroke-width: 0.7; }
+.game-preview .tmf { fill: var(--pv-mark); } .game-preview .tmd { stroke: var(--pv-mark); stroke-width: 1.8; }
+.game-preview .rl { fill: var(--pv-land); stroke: var(--pv-land-edge); stroke-width: 0.8; } .game-preview .rw { fill: var(--pv-river); }
+.game-preview .rwv { stroke: var(--pv-wave); stroke-width: 1.6; } .game-preview .bt { fill: var(--pv-crate); stroke: var(--pv-crate-edge); stroke-width: 1.2; }
+.game-preview .bi { fill: var(--pv-boat-in); }
+.game-preview .s0, .game-preview .s1, .game-preview .s2, .game-preview .pf { stroke: var(--pv-stone-edge); stroke-width: 0.7; }
+.game-preview .s0 { fill: var(--pv-s0); } .game-preview .s1 { fill: var(--pv-s1); } .game-preview .s2 { fill: var(--pv-s2); } .game-preview .pf { fill: var(--pv-platform); }
+.game-preview .fw { fill: var(--pv-flow); } .game-preview .fh { stroke: var(--pv-hatch); stroke-width: 0.7; }
+.game-preview .pcf { fill: var(--pv-pc-face); stroke: var(--pv-pc-edge); stroke-width: 0.5; } .game-preview .pci { fill: var(--pv-pc-ink); }
+.game-preview .pcr { fill: var(--pv-pc-red); } .game-preview .pcb { fill: var(--pv-pc-back); stroke: var(--pv-pc-edge); stroke-width: 0.4; }
+.game-preview .pcl { stroke: var(--pv-pc-back-line); stroke-width: 0.4; }
+.game-preview .win { stroke: color-mix(in srgb, var(--wp-surface) 80%, var(--wp-text)); stroke-width: 0.6; stroke-linecap: butt; }
+.game-preview .fbg { fill: #e9e4db; } .game-preview .fsk { fill: #e0b089; stroke: #8c5a37; stroke-width: 0.6; } .game-preview .fsh { fill: #5f8f5a; } .game-preview .fhr { fill: #d4a94a; }
+/* Text. */
+.game-preview .t { fill: var(--wp-text); stroke: none; font: 700 9px var(--wp-font); text-anchor: middle; dominant-baseline: central; }
+.game-preview .ts { fill: var(--wp-accent-contrast); }
+.game-preview .tm2 { fill: var(--wp-muted); }
+.game-preview .t.pcr { fill: var(--pv-pc-red); }
+.game-preview .n1 { fill: var(--pv-n1); } .game-preview .n2 { fill: var(--pv-n2); }
+.game-preview .tz { fill: #10131a; } .game-preview .tli { fill: #f4f4f4; }
+.game-preview .tsm { font-size: 6.5px; }
+.game-preview .txs { font-size: 4.2px; }
+.game-preview .tl { font-size: 15px; }
+@media (forced-colors: active) {
+  .game-preview { forced-color-adjust: none; background: Canvas; border-color: CanvasText; }
+  .game-preview :is(.c, .e, .o, .ob, .mc, .rl, .rw, .bi, .hb, .tp, .trd, .tf, .th, .tw, .chl, .pw, .wd, .fbg, .lf, .lsel, .sh, .pcf) { fill: Canvas; stroke: CanvasText; }
+  .game-preview :is(.d, .bd, .i, .t, .wl, .cr, .fr, .chd, .pb, .pf, .s1, .lbk, .fsk, .fsh, .fhr, .tmf, .pci, .pcb) { fill: CanvasText; }
+  .game-preview :is(.a, .w, .ok, .p1, .p2, .sun, .cd, .wh, .wn, .st, .m0, .m1, .m2, .m3, .m4, .m5, .lgf, .bt, .s0, .s2, .fw, .pcr) { fill: Highlight; }
+  .game-preview :is(.sf, .ts, .sui, .tz, .tli, .n1, .n2, .tm2) { fill: Canvas; }
+  .game-preview :is(.t.n1, .t.n2, .t.tm2) { fill: CanvasText; }
+  .game-preview :is(.k, .fn, .g, .mu, .gk, .ln, .tx, .x1, .bl, .wll, .cre, .tm, .lgd, .ltg, .lmr, .rwv, .fh, .dn, .sus, .tmd) { stroke: CanvasText; }
+  .game-preview :is(.al, .ab, .okl, .pr, .x2, .y2, .lgr) { stroke: Highlight; }
+  .game-preview .sk, .game-preview .skf, .game-preview .win, .game-preview .pcl { stroke: Canvas; }
+}
 .badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-block-start: 0.25rem; }
 .badge { font-size: 0.8rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--wp-surface-2); border: 1px solid var(--wp-border); }
 .badge.warn { border-style: dashed; }
+.badge.preview { font-weight: 600; border-color: var(--wp-accent); }
 .principles { margin-block: 2rem; }
 .principles ul { padding-inline-start: 1.2rem; }
 .prose { max-width: 44rem; }
@@ -47,11 +189,69 @@ main:focus { outline: none; }
 .host-panel { margin-block: 1rem; }
 .toolbar { justify-content: flex-start; }
 .field { display: grid; gap: 0.3rem; margin-block: 0.75rem; }
-.field.inline { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; }
+.field.inline { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0; max-width: 100%; min-width: 0; }
+.field.inline select { min-width: 0; max-width: 100%; text-overflow: ellipsis; }
 .field.checkbox { display: flex; align-items: center; gap: 0.6rem; }
 .field.checkbox input { width: 1.4rem; height: 1.4rem; min-height: 0; }
 fieldset { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 1rem; }
 .game-root { margin-block: 1rem; }
 .finished { margin-block: 1rem; }
+/* Start screen (ADR 0017): Continue, then "New game" with the game's settings and Start. */
+.start-form h2 { margin: 0; font-size: 1.15rem; }
+.setup-fields { gap: 0.75rem; }
+.setting { margin: 0; min-width: 0; }
+.setting[hidden] { display: none; }
+.setting legend { font-weight: 600; padding-inline: 0.25rem; }
+.setting.field { margin: 0; }
+.setting.field > label { font-weight: 600; }
+.setting select, .setting input[type='number'] { max-width: 100%; min-width: 0; justify-self: start; }
+.setting input[type='number'] { width: 8rem; }
+/* On a phone a select takes the whole line, so long option labels have the most room (they cannot wrap). */
+@media (max-width: 30rem) { .setting select { inline-size: 100%; text-overflow: ellipsis; } }
+.setting-options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.setting-option { display: inline-flex; align-items: center; gap: 0.5rem; min-height: var(--wp-touch); padding: 0.25rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); cursor: pointer; max-width: 100%; box-sizing: border-box; }
+.setting-option input { width: 1.25rem; height: 1.25rem; min-height: 0; margin: 0; flex: none; accent-color: var(--wp-accent); }
+.setting-option:has(input:checked) { border-color: var(--wp-accent); box-shadow: inset 0 0 0 1px var(--wp-accent); font-weight: 600; }
+.setting-option:has(input:focus-visible) { outline: 2px solid var(--wp-focus); outline-offset: 2px; }
+.setting-toggle .field.checkbox { margin: 0; min-height: var(--wp-touch); }
+.setting-hint { margin: 0.25rem 0 0; font-size: 0.9rem; }
+.settings-summary { font-size: 0.9rem; }
 .session-note { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .seed { font-size: 0.85rem; }
+/* Deck library (/decks, /decks/<id>, /decks/import) */
+.deck-card .badges { margin-block-start: auto; }
+.deck-facts { padding-inline-start: 1.2rem; }
+.deck-actions { margin-block: 1rem; }
+button.danger { border-color: var(--wp-danger); color: var(--wp-danger); }
+button.danger::before { content: '✕ '; }
+.deck-preview { max-width: 100%; overflow-x: auto; }
+.deck-preview table { width: 100%; border-collapse: collapse; }
+.deck-preview th, .deck-preview td { padding: 0.4rem 0.5rem; border-block-end: 1px solid var(--wp-border); text-align: start; vertical-align: middle; overflow-wrap: anywhere; }
+.deck-preview th { font-weight: 600; color: var(--wp-muted); }
+.deck-preview td:first-child, .deck-preview th:first-child { width: 2.5rem; }
+.deck-symbol { font-size: 1.6rem; line-height: 1; }
+.deck-image { max-width: 4rem; max-height: 3rem; object-fit: contain; vertical-align: middle; }
+.import-form .field { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.import-form textarea, .import-form input { box-sizing: border-box; max-width: 100%; min-width: 0; }
+.import-form textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 0.9rem; }
+.import-form input[type='text'] { width: min(100%, 24rem); }
+.import-form input[type='file'] { width: 100%; }
+.import-example { overflow-x: auto; padding: 0.5rem; border-radius: 6px; background: var(--wp-surface-2); font-size: 0.85rem; }
+.import-errors { border-inline-start-color: var(--wp-danger); }
+/* "Create with an AI" on /decks/import: the guide link and its copy button wrap on narrow screens. */
+.ai-guide { margin-block: 1.5rem; }
+.ai-guide .field { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.ai-guide-link { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; min-width: 0; }
+.ai-guide-link input { flex: 1 1 16rem; box-sizing: border-box; min-width: 0; max-width: 100%; font-family: ui-monospace, monospace; font-size: 0.9rem; }
+.ai-guide a, .about-ai-decks a { min-height: var(--wp-touch); display: inline-flex; align-items: center; }
+/* Items worth reviewing (neutral overview: no colours that urge, no counters that grow louder) */
+.review-overview { margin-block: 1.25rem; }
+.review-list { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.5rem; }
+.review-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); }
+.review-list .review-deck { font-weight: 600; }
+.review-list .wp-button { margin-inline-start: auto; }
+.review-badge { border-style: dashed; }
+.review-how { max-width: 46rem; }
+.import-errors ul, .import-warnings ul { margin-block: 0.25rem; padding-inline-start: 1.2rem; }
+.import-errors strong::before { content: '⚠ '; }
+.import-result { margin-block: 1rem; display: grid; gap: 0.75rem; }

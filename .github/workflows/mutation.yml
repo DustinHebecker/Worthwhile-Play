@@ -1,23 +1,108 @@
 name: Mutation tests
 
-# Targeted mutation testing (Stryker) on high-value logic: RNG, persistence, deck model,
-# localization core, and each game's rules/AI. Not run on presentation code.
+# Mutation testing (Stryker) on high-value logic: RNG, persistence, deck model, localization core,
+# each game's rules/AI and the strategy engine (stryker.config.json `mutate`); not on presentation code.
+# Compute budget (ADR 0021):
+# - Pull requests: only the changed lines of covered files. `git diff -U0` → scripts/mutation-targets.mjs
+#   --lines gives Stryker mutation ranges (`file:start-end`, nearby hunks merged, two lines of context);
+#   one job per file; break threshold 65 % on those mutants. Draft PRs are skipped; a new push cancels
+#   the running check.
+# - Weekly schedule: a rotating, report-only sample. The covered files, sorted, whose index ≡ ISO week
+#   (mod 8), so every file is mutated once in 8 weeks; 3 jobs; no break threshold
+#   (stryker.report.config.mjs); per-file scores go to the job summary. A broken dry run still fails.
+# - Manual run (workflow_dispatch): mode `sample` (this week's sample, as the schedule) or `full`
+#   (every covered file in 12 round-robin groups, break threshold 65 % per group).
+# Stryker runs the tests through vitest.mutation.config.ts, which leaves out *.slow.test.ts and
+# *.long.test.ts (AI strength, statistics, oracle searches); the CI workflow runs those.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'packages/**/src/**'
       - 'stryker.config.json'
+      - 'stryker.report.config.mjs'
+      - 'vitest.mutation.config.ts'
+      - 'scripts/mutation-targets.mjs'
+      - 'scripts/mutation-targets.test.mjs'
+      - 'scripts/mutation-summary.mjs'
+      - '.github/workflows/mutation.yml'
   schedule:
     - cron: '17 3 * * 1'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'sample = this week''s rotating sample, report-only; full = every covered file, 65 % threshold (hours of runner time)'
+        type: choice
+        options: [sample, full]
+        default: sample
+
+# Pull requests: a new push replaces the running check. Scheduled and manual runs are never cancelled
+# by each other (they queue instead), so a manual full run is not lost to the weekly sample.
+concurrency:
+  group: mutation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
-  stryker:
+  plan:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 10
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
+      config: ${{ steps.targets.outputs.config }}
+      timeout: ${{ steps.targets.outputs.timeout }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Test the target script
+        run: node --test scripts/mutation-targets.test.mjs
+      - name: What to mutate (changed lines on pull requests, a weekly sample or everything otherwise)
+        id: targets
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          EVENT: ${{ github.event_name }}
+          MODE: ${{ inputs.mode || 'sample' }}
+        run: |
+          set -o pipefail
+          if [ "$EVENT" = "pull_request" ]; then
+            targets=$(git diff -U0 --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ --diff-filter=AMR "origin/$BASE_REF...HEAD" | node scripts/mutation-targets.mjs --lines --json)
+            config=stryker.config.json
+            timeout=90
+          elif [ "$MODE" = "full" ]; then
+            targets=$(git ls-files 'packages/**/src/**' | node scripts/mutation-targets.mjs --json --groups 12)
+            config=stryker.config.json
+            timeout=300
+          else
+            week=$((10#$(date -u +%V)))
+            echo "ISO week $week: files with index mod 8 = $((week % 8))"
+            targets=$(git ls-files 'packages/**/src/**' | node scripts/mutation-targets.mjs --json --sample "$week" --every 8 --groups 3)
+            config=stryker.report.config.mjs
+            timeout=240
+          fi
+          echo "Mutating with $config: $targets"
+          {
+            echo "targets=$targets"
+            echo "config=$config"
+            echo "timeout=$timeout"
+          } >> "$GITHUB_OUTPUT"
+
+  stryker:
+    needs: plan
+    if: needs.plan.outputs.targets != '' && needs.plan.outputs.targets != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs.plan.outputs.timeout) }}
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -26,10 +111,30 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm mutation
+      - name: Mutation tests (${{ strategy.job-index }})
+        env:
+          CONFIG: ${{ needs.plan.outputs.config }}
+          TARGET: ${{ matrix.target }}
+        run: pnpm mutation "$CONFIG" --mutate "$TARGET"
+      - name: Score summary
+        if: always()
+        env:
+          CONFIG: ${{ needs.plan.outputs.config }}
+          JOB: ${{ strategy.job-index }}
+        run: node scripts/mutation-summary.mjs reports/mutation/mutation.json "Mutation score, job $JOB ($CONFIG)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Report name
+        id: name
+        if: always()
+        env:
+          JOB: ${{ strategy.job-index }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          # The first file of the target, without its line range, as a valid artifact name.
+          file=$(printf '%s' "$TARGET" | cut -d, -f1 | cut -d: -f1 | tr -c 'A-Za-z0-9_-' '-' | cut -c1-80)
+          echo "name=mutation-report-$JOB-$file" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: mutation-report
+          name: ${{ steps.name.outputs.name }}
           path: reports/mutation/
           retention-days: 14

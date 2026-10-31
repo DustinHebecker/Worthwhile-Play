@@ -201,4 +201,15 @@ describe('renderSide', () => {
     expect(symbolFace.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Schildkröte');
     expect(renderSide({ audio: 'x.mp3' }, '').childElementCount).toBe(0);
   });
+
+  it('sizes text by its display width: long words smaller, definitions as a paragraph', () => {
+    const cls = (text: string) => renderSide({ text, lang: 'en' }, text).querySelector('.wp-memory__text')?.className;
+    expect(cls('Hund')).toBe('wp-memory__text');
+    expect(cls('Schildkröte')).toBe('wp-memory__text wp-memory__text--long');
+    expect(cls('Kontextfenster')).toBe('wp-memory__text wp-memory__text--xlong');
+    // Chinese, Japanese and Korean characters are about twice as wide as Latin letters.
+    expect(cls('りんご')).toBe('wp-memory__text');
+    expect(cls('アラインメント')).toBe('wp-memory__text wp-memory__text--xlong');
+    expect(cls('Small piece of text, often a word or part of a word, that a language model reads and writes.')).toBe('wp-memory__text wp-memory__text--para');
+  });
 });

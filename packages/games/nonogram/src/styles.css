@@ -25,6 +25,20 @@
 }
 .wp-nonogram .ng-board[data-size='5'] { --ng-min: 44px; }
 .wp-nonogram .ng-board[data-size='8'] { --ng-min: 30px; }
+/* 15×15 fits a 360 px phone with small cells; "Larger cells" switches to 44 px cells that scroll
+   sideways inside the frame while the row clues stay pinned at the inline start. */
+.wp-nonogram .ng-board[data-size='15'] { --ng-min: 15px; }
+.wp-nonogram .ng-board[data-size='15'] .ng-clue { font-size: 0.75rem; }
+.wp-nonogram .ng-board[data-size='15'] .ng-row-clue { gap: 0.3em; padding-inline: 0 0.25rem; }
+.wp-nonogram .ng-board[data-size='15'] .ng-col-clue { gap: 0; }
+.wp-nonogram .ng-board.is-zoomed { --ng-min: 44px; justify-content: start; }
+.wp-nonogram .ng-board.is-zoomed .ng-clue { font-size: 0.85rem; }
+.wp-nonogram .ng-board.is-zoomed .ng-row-clue,
+.wp-nonogram .ng-board.is-zoomed .ng-corner {
+  position: sticky; inset-inline-start: 0; z-index: 2;
+  background: var(--wp-bg);
+  border-inline-end: 1px solid var(--ng-major);
+}
 .wp-nonogram .ng-row { display: contents; }
 
 /* Clues */
@@ -96,6 +110,9 @@
 .wp-nonogram .ng-mode-icon { display: inline-flex; align-items: center; justify-content: center; width: 1.1em; height: 1.1em; font-weight: 700; }
 .wp-nonogram .ng-mode-icon-fill { background: var(--wp-text); border-radius: 2px; }
 .wp-nonogram .ng-actions { justify-content: center; }
+.wp-nonogram .ng-view-options { display: flex; justify-content: center; }
+.wp-nonogram .ng-zoom[aria-pressed='true'] { border: 2px solid var(--wp-accent); font-weight: 700; }
+.wp-nonogram .ng-zoom-icon { margin-inline-end: 0.35em; }
 .wp-nonogram .ng-check-result {
   padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-accent);
   background: var(--wp-surface-2); border-radius: 6px;

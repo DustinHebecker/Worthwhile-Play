@@ -1,0 +1,200 @@
+/* Lootlings — layout for 360 px and up; logical properties only (RTL-safe); 44 px targets. */
+.cq {
+  --cq-monster: #8a3b2e;
+  --cq-curse: #5b3b8a;
+  --cq-item: #2f5d50;
+  --cq-loot: #8a6a12;
+  --cq-body: #d9c6a5;
+  --cq-accent: #b4530a;
+  display: grid;
+  gap: 0.75rem;
+  max-inline-size: 48rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .cq {
+    --cq-monster: #f0a090;
+    --cq-curse: #c7a8f0;
+    --cq-item: #8fc1ad;
+    --cq-loot: #e8c766;
+    --cq-body: #5c5245;
+    --cq-accent: #f0a35e;
+  }
+}
+.cq h2,
+.cq h3,
+.cq h4 { margin: 0; }
+.cq h3 { font-size: 1.05rem; }
+.cq h4 { font-size: 0.95rem; margin-block-start: 0.5rem; }
+.cq p { margin: 0; }
+.cq-muted { color: var(--wp-muted); font-size: 0.9rem; }
+.cq-strong { font-weight: 700; font-size: 1.2rem; }
+
+/* Coach switch */
+.cq-check { display: flex; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch); }
+.cq-check input { inline-size: 1.4rem; block-size: 1.4rem; min-block-size: auto; }
+
+/* Players */
+.cq-round { font-size: 0.9rem; color: var(--wp-muted); }
+.cq-players { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.cq-player { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); }
+.cq-player[data-active='true'] { border-inline-start: 6px solid var(--cq-accent); }
+.cq-player summary { min-block-size: var(--wp-touch); padding: 0.35rem 0.6rem; display: flex; flex-wrap: wrap; gap: 0 0.5rem; align-items: center; cursor: pointer; }
+.cq-player-name { font-weight: 600; }
+.cq-turn { font-weight: 700; }
+.cq-player-facts { font-size: 0.9rem; }
+.cq-player-gear { padding: 0 0.6rem 0.5rem; font-size: 0.9rem; }
+
+/* Next step, hints, recent events */
+.cq-next { background: var(--wp-surface-2); border-radius: var(--wp-radius); padding: 0.6rem 0.75rem; display: grid; gap: 0.35rem; }
+.cq-next-text { font-weight: 600; }
+.cq-hint { border-inline-start: 4px solid var(--cq-accent); padding-inline-start: 0.5rem; font-size: 0.95rem; }
+.cq-recent { border: 1px dashed var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 0.75rem; }
+.cq-recent ul,
+.cq-log ul { margin: 0.25rem 0 0; padding-inline-start: 1.1rem; font-size: 0.9rem; }
+
+/* Actions */
+.cq-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.cq-actions button.primary { flex: 1 1 12rem; font-weight: 700; }
+
+/* Fight */
+.cq-fight { border: 2px solid var(--cq-monster); border-radius: var(--wp-radius); padding: 0.6rem 0.75rem; display: grid; gap: 0.5rem; background: var(--wp-surface); }
+.cq-forecast { font-weight: 600; display: flex; gap: 0.4rem; align-items: baseline; }
+.cq-forecast-icon { font-size: 0.9rem; }
+.cq-fight-monsters { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.cq-fight-monster { display: grid; gap: 0.25rem; }
+.cq-parts { margin: 0; padding-inline-start: 1.1rem; font-size: 0.85rem; }
+
+/* Cards */
+.cq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.4rem; align-items: start; }
+.cq-tile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+  min-block-size: 3.4rem;
+  padding: 0.3rem 0.5rem;
+  text-align: start;
+  border-width: 2px;
+  border-radius: 8px;
+}
+.cq-tile[data-type='monster'] { border-color: var(--cq-monster); border-style: solid; border-radius: 2px 12px; }
+.cq-tile[data-type='curse'] { border-color: var(--cq-curse); border-style: dashed; }
+.cq-tile[data-type='item'],
+.cq-tile[data-type='upgrade'] { border-color: var(--cq-item); border-radius: 14px; }
+.cq-tile[data-type='oneshot'],
+.cq-tile[data-type='levelup'],
+.cq-tile[data-type='double'] { border-color: var(--cq-loot); border-style: double; border-width: 4px; }
+.cq-tile[aria-pressed='true'] { outline: 3px solid var(--wp-accent); outline-offset: 1px; background: var(--wp-surface-2); }
+.cq-tile { position: relative; }
+.cq-pick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem; align-items: stretch; }
+.cq-info { min-inline-size: var(--wp-touch); padding: 0; font-weight: 800; font-style: italic; font-family: Georgia, serif; font-size: 1.2rem; border-radius: 50%; align-self: center; block-size: var(--wp-touch); }
+.cq-tile[aria-pressed='true']::after { content: '✓'; position: absolute; inset-inline-end: 0.3rem; inset-block-start: 0.1rem; font-size: 0.8rem; font-weight: 700; }
+.cq-tile-text { display: grid; min-inline-size: 0; }
+.cq-tile-name { font-weight: 600; font-size: 0.95rem; line-height: 1.2; overflow-wrap: break-word; hyphens: auto; }
+.cq-tile-type { font-size: 0.78rem; color: var(--wp-muted); }
+.cq-tile-num { font-weight: 800; font-size: 1.1rem; }
+/* An item with its upgrades (owner feedback 2026-10-24): the upgrades hang below the item, joined by a rail. */
+.cq-stack { display: grid; align-content: start; }
+.cq-attached { list-style: none; margin: 0; padding: 0.2rem 0 0; padding-inline-start: 0.4rem; margin-inline-start: 1rem; display: grid; gap: 0.2rem; border-inline-start: 3px solid var(--cq-item); }
+.cq-attached .cq-tile { inline-size: 100%; min-block-size: var(--wp-touch); padding-block: 0.15rem; border-style: dashed; border-radius: 10px; }
+.cq-attached .cq-art { inline-size: 2rem; block-size: 2rem; }
+.cq-attached .cq-art-il { inline-size: 2.6rem; block-size: auto; }
+.cq-tile-total { display: grid; justify-items: end; line-height: 1.1; }
+.cq-tile-sum { font-size: 0.72rem; font-weight: 600; color: var(--wp-muted); white-space: nowrap; }
+.cq-detail-attached { margin: 0; font-weight: 600; }
+.cq-worlds { margin: 0; font-size: 0.85rem; color: var(--wp-muted); }
+.cq-art { display: block; inline-size: 2.6rem; block-size: 2.6rem; }
+.cq-art-il { inline-size: 3.6rem; block-size: auto; align-self: center; }
+.cq-detail-pic { max-inline-size: 26rem; inline-size: 100%; justify-self: center; }
+.cq-pic { inline-size: 100%; block-size: 100%; }
+.cq-pic .b { fill: var(--cq-body); stroke: var(--wp-text); stroke-width: 1.5; }
+.cq-pic .a { fill: var(--cq-accent); stroke: var(--wp-text); stroke-width: 1; }
+.cq-pic .d { fill: var(--wp-surface-2); stroke: var(--wp-text); stroke-width: 1.2; }
+.cq-pic .e { fill: var(--wp-text); }
+.cq-pic .k { fill: none; stroke: var(--wp-text); stroke-width: 2; stroke-linecap: round; }
+.cq-pic-monster .b { fill: var(--cq-monster); }
+.cq-pic-curse .b { fill: var(--cq-curse); }
+
+/* Card detail */
+.cq-detail { border: 2px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.75rem; margin-block-start: 0.5rem; display: grid; gap: 0.5rem; background: var(--wp-surface); }
+.cq-detail:focus { outline: 3px solid var(--wp-focus); }
+.cq-detail-head { display: flex; gap: 0.6rem; align-items: center; }
+.cq-detail-head .cq-art { inline-size: 4rem; block-size: 4rem; }
+.cq-rules { margin: 0; padding-inline-start: 1.1rem; }
+.cq-flavour { font-style: italic; color: var(--wp-muted); }
+.cq-blunder { border-inline-start: 4px solid var(--cq-monster); padding-inline-start: 0.5rem; }
+.cq-detail-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.cq-hand,
+.cq-mine { display: grid; gap: 0.4rem; }
+.cq-log summary { min-block-size: var(--wp-touch); display: flex; align-items: center; cursor: pointer; }
+
+@media (forced-colors: active) {
+  .cq-pic .b,
+  .cq-pic .a,
+  .cq-pic .d { fill: Canvas; stroke: CanvasText; }
+  .cq-pic .e { fill: CanvasText; }
+  .cq-pic .k { stroke: CanvasText; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cq * { transition: none !important; animation: none !important; }
+}
+
+/* Card illustrations (illustrations/): one fixed, dusky palette in both themes (owner preferred the dark look). */
+.cq { --il-ink: #120f0c; --il-sky: #3a4d5c; --il-night: #161c2e; --il-cave: #2a2420; --il-grass: #4f7d3a; --il-earth: #b8633a;
+  --il-earth-dark: #8f4626; --il-red: #d2402f; --il-orange: #e07a2c; --il-pink: #e48aa6; --il-green: #3f8f46; --il-blue: #3d6fb6;
+  --il-teal: #2f8f8a; --il-yellow: #f2c530; --il-gold: #e0a92a; --il-white: #e9e7df; --il-dark: #241f1b; --il-grey: #6e6a64;
+  --il-skin: #f1c7a1; --il-beard: #ecebe6; --il-stone: #a8a59c; --il-metal: #b9c0c7; --il-wood: #b07b48; --il-wood-dark: #7d5330;
+  --il-water: #6bb8e8; --il-smoke: #cfcfcf; --il-glow: #f4ff6a; --il-purple: #7b4fa8; --il-purple-dark: #4b2d6b; --il-torch: #b8ad5c;
+  --il-slime: #8fd14f; --il-paper: #efe6cf; }
+.cq-il { inline-size: 100%; block-size: auto; display: block; border-radius: 8px; }
+.cq-art-il .cq-il { border-radius: 4px; }
+.cq-il .il-ink { stroke: var(--il-ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cq-il .il-line { fill: none; stroke: var(--il-ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cq-il .il-light { fill: none; stroke: var(--il-white); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cq-il .il-thin { stroke-width: 1.2; }
+.cq-il .il-thick { stroke-width: 3.5; }
+.cq-il .il-dash { stroke-dasharray: 6 4; }
+.cq-il .il-sky { fill: var(--il-sky); }
+.cq-il .il-night { fill: var(--il-night); }
+.cq-il .il-cave { fill: var(--il-cave); }
+.cq-il .il-grass { fill: var(--il-grass); }
+.cq-il .il-earth { fill: var(--il-earth); }
+.cq-il .il-earth-dark { fill: var(--il-earth-dark); }
+.cq-il .il-red { fill: var(--il-red); }
+.cq-il .il-orange { fill: var(--il-orange); }
+.cq-il .il-pink { fill: var(--il-pink); }
+.cq-il .il-green { fill: var(--il-green); }
+.cq-il .il-blue { fill: var(--il-blue); }
+.cq-il .il-teal { fill: var(--il-teal); }
+.cq-il .il-yellow { fill: var(--il-yellow); }
+.cq-il .il-gold { fill: var(--il-gold); }
+.cq-il .il-white { fill: var(--il-white); }
+.cq-il .il-dark { fill: var(--il-dark); }
+.cq-il .il-grey { fill: var(--il-grey); }
+.cq-il .il-skin { fill: var(--il-skin); }
+.cq-il .il-beard { fill: var(--il-beard); }
+.cq-il .il-stone { fill: var(--il-stone); }
+.cq-il .il-metal { fill: var(--il-metal); }
+.cq-il .il-wood { fill: var(--il-wood); }
+.cq-il .il-wood-dark { fill: var(--il-wood-dark); }
+.cq-il .il-water { fill: var(--il-water); }
+.cq-il .il-smoke { fill: var(--il-smoke); }
+.cq-il .il-glow { fill: var(--il-glow); }
+.cq-il .il-purple { fill: var(--il-purple); }
+.cq-il .il-purple-dark { fill: var(--il-purple-dark); }
+.cq-il .il-slime { fill: var(--il-slime); }
+.cq-il .il-paper { fill: var(--il-paper); }
+.cq-il .il-torch { fill: var(--il-torch); opacity: 0.7; }
+.cq-il .il-hose { fill: none; stroke: var(--il-green); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.cq-il .il-water-line { fill: none; stroke: var(--il-water); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 6 4; }
+@media (forced-colors: active) {
+  .cq-il * { fill: Canvas !important; stroke: CanvasText !important; }
+}
+
+/* Offers (K2) */
+.cq-help { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 0.75rem; display: grid; gap: 0.35rem; }
+.cq-help select { min-inline-size: 0; max-inline-size: 100%; }
+.cq-stars { color: var(--cq-loot); letter-spacing: 0.05em; }
+.cq-offer-text { flex: 1 1 100%; font-weight: 600; }

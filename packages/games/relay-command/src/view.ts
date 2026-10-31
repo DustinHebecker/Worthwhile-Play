@@ -1,0 +1,2903 @@
+import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
+import { normalizeSeed } from '@wp/game-core';
+import {
+  hostile,
+  archetypeOf,
+  carrierOf,
+  droneState,
+  depositAt,
+  isReady,
+  repairPrice,
+  incomeOfSide,
+  ARMOR_CLASSES,
+  cellOf,
+  computeNetwork,
+  NEUTRAL,
+  jammedCells,
+  needsDeploy as needsDeployArch,
+  nodeRadius,
+  RETREAT_THRESHOLDS,
+  TARGET_PRIORITIES,
+  LOST_CONTACT,
+  type LostContact,
+  type Doctrine,
+  type Entity,
+  type Network,
+  type Order,
+  type World
+} from '@wp/strategy-engine';
+import { announce, clear, h } from '@wp/ui';
+import {
+  cancelJob,
+  cancelOrder,
+  canSettle,
+  confirmHandover,
+  isHotSeat,
+  levelOf,
+  personsLeft,
+  type Seat,
+  concede,
+  settle,
+  settleResult,
+  MAX_TURNS,
+  STALL_TURNS,
+  stalemateTurns,
+  doctrineFor,
+  doctrineRefusal,
+  draftFor,
+  lockTurn,
+  newGame,
+  opponentValue,
+  teamValue,
+  PLAYER,
+  startSeats,
+  teamShapes,
+  teamShapeOf,
+  teamsOnly,
+  winnersOf,
+  type TeamShape,
+  orderRefusal,
+  rulesOf,
+  orderSlots,
+  outcome,
+  picture,
+  planDoctrine,
+  planOrder,
+  plannedJobs,
+  plannedSaleRefund,
+  plannedSupply,
+  commandPost as commandPostOf,
+  lastSentOrder,
+  reportTurn,
+  RULESET,
+  scenarioById,
+  specOf,
+  TURN_LIMITS,
+  unitById,
+  RANDOM_OPPONENTS,
+  RANDOM_SIZES,
+  type RandomMap,
+  type RcState
+} from './rules';
+import { DIFFICULTIES, type Difficulty } from './ai';
+import { drawIcon, VIEWS, type View } from './icons';
+import { buildReplay, positionAt, type Replay } from './replay';
+import { createEditor } from './editor';
+import { blankMap, customSpec, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, seatsOf, type EditMap, type MapLibrary, type MapStore } from './maps';
+import { generateMap } from './generator';
+import { CELL, createTerrainLayer, drawDeposit, drawTerrainSwatch, TERRAIN_NAMES } from './draw';
+import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
+
+/** Most pixels a map canvas has (phone browsers refuse larger canvases; a margin below 16.7 MP). */
+const MAX_CANVAS_PIXELS = 12_000_000;
+/** Maps larger than this (cells; 24×16) are large: they scroll in a frame of their own and can be zoomed out. */
+const LARGE_MAP_CELLS = 24 * 16;
+/** Map sizes on large maps (owner request 2026-10-27, 48×32 maps): a share of the full 44 px a cell. */
+export const ZOOMS = [1, 0.75, 0.5] as const;
+
+/** Where a cell lies on a map, by thirds (the name of a base in the setup). */
+export function placeOf(x: number, y: number, w: number, h: number): string {
+  const col = x * 3 < w ? 'left' : x * 3 >= 2 * w ? 'right' : '';
+  const row = y * 3 < h ? 'top' : y * 3 >= 2 * h ? 'bottom' : '';
+  return row && col ? `${row}-${col}` : row || col || 'centre';
+}
+import './styles.css';
+
+/** Letters of the sides (A = the player), shown on every unit and row when there are several sides. */
+const SIDE_MARKS = 'ABCDEFGH';
+/** Colour tokens of the sides (and fallbacks): the first two are the shared player colours. */
+const SIDE_COLOURS: readonly (readonly [string, string])[] = [
+  ['--wp-p1', '#24508f'],
+  ['--wp-p2', '#9a3412'],
+  ['--rc-p3', '#6b21a8'],
+  ['--rc-p4', '#0f5f57'],
+  ['--rc-p5', '#854d0e'],
+  ['--rc-p6', '#9d174d'],
+  ['--rc-p7', '#3f6212'],
+  ['--rc-p8', '#1e3a8a']
+];
+
+/** Milliseconds after arming a two-press confirmation in which a second press does not count. */
+const CONFIRM_GAP = 400;
+/** Open end: from this many quiet turns on the turn line says that strength will decide. */
+const QUIET_NOTICE = 3;
+
+/** Kinds the game uses, in the legend's order: fighters, support, structures. */
+const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'kite', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp'] as const;
+
+/** Map cell size in CSS pixels (the 44 px minimum touch target). */
+export { CELL };
+
+/** Automatic order ends worth telling the player (arrivals and regroups are expected outcomes). */
+const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced', 'lost-contact', 'turned-back', 'leash']);
+
+let instanceCounter = 0;
+
+const isDifficulty = (v: unknown): v is Difficulty => (DIFFICULTIES as readonly unknown[]).includes(v);
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+/** Small line pictograms of the unit card (20-unit box, current colour; hand-drawn, no third-party art). */
+const PICTOGRAMS = {
+  health: ['M10 4v12M4 10h12', 'M6 2h8a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z'],
+  attack: ['M10 4a6 6 0 1 0 0 12a6 6 0 1 0 0-12z', 'M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4'],
+  range: ['M2.5 10h11M10.5 6.5 14 10l-3.5 3.5M17 4.5v11'],
+  move: ['M4 5l5 5-5 5M10 5l5 5-5 5'],
+  sight: ['M1.5 10Q10 2 18.5 10Q10 18 1.5 10Z', 'M10 8.2a1.8 1.8 0 1 0 0 3.6a1.8 1.8 0 1 0 0-3.6z'],
+  radio: ['M10 18V8M6.6 5.2a4.5 4.5 0 0 0 0 5.6M13.4 5.2a4.5 4.5 0 0 1 0 5.6M4.2 2.8a8 8 0 0 0 0 10.4M15.8 2.8a8 8 0 0 1 0 10.4'],
+  noweapon: ['M10 4a6 6 0 1 0 0 12a6 6 0 1 0 0-12z', 'M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4M3 17 17 3']
+} as const;
+
+/** A pictogram as inline SVG (decorative: the word next to it carries the meaning). */
+function pictogram(name: keyof typeof PICTOGRAMS): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  for (const [k, v] of Object.entries({ class: 'rc-pict', viewBox: '0 0 20 20', width: '18', height: '18', 'aria-hidden': 'true', focusable: 'false', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })) svg.setAttribute(k, v);
+  for (const d of PICTOGRAMS[name]) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    svg.append(path);
+  }
+  return svg;
+}
+
+export function createRelayCommand(context: GameContext): GameInstance<RcState> {
+  const { t, root } = context;
+  const uid = `rc-${++instanceCounter}`;
+  let state: RcState = newGame(0);
+  let selected: number | null = null;
+  let cursor = { x: 0, y: 0 };
+  let confirming = false;
+  /** The side whose view is shown: the player's, or in a hot-seat game the person planning (D10). */
+  const me = (): number => state.planning;
+  /** Whether `finished()` was already reported for the current game. */
+  let reported = false;
+
+  /* ---------- Text helpers ---------- */
+  /** The world as the player knows it (fog, D7); rule checks use the true world in `rules.ts`. */
+  // Once the game is over everything is revealed: the map and the result show the true world.
+  // Hot-seat: never (no side may see the others' positions, not even afterwards — D10).
+  const revealed = (): boolean => state.phase === 'finished' && !isHotSeat(state);
+  const world = (): World => (revealed() ? state.world : picture(state.world, me()).world);
+  /** Tick of the last report for units shown at their last known position, else `undefined`. */
+  const ghostTick = (e: Pick<Entity, 'id'>): number | undefined => (revealed() ? undefined : picture(state.world, me()).ghosts.get(e.id));
+  const observedAt = (x: number, y: number): boolean => revealed() || picture(state.world, me()).observed[cellOf(state.world.map, x, y)] === 1;
+  const isGhost = (e: Pick<Entity, 'id'>): boolean => ghostTick(e) !== undefined;
+  const known = (id: number): Entity | undefined => world().entities.find((e) => e.id === id);
+  const unitName = (e: Pick<Entity, 'kind' | 'id'>) => t('unit.name', { name: t(`unit.${e.kind}`), id: e.id });
+  /** Several sides: every side has a letter (A = you) and a name besides its colour (never colour alone). */
+  // A fixed property of the game (its opponents and rules), never of what is left on the map: whether
+  // a neutral post still stands must not show in the interface (review of PR #23).
+  const several = (): boolean => state.opponents > 1 || rulesOf(state).capture === true;
+  const sideMark = (side: number): string => (side === NEUTRAL ? 'N' : (SIDE_MARKS[side] ?? '?'));
+  const sideName = (side: number): string =>
+    side === me() ? t('side.own') : side === NEUTRAL ? t('side.neutral') : !hostile(world(), me(), side) ? t('side.ally', { mark: sideMark(side) }) : several() ? t('side.opponent', { mark: sideMark(side) }) : t('side.enemy');
+  const sideColour = (side: number): string => {
+    if (side === NEUTRAL) return css('--rc-neutral', '#4b5563');
+    const token = SIDE_COLOURS[side] ?? SIDE_COLOURS[1]!;
+    return css(token[0], token[1]);
+  };
+  const terrainName = (x: number, y: number) => t(`terrain.${TERRAIN_NAMES[world().map.terrain[y * world().map.w + x] ?? '.'] ?? 'plain'}`);
+  const isMobile = (e: Entity) => (archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0;
+  /** Structures never move: drawn as squares, told apart from vehicles that merely stand still. */
+  const isStructure = (e: Pick<Entity, 'kind'>) => (archetypeOf(RULESET, e.kind)?.speed ?? 0) === 0;
+  const isSetUp = (e: Entity) => (e.deploy ?? 0) >= RULESET.ticksPerTurn;
+  const needsDeploy = (e: Entity) => needsDeployArch(archetypeOf(RULESET, e.kind));
+  /** Message key prefix: relays and posts set up as network nodes, jammers as jammers. */
+  const deployKind = (e: Pick<Entity, 'kind'>): 'deploy' | 'deployJammer' => (archetypeOf(RULESET, e.kind)?.ew?.role === 'jammer' ? 'deployJammer' : 'deploy');
+  /** The player's network, computed once per state (not per unit or per drawing call). */
+  let cachedNet: { state: RcState; net: Network } | undefined;
+  const network = (): Network => {
+    // From the true world: the player's own radio net is felt directly, enemy jamming included
+    // (the picture strips enemy set-up state, so it cannot tell a working jammer).
+    if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(state.world, RULESET, me()) };
+    return cachedNet.net;
+  };
+  /**
+   * Muzzle flashes of the last turn (owner decision 2026-10-17): unseen enemies that fired at the
+   * player's units in contact, by cell (the last position each fired from). Not shown once the
+   * shooter is in sight (it is drawn as a unit then) or after the game ended (everything is revealed).
+   */
+  const flashes = (): Map<number, { kind: string; x: number; y: number }> => {
+    const out = new Map<number, { kind: string; x: number; y: number }>();
+    if (revealed()) return out;
+    const seenNow = new Set((state.world.intel?.[me()] ?? []).filter((r) => r.live).map((r) => r.id));
+    for (const e of state.events) if (e.t === 'flash' && !seenNow.has(e.id)) out.set(e.id, { kind: e.kind, x: e.x, y: e.y });
+    return out;
+  };
+  const flashAt = (x: number, y: number) => [...flashes().values()].filter((f) => f.x === x && f.y === y);
+  /**
+   * Fixes of the last turn (owner choice 2026-10-27): enemy units the player's Direction Finders
+   * tracked by their orders, where they were last reported (the end of that turn). Not shown once
+   * they are in sight again or after the game ended.
+   */
+  const fixes = (): Map<number, { kind: string; x: number; y: number }> => {
+    const out = new Map<number, { kind: string; x: number; y: number }>();
+    if (revealed()) return out;
+    const reports = new Map((state.world.intel?.[me()] ?? []).map((r) => [r.id, r]));
+    for (const e of state.events) {
+      if (e.t !== 'intercept') continue;
+      const r = reports.get(e.id);
+      if (r?.live) continue;
+      out.set(e.id, { kind: e.kind, x: r?.x ?? e.x, y: r?.y ?? e.y });
+    }
+    return out;
+  };
+  const fixAt = (x: number, y: number) => [...fixes().values()].filter((f) => f.x === x && f.y === y);
+
+  /** Cells where the player's radio is jammed (the player notices the interference). */
+  // Only cells the own net would cover without jamming: the player notices radio silence where
+  // there should be contact, not the jammer's whole disc (that would give its position away).
+  let cachedJam: { state: RcState; jam: Uint8Array } | undefined;
+  const jammed = (x: number, y: number): boolean => {
+    if (cachedJam?.state !== state) {
+      // Expected reach: the discs of the nodes that really are connected now. A silenced post
+      // then shows no marks at all (the status line explains it) instead of the jammer's disc.
+      const jam = jammedCells(state.world, RULESET, me());
+      const { w: mw, h: mh } = state.world.map;
+      const expected = new Uint8Array(mw * mh);
+      for (const id of network().nodes) {
+        const node = unitById(state, id);
+        const r = node ? nodeRadius(state.world, RULESET, node) : 0;
+        if (!node) continue;
+        for (let y = Math.max(0, node.y - r); y <= Math.min(mh - 1, node.y + r); y++) {
+          for (let x = Math.max(0, node.x - r); x <= Math.min(mw - 1, node.x + r); x++) {
+            if ((x - node.x) ** 2 + (y - node.y) ** 2 <= r * r) expected[y * mw + x] = 1;
+          }
+        }
+      }
+      cachedJam = { state, jam: jam.map((j, c) => (j === 1 && expected[c] === 1 ? 1 : 0)) };
+    }
+    return cachedJam.jam[cellOf(state.world.map, x, y)] === 1;
+  };
+  /** Whether the unit's weapon can damage the target's armour at all (no button otherwise). */
+  const canHurt = (shooter: Entity, target: Entity): boolean => {
+    const armor = archetypeOf(RULESET, target.kind)?.armor;
+    return !!armor && (archetypeOf(RULESET, shooter.kind)?.weapon?.vs[armor] ?? 0) > 0;
+  };
+  const inContact = (e: Entity) => !isGhost(e) && network().coverage[cellOf(world().map, e.x, e.y)] === 1;
+  const isSetUpOrPending = (e: Entity) =>
+    (e.deploy ?? 0) >= RULESET.ticksPerTurn || e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy';
+  const deployText = (e: Entity): string => {
+    const k = deployKind(e);
+    if ((e.deploy ?? 0) >= RULESET.ticksPerTurn) return t(`${k}.active`);
+    if (e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy') return t(`${k}.pending`);
+    return t(`${k}.idle`);
+  };
+
+  const describeOrder = (e: Entity, order: Order): string => {
+    if (!isMobile(e) && order.type === 'hold') return t('order.static');
+    switch (order.type) {
+      case 'move':
+        return t('order.move', { x: order.x + 1, y: order.y + 1 });
+      case 'attack': {
+        const target = known(order.target);
+        return t('order.attack', { target: target ? unitName(target) : `#${order.target}` });
+      }
+      case 'deploy':
+        return t(deployKind(e) === 'deployJammer' ? 'order.deployJammer' : 'order.deploy');
+      case 'escort': {
+        const charge = known(order.target);
+        return t('order.escort', { target: charge ? unitName(charge) : `#${order.target}` });
+      }
+      case 'patrol':
+        return t('order.patrol', { x: order.x + 1, y: order.y + 1, rx: order.rx + 1, ry: order.ry + 1 });
+      case 'regroup':
+        return t('order.regroup');
+      case 'launch':
+        return t('order.launch');
+      case 'recall': {
+        const carrier = carrierOf(world(), e);
+        return t('order.recall', { target: carrier ? unitName(carrier) : t('unit.outrider') });
+      }
+      default:
+        return t('order.hold');
+    }
+  };
+
+  const describeUnit = (e: Entity): string => {
+    const max = archetypeOf(RULESET, e.kind)?.hp ?? e.hp;
+    const ghost = ghostTick(e);
+    if (ghost !== undefined && e.side !== me()) {
+      // Enemies out of sight: only where and how strong they were when last reported.
+      const where = t('unit.lastSeen', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max });
+      return `${where} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
+    }
+    // Enemy orders are never known, not even for enemies in sight.
+    if (e.side !== me()) return t('unit.enemySummary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max });
+    // Own units out of contact: the last order sent, which the player cannot confirm.
+    const order = ghost !== undefined ? t('unit.unconfirmed', { order: describeOrder(e, lastSentOrder(state, e.id) ?? { type: 'hold' }) }) : describeOrder(e, e.order);
+    let text = t('unit.summary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max, order });
+    if (ghost !== undefined) text = `${text} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
+    if (isMobile(e)) text = `${text} (${t(inContact(e) ? 'contact.in' : !isGhost(e) && jammed(e.x, e.y) ? 'contact.jammed' : 'contact.out')})`;
+    if (needsDeploy(e)) text = `${text} ${deployText(e)}`;
+    if (e.build !== undefined) text = `${text} (${t('list.site', { n: e.build })})`;
+    else if (e.queue && e.queue.length > 0) text = `${text} (${t('list.queue', { n: e.queue.map((q) => t(`unit.${q.kind}`)).join(', ') })})`;
+    const planned = draftFor(state, e.id);
+    return planned ? `${text} ${t('unit.planned', { order: describeOrder(e, planned) })}` : text;
+  };
+
+  const unitsAt = (x: number, y: number) => world().entities.filter((e) => e.x === x && e.y === y);
+
+  const describeCell = (x: number, y: number): string => {
+    const units = unitsAt(x, y);
+    // The veil is told in words too (screen readers).
+    let terrain = observedAt(x, y) ? terrainName(x, y) : `${terrainName(x, y)} ${t('cell.unobserved')}`;
+    if (!revealed() && jammed(x, y)) terrain = `${terrain} ${t('cell.jammed')}`;
+    // Deposits are told in words as well; how much is left only while the cell is observed.
+    const deposit = depositAt(world().map, x, y);
+    if (deposit) terrain = `${terrain} ${deposit.endless ? t('cell.depositEndless') : observedAt(x, y) ? t('cell.deposit', { n: deposit.left }) : t('cell.depositUnknown')}`;
+    for (const f of flashAt(x, y)) terrain = `${terrain} ${t('cell.flash', { name: t(`unit.${f.kind}`) })}`;
+    for (const f of fixAt(x, y)) terrain = `${terrain} ${t('cell.intercept', { name: t(`unit.${f.kind}`) })}`;
+    if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
+    return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
+  };
+
+  /* ---------- DOM ---------- */
+  let live = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
+  /** Hot-seat: whose plan is open (letter, colour and words). */
+  const seatEl = h('p', { class: 'rc-seat', 'data-testid': 'rc-seat', hidden: true });
+  const turnEl = h('p', { class: 'rc-turn', 'data-testid': 'rc-turn' });
+  const statusEl = h('p', { class: 'rc-status', 'data-testid': 'rc-status', role: 'status', tabindex: -1 });
+  const slotsEl = h('p', { class: 'rc-slots', 'data-testid': 'rc-slots' });
+  const supplyEl = h('p', { class: 'rc-supply', 'data-testid': 'rc-supply' });
+  /** Quick match only: the stalemate warning, in a slot of its own (the bar never reflows). */
+  const stalemateText = h('span', { 'data-testid': 'rc-stalemate-text' });
+  // Plain open end, stalled: the player may end on strength (two presses: the result is final).
+  let settleArmed = false;
+  const settleBtn = h('button', { type: 'button', 'data-testid': 'rc-settle', onclick: () => onSettle() }) as HTMLButtonElement;
+  settleBtn.addEventListener('blur', () => {
+    if (!settleArmed) return;
+    settleArmed = false;
+    render();
+  });
+  const stalemateEl = h('div', { class: 'rc-stalemate', 'data-testid': 'rc-stalemate', 'aria-live': 'polite' }, stalemateText, settleBtn);
+  /** Visible reason for a refused order (the live region alone only reaches screen readers). */
+  const noticeEl = h('p', { class: 'rc-notice', 'data-testid': 'rc-notice', hidden: true });
+  const lockBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-lock', onclick: () => onLock() }, t('action.lock'));
+  const concedeBtn = h('button', { type: 'button', 'data-testid': 'rc-concede', onclick: () => setConfirming(true) }, t('action.concede'));
+  const confirmBox = h(
+    'div',
+    { class: 'rc-confirm', 'data-testid': 'rc-confirm', role: 'group', 'aria-label': t('action.concedeConfirm') },
+    h('span', {}, t('action.concedeConfirm')),
+    h('button', { type: 'button', 'data-testid': 'rc-concede-yes', onclick: () => onConcede() }, t('action.concedeYes')),
+    h('button', { type: 'button', 'data-testid': 'rc-concede-no', onclick: () => setConfirming(false) }, t('action.concedeNo'))
+  );
+
+  const cursorDesc = h('p', { id: `${uid}-cursor`, class: 'rc-cursor', 'data-testid': 'rc-cursor' });
+  const canvas = h('canvas', {
+    class: 'rc-map',
+    'data-testid': 'rc-map',
+    tabindex: 0,
+    'data-autofocus': true,
+    role: 'application',
+    'aria-label': t('map.label'),
+    'aria-describedby': `${uid}-cursor`
+  });
+  const mapWrap = h('div', { class: 'rc-mapwrap', dir: 'ltr' }, canvas);
+  /** How the map is drawn: from the side (default) or from above; a choice of this device, not of the game. */
+  const readView = (): View => {
+    try {
+      return context.preferences?.get('mapView') === 'top' ? 'top' : 'profile';
+    } catch {
+      return 'profile';
+    }
+  };
+  let mapView: View = readView();
+  const terrainLayer = createTerrainLayer('fine');
+  /**
+   * Time per tick of the replay (a turn of 6 ticks takes 6 s; stepwise with reduced motion 6.6 s).
+   * Slowed down after the owner's review 2026-10-27: at 450 ms a tick the shooter could not be told.
+   */
+  const REPLAY_TICK_MS = 1000;
+  const REPLAY_STEP_MS = 1100;
+  let playing: { replay: Replay; f: number; start: number; frame: number } | null = null;
+  const viewButtons = VIEWS.map((v) =>
+    h('button', { type: 'button', 'data-testid': `rc-view-${v}`, 'aria-pressed': String(v === mapView), onclick: () => setView(v) }, t(`view.${v}`))
+  );
+  const viewGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('view.label'), 'data-testid': 'rc-view' }, h('span', { class: 'rc-label' }, t('view.label')), ...viewButtons);
+  /** Map size on large maps, a choice of this device (smaller cells than the 44 px targets: an overview to choose from). */
+  const readZoom = (): number => {
+    try {
+      const z = Number(context.preferences?.get('mapZoom'));
+      return (ZOOMS as readonly number[]).includes(z) ? z : 1;
+    } catch {
+      return 1;
+    }
+  };
+  let zoom = readZoom();
+  const percent = (z: number) => t('zoom.percent', { n: Math.round(z * 100) });
+  const zoomButtons = ZOOMS.map((z) =>
+    h('button', { type: 'button', 'data-testid': `rc-zoom-${Math.round(z * 100)}`, 'aria-pressed': String(z === zoom), onclick: () => setZoom(z) }, percent(z))
+  );
+  const zoomGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('zoom.label'), 'data-testid': 'rc-zoom', hidden: true }, h('span', { class: 'rc-label' }, t('zoom.label')), ...zoomButtons);
+  /** Whether the next draw brings the cursor into the map's frame: centred (a new map, a handover) or only just ('near'). */
+  let reveal: 'centre' | 'near' | null = 'centre';
+  /**
+   * Turn replay (owner request 2026-10-27): the last turn played back on the map, moves and shots,
+   * from what the side was told. On demand, or after every turn when the player chose so (off by
+   * default: no waiting unless asked for); always cut short by "Skip", Escape or a click on the map.
+   */
+  const readAutoReplay = (): boolean => {
+    try {
+      return context.preferences?.get('replayTurns') === true;
+    } catch {
+      return false;
+    }
+  };
+  const autoReplayBox = h('input', { type: 'checkbox', 'data-testid': 'rc-replay-auto', onchange: () => onAutoReplay() }) as HTMLInputElement;
+  autoReplayBox.checked = readAutoReplay();
+  const replayBtn = h('button', { type: 'button', 'data-testid': 'rc-replay', onclick: () => startReplay() }, t('replay.play')) as HTMLButtonElement;
+  const replayStatus = h('span', { 'data-testid': 'rc-replay-status' });
+  const replaySkip = h('button', { type: 'button', 'data-testid': 'rc-replay-skip', onclick: () => stopReplay(true) }, t('replay.skip'));
+  const replayBar = h('div', { class: 'rc-actions rc-replay-bar', role: 'status', 'data-testid': 'rc-replay-bar', hidden: true }, replayStatus, replaySkip);
+  // Below the map, in one row that keeps its height while a replay plays (the map never moves).
+  const replayRow = h('div', { class: 'rc-actions rc-replay' }, replayBtn, replayBar, h('label', { class: 'rc-check' }, autoReplayBox, h('span', {}, t('replay.auto'))));
+
+  /** Game setup, until the first turn is locked: scenario and turn limit (open end by default). */
+  const scenarioSelect = h('select', { 'data-testid': 'rc-scenario', onchange: () => onSetup() });
+  for (const spec of SCENARIOS) scenarioSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
+  // A generated map (I6c): size and map number (its seed; the same number gives the same map again).
+  scenarioSelect.append(h('option', { value: 'random' }, t('setup.random')));
+  const randomSize = h('select', { 'data-testid': 'rc-random-size', onchange: () => onSetup() });
+  for (const [w, h_] of RANDOM_SIZES) randomSize.append(h('option', { value: `${w}x${h_}`, 'aria-label': t('setup.randomSizeLabel', { w, h: h_ }) }, `${w}×${h_}`));
+  randomSize.value = '16x12'; // a medium map unless another size is chosen
+  const randomSeed = h('input', { type: 'number', min: '0', max: '4294967295', step: '1', inputmode: 'numeric', 'data-testid': 'rc-random-seed', onchange: () => onSetup() }) as HTMLInputElement;
+  const randomNew = h('button', { type: 'button', 'data-testid': 'rc-random-new', onclick: () => newRandomMap() }, t('setup.randomNew'));
+  /** Generated without a mirror (owner request 2026-10-27): two bases only, so one opponent. */
+  const randomAsym = h('input', { type: 'checkbox', 'data-testid': 'rc-random-asym', onchange: () => onSetup() }) as HTMLInputElement;
+  const randomAsymLabel = h('label', { class: 'rc-check', 'data-testid': 'rc-random-asym-label' }, randomAsym, h('span', {}, t('setup.randomAsymmetric')));
+  const randomBox = h(
+    'div',
+    { class: 'rc-random', 'data-testid': 'rc-random', hidden: true },
+    h('label', {}, h('span', {}, t('setup.randomSize')), randomSize),
+    h('label', {}, h('span', {}, t('setup.randomSeed')), randomSeed),
+    randomNew,
+    randomAsymLabel
+  );
+  const limitSelect = h('select', { 'data-testid': 'rc-turn-limit', onchange: () => onSetup() });
+  /** Opponent level (owner decision 2026-10-16): chosen here with the map, not on the host's start screen. */
+  const difficultySelect = h('select', { 'data-testid': 'rc-difficulty', onchange: () => onDifficulty() }) as HTMLSelectElement;
+  for (const d of DIFFICULTIES) difficultySelect.append(h('option', { value: d }, t(`difficulty.${d}`)));
+  /** Hidden while no seat is a computer (hot-seat only): there is no opponent level then. */
+  const difficultyLabel = h('label', { 'data-testid': 'rc-difficulty-label' }, h('span', {}, t('setup.difficulty')), difficultySelect);
+  /** Opponents: only the counts the chosen map declares (two-side maps: one). */
+  const opponentsSelect = h('select', { 'data-testid': 'rc-opponents', onchange: () => onSetup() });
+  /** Teams (owner decisions 2026-10-24): the shapes the map offers for the opponent count; shown only then. */
+  const teamsSelect = h('select', { 'data-testid': 'rc-teams', onchange: () => onSetup() }) as HTMLSelectElement;
+  const teamsLabel = h('label', { 'data-testid': 'rc-teams-label', hidden: true }, h('span', {}, t('setup.teams')), teamsSelect);
+  /** The player's base (owner request 2026-10-27): each base the map offers, named by where it lies. */
+  const startSelect = h('select', { 'data-testid': 'rc-start', onchange: () => onSetup() }) as HTMLSelectElement;
+  const startLabel = h('label', { 'data-testid': 'rc-start-label', hidden: true }, h('span', {}, t('setup.start')), startSelect);
+  // Lengths: open end (default), quick match (strength decides once the side behind stops gaining
+  // ground), or a fixed number of turns.
+  for (const limit of TURN_LIMITS) {
+    limitSelect.append(h('option', { value: limit === null ? 'open' : String(limit) }, limit === null ? t('setup.open') : t('setup.turns', { n: limit })));
+    if (limit === null) limitSelect.append(h('option', { value: 'quick' }, t('setup.quick')));
+  }
+  /**
+   * Hot-seat (D10): who plays each side, person or computer (side A is always you). Rows follow
+   * the opponent count; several persons pass the device on each turn.
+   */
+  const seatsBox = h('fieldset', { class: 'rc-seats', 'data-testid': 'rc-seats' });
+  /** Game option (owner decision 2026-10-14): no deposit runs dry. */
+  const endlessInput = h('input', { type: 'checkbox', 'data-testid': 'rc-endless', onchange: () => onSetup() }) as HTMLInputElement;
+  /** Several persons with an open end: such a game ends only by sides being out or giving up. */
+  const hotSeatHint = h('p', { class: 'rc-hint', 'data-testid': 'rc-hotseat-hint', hidden: true }, t('setup.hotSeatOpen'));
+  // The map editor opens from the setup (also after the first turn, through the fold).
+  const editorBtn = h('button', { type: 'button', class: 'rc-editor-open', 'data-testid': 'rc-editor-open', onclick: () => openEditor() }, t('editor.open'));
+  const setupBox = h(
+    'fieldset',
+    { class: 'rc-setup', 'data-testid': 'rc-setup' },
+    h('legend', {}, t('setup.title')),
+    h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
+    h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
+    randomBox,
+    difficultyLabel,
+    h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
+    teamsLabel,
+    startLabel,
+    h('label', { class: 'rc-check' }, endlessInput, h('span', {}, t('setup.endless'))),
+    seatsBox,
+    hotSeatHint,
+    editorBtn
+  );
+  // After the first turn the setup folds into one line (map, length, level) that opens on demand:
+  // on a phone the locked choices would otherwise push the map a screen down.
+  const setupSummary = h('summary', { 'data-testid': 'rc-setup-summary' });
+  const setupFold = h('details', { class: 'rc-setup-fold', 'data-testid': 'rc-setup-fold' }, setupSummary) as HTMLDetailsElement;
+  const setupSlot = h('div', { class: 'rc-setup-slot' }, setupBox);
+
+  const selectionTitle = h('h3', {}, t('panel.selection'));
+  const selectionText = h('p', { 'data-testid': 'rc-selection-text' });
+  /** Uniform stat card of the selected unit (own or known enemy). */
+  const cardEl = h('div', { class: 'rc-card', 'data-testid': 'rc-card', hidden: true });
+  const holdBtn = h('button', { type: 'button', 'data-testid': 'rc-hold', onclick: () => onHold() }, t('action.hold'));
+  const deployBtn = h('button', { type: 'button', 'data-testid': 'rc-deploy', onclick: () => orderSelected({ type: 'deploy' }) }, t('action.deploy'));
+  const regroupBtn = h('button', { type: 'button', 'data-testid': 'rc-regroup', onclick: () => orderSelected({ type: 'regroup' }) }, t('action.regroup'));
+  const cancelBtn = h('button', { type: 'button', 'data-testid': 'rc-cancel', onclick: () => onCancel() }, t('action.cancel'));
+  /** Drones (owner decision 2026-10-27): a Scout Car launches its drone; a drone lands on its car. */
+  const launchBtn = h('button', { type: 'button', 'data-testid': 'rc-launch', onclick: () => orderSelected({ type: 'launch' }) }, t('action.launch')) as HTMLButtonElement;
+  const recallBtn = h('button', { type: 'button', 'data-testid': 'rc-recall', onclick: () => orderSelected({ type: 'recall' }) }, t('action.recall'));
+
+  /** What the next map click means for the selected unit. */
+  type ClickMode = 'move' | 'patrol' | 'escort';
+  let mode: ClickMode = 'move';
+  const modeButtons = (['move', 'patrol', 'escort'] as const).map((m) =>
+    h('button', { type: 'button', 'data-testid': `rc-mode-${m}`, 'aria-pressed': 'false', onclick: () => setMode(m) }, t(`mode.${m}`))
+  );
+  const modeHint = h('p', { class: 'rc-hint', 'data-testid': 'rc-mode-hint' });
+  const modeGroup = h('div', { class: 'rc-actions', role: 'group', 'aria-label': t('mode.label') }, h('span', { class: 'rc-label' }, t('mode.label')), ...modeButtons);
+
+  const retreatSelect = h('select', { 'data-testid': 'rc-doctrine-retreat', onchange: () => onDoctrine() });
+  for (const n of RETREAT_THRESHOLDS) retreatSelect.append(h('option', { value: String(n) }, n === 0 ? t('doctrine.never') : t('doctrine.percent', { n })));
+  const prioritySelect = h('select', { 'data-testid': 'rc-doctrine-priority', onchange: () => onDoctrine() });
+  for (const p of TARGET_PRIORITIES) prioritySelect.append(h('option', { value: p }, t(`doctrine.priority.${p}`)));
+  const coverBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-cover', onchange: () => onDoctrine() });
+  const holdFireBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-holdfire', onchange: () => onDoctrine() });
+  /** Without radio contact: return after a turn, carry the order out and then return, or carry on. */
+  const lostContactSelect = h('select', { 'data-testid': 'rc-doctrine-lostcontact', onchange: () => onDoctrine() });
+  // From the most careful to the boldest.
+  for (const v of ['regroup', 'finish', 'keep'] as const) lostContactSelect.append(h('option', { value: v }, t(`doctrine.lost.${v}`)));
+  const doctrineBox = h(
+    'fieldset',
+    { class: 'rc-doctrine', 'data-testid': 'rc-doctrine' },
+    h('legend', {}, t('doctrine.title')),
+    h('label', {}, h('span', {}, t('doctrine.retreat')), retreatSelect),
+    h('label', {}, h('span', {}, t('doctrine.priority')), prioritySelect),
+    h('label', { class: 'rc-check' }, coverBox, h('span', {}, t('doctrine.seekCover'))),
+    h('label', { class: 'rc-check' }, holdFireBox, h('span', {}, t('doctrine.holdFire'))),
+    h('label', {}, h('span', {}, t('doctrine.lostContact')), lostContactSelect)
+  );
+  const selectionActions = h('div', { class: 'rc-orders' }, h('div', { class: 'rc-actions' }, holdBtn, regroupBtn, deployBtn, launchBtn, recallBtn, cancelBtn), modeGroup, modeHint, doctrineBox);
+  /** Production (yards) and placement (command sources) of the selected structure (I6a). */
+  const jobsEl = h('div', { class: 'rc-jobs', 'data-testid': 'rc-jobs', hidden: true });
+  /** Structure kind the next map click places, or null. */
+  let placing: string | null = null;
+  const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, cardEl, noticeEl, selectionActions, jobsEl);
+  const legendEl = h('details', { class: 'rc-legend', 'data-testid': 'rc-legend' }, h('summary', {}, t('legend.title')));
+
+  const ownList = h('ul', { class: 'rc-units', 'data-testid': 'rc-own' });
+  const enemyList = h('ul', { class: 'rc-units', 'data-testid': 'rc-enemy' });
+  /** Maps with empty seats: the neutral posts in a list of their own (not among the enemies). */
+  const neutralList = h('ul', { class: 'rc-units', 'data-testid': 'rc-neutral' });
+  const neutralPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-neutral-panel', hidden: true }, h('h3', {}, t('list.neutral')), neutralList);
+  const allyList = h('ul', { class: 'rc-units', 'data-testid': 'rc-allies' });
+  const allyPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-allies-panel', hidden: true }, h('h3', {}, t('list.allies')), allyList);
+  const summaryList = h('ul', { class: 'rc-summary', 'data-testid': 'rc-summary' });
+
+  const help = h(
+    'details',
+    { class: 'rc-help' },
+    h('summary', {}, t('help.title')),
+    ...['help.turns', 'help.replay', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.intercept', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.drone', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.start', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+  );
+
+  /* ---------- Map editor ---------- */
+  // Maps are kept by the host's library for this game (ADR 0012: Settings counts and deletes them
+  // as the player's own content); without one, in the game's preferences; without those, for
+  // this session only. Maps kept in preferences before the library existed move over once.
+  const store: MapStore = context.preferences ?? memoryStore();
+  const mapLabel = (m: EditMap) => m.name.trim() || t('editor.untitled');
+  const mapLibrary: MapLibrary = context.library ? hostMapLibrary(context.library, mapLabel) : preferenceMapLibrary(store);
+  const library = () => editor.maps();
+  const editor = createEditor({
+    t,
+    css: (name, fallback) => css(name, fallback),
+    icon: (kind, own) => unitIcon(kind, own),
+    view: () => mapView,
+    library: mapLibrary,
+    libraryChanged: () => {
+      if (!state.edit) render(); // the setup lists the device's maps
+    },
+    draft: () => state.edit ?? { map: blankMap(16, 12), slot: null, mirror: true },
+    change: (draft, message) => commit({ ...state, edit: draft }, message),
+    close: () => closeEditor(),
+    play: (m) => playMap(m),
+    playEndsGame: () => state.phase === 'plan' && state.log.length > 0,
+    announce: (text) => announce(live, text)
+  });
+
+  if (context.library) void migratePreferenceMaps(context.preferences, mapLibrary).then((moved) => moved > 0 && editor.refresh());
+
+  function openEditor(): void {
+    editor.forget();
+    // Start from the map being played (a player-made or random one, two sides or four bases), else an
+    // empty map; mirrored edits by default.
+    if (!state.edit) commit({ ...state, edit: { map: state.map ?? blankMap(16, 12), slot: null, mirror: true } });
+    render();
+    editor.el.querySelector<HTMLElement>('[data-testid="ed-map"]')?.focus();
+  }
+  function closeEditor(): void {
+    editor.forget();
+    commit({ ...state, edit: null });
+    render();
+    editorBtn.focus();
+  }
+  function playMap(m: EditMap): void {
+    if (mapIssues(m).length > 0) return;
+    editor.forget();
+    selected = null;
+    const limit = state.turnLimit;
+    // A map with four bases starts with three opponents (the setup offers one to three and teams).
+    commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m, seatsOf(m) - 1, [], state.endless), t('announce.setup', { scenario: mapLabel(m) }));
+    homeCursor();
+    render();
+    canvas.focus();
+  }
+
+  const mainEl = h(
+    'div',
+    { class: 'rc-main', 'data-testid': 'rc-main' },
+    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, viewGroup, zoomGroup, replayRow, legendEl),
+    h(
+      'div',
+      { class: 'rc-side' },
+      selectionPanel,
+      h('section', { class: 'rc-panel' }, h('h3', {}, t('list.own')), ownList),
+      h('section', { class: 'rc-panel' }, h('h3', {}, t('list.enemy')), enemyList),
+      neutralPanel,
+      allyPanel,
+      h('section', { class: 'rc-panel' }, h('h3', {}, t('summary.title')), summaryList)
+    )
+  );
+  /** Hot-seat result: only what every side was told — the winner and the sides that are out (no map). */
+  const resultEl = h('section', { class: 'rc-panel rc-result', 'data-testid': 'rc-result', hidden: true });
+  /**
+   * Hot-seat hand-over (D10): the device goes to the next person. While it shows, nothing of any
+   * side is in the document — no map, list, summary or live text — until that person confirms.
+   */
+  const handoverTitle = h('h2', { id: `${uid}-handover` });
+  const handoverText = h('p', {});
+  const handoverBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-handover-confirm', onclick: () => onHandover() }) as HTMLButtonElement;
+  const handoverEl = h('section', { class: 'rc-handover', 'data-testid': 'rc-handover', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': `${uid}-handover` }, handoverTitle, handoverText, handoverBtn);
+  const shell = h(
+    'div',
+    { class: 'wp-relay-command', 'data-testid': 'rc-root' },
+    h(
+      'div',
+      { class: 'rc-bar' },
+      h('div', { class: 'rc-bar-facts' }, seatEl, turnEl, supplyEl, slotsEl),
+      statusEl,
+      stalemateEl,
+      h('div', { class: 'rc-actions rc-bar-actions' }, lockBtn, concedeBtn, confirmBox)
+    ),
+    setupSlot,
+    mainEl,
+    resultEl,
+    help,
+    editor.el,
+    live
+  );
+  root.append(shell);
+  // While the editor is open, the game waits behind it (state kept, nothing lost).
+  const gameParts = [...shell.children].filter((el) => el !== editor.el && el !== live) as HTMLElement[];
+
+  /**
+   * Hot-seat: behind the hand-over the game's parts leave the document (not just hidden), and the
+   * live region is emptied, so nothing of the previous side can be read, heard or focused.
+   */
+  function showHandover(on: boolean): void {
+    if (on) {
+      for (const part of gameParts) part.remove();
+      // A fresh, empty live region: an announcement still pending for the previous person (they
+      // are written a moment later) lands in the old one, which has left the document.
+      const fresh = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
+      live.replaceWith(fresh);
+      live = fresh;
+      if (!handoverEl.isConnected) shell.prepend(handoverEl);
+      const mark = sideMark(me());
+      handoverTitle.textContent = t('handover.title', { mark });
+      handoverText.textContent = t('handover.text', { turn: state.world.turn + 1, mark });
+      handoverBtn.textContent = t('handover.confirm', { mark });
+      return;
+    }
+    handoverEl.remove();
+    // Back in their places, in order (the result screen takes the map's part out as well).
+    let next: Element = editor.el;
+    for (let i = gameParts.length - 1; i >= 0; i--) {
+      const part = gameParts[i]!;
+      if (!part.isConnected) shell.insertBefore(part, next);
+      next = part;
+    }
+  }
+
+  function setView(v: View): void {
+    if (v === mapView) return;
+    mapView = v;
+    try {
+      context.preferences?.set('mapView', v);
+    } catch {
+      /* not kept: this session only */
+    }
+    for (const [i, b] of viewButtons.entries()) b.setAttribute('aria-pressed', String(VIEWS[i] === v));
+    // The legend and the pictures in the lists follow the map.
+    for (const child of [...legendEl.children]) if (child.tagName !== 'SUMMARY') child.remove();
+    legendDrawn = false;
+    render();
+    announce(live, t('view.changed', { view: t(`view.${v}`) }));
+  }
+
+  /* ---------- Rendering ---------- */
+  let legendDrawn = false;
+  function render(): void {
+    if (!legendDrawn) {
+      legendDrawn = true;
+      renderLegend();
+    }
+    const editing = state.edit !== null;
+    const handing = !editing && state.phase === 'plan' && state.handover;
+    showHandover(handing);
+    if (handing) {
+      editor.el.hidden = true;
+      return;
+    }
+    for (const part of gameParts) part.hidden = editing || (part === resultEl && !(isHotSeat(state) && state.phase === 'finished'));
+    editor.el.hidden = !editing;
+    if (editing) {
+      editor.render();
+      return;
+    }
+    // A finished hot-seat game shows no map, list or summary of any side: the result only.
+    const hotEnd = isHotSeat(state) && state.phase === 'finished';
+    // Out of the document and not drawn at all: no lists, reports, cursor text or map of any side.
+    if (hotEnd) {
+      mainEl.remove();
+      renderResult();
+    }
+    seatEl.hidden = !isHotSeat(state) || state.phase !== 'plan';
+    clear(seatEl);
+    if (!seatEl.hidden) {
+      seatEl.append(h('span', { class: 'rc-row-mark', style: `color:${sideColour(me())}` }, sideMark(me())), ' ', t('hot.planning', { mark: sideMark(me()) }));
+    }
+    const w = world();
+    const finished = state.phase === 'finished';
+    turnEl.textContent =
+      state.turnLimit === null ? t('status.turnOpen', { turn: w.turn + 1 }) : t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
+    // Open end: a stalled game is heading for a decision on strength (STALL_TURNS); say so early.
+    const stalemate = state.quick && state.turnLimit === null && state.phase === 'plan' && stalemateTurns(state) >= QUIET_NOTICE;
+    const settleable = canSettle(state);
+    stalemateText.textContent = stalemate ? t('status.quiet', { turn: w.turn + STALL_TURNS - stalemateTurns(state) }) : settleable ? t('status.settleOffer', { n: stalemateTurns(state) }) : '';
+    settleBtn.hidden = !settleable;
+    if (!settleable) settleArmed = false;
+    // Strength figures only while the offer stands (never left behind in the document).
+    settleBtn.textContent = !settleable
+      ? ''
+      : settleArmed
+        ? t('action.settleConfirm')
+        : t(`action.settle.${settleResult(state)}`, { own: teamValue(state.world, me()), enemy: opponentValue(state.world) });
+    stalemateEl.toggleAttribute('data-empty', !stalemate && !settleable);
+    // Scenario and turn limit can be changed until the first turn is locked.
+    // Kept in place after the first turn (disabled), so the map does not jump up.
+    const setupLocked = state.phase !== 'plan' || state.log.length > 0;
+    scenarioSelect.disabled = setupLocked;
+    limitSelect.disabled = setupLocked;
+    difficultySelect.disabled = setupLocked;
+    difficultySelect.value = state.difficulty;
+    const computer = state.seats.includes('computer');
+    difficultyLabel.hidden = !computer;
+    opponentsSelect.disabled = setupLocked;
+    endlessInput.disabled = setupLocked;
+    randomSize.disabled = setupLocked;
+    randomSeed.disabled = setupLocked;
+    randomNew.disabled = setupLocked;
+    randomAsym.disabled = setupLocked;
+    randomBox.hidden = state.random === null;
+    if (state.random) {
+      randomSize.value = `${state.random.w}x${state.random.h}`;
+      if (document.activeElement !== randomSeed) randomSeed.value = String(state.random.seed);
+      // With more opponents the choice is hidden and kept for when one opponent is chosen again.
+      if (state.opponents === 1) randomAsym.checked = state.random.asymmetric === true;
+    }
+    // Asymmetric maps have two bases: offered with one opponent only.
+    randomAsymLabel.hidden = state.opponents > 1;
+    endlessInput.checked = state.endless;
+    syncSeatRows(setupLocked);
+    setupBox.toggleAttribute('data-locked', setupLocked);
+    // Unlocked: the setup stands open on its own; locked: it moves into the fold (closed until opened).
+    if (setupLocked && setupBox.parentElement !== setupFold) {
+      setupFold.open = false;
+      setupFold.append(setupBox);
+      setupSlot.replaceChildren(setupFold);
+    } else if (!setupLocked && setupBox.parentElement !== setupSlot) setupSlot.replaceChildren(setupBox);
+    syncScenarioOptions();
+    scenarioSelect.value = state.random ? 'random' : state.map ? 'custom' : state.scenario;
+    limitSelect.value = state.turnLimit !== null ? String(state.turnLimit) : state.quick ? 'quick' : 'open';
+    syncOpponentOptions();
+    opponentsSelect.value = String(state.opponents);
+    syncTeamOptions();
+    teamsSelect.disabled = setupLocked;
+    syncStartOptions();
+    startSelect.disabled = setupLocked;
+    const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
+    const length = limitSelect.selectedOptions[0]?.textContent ?? '';
+    const summary = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
+    // Levels per seat: each computer seat with its own (in the order of the seats).
+    const level = !computer
+      ? []
+      : state.levels
+        ? state.seats.flatMap((seat, side) => (seat === 'computer' ? [t('setup.levelSeat', { mark: sideMark(side), level: t(`level.${levelOf(state, side)}`) })] : []))
+        : [difficultySelect.selectedOptions[0]?.textContent ?? ''];
+    const shape = teamShapeOf(state.world);
+    setupSummary.textContent = [summary, ...(shape ? [t(`setup.teams.${shape}`)] : []), ...(state.endless ? [t('setup.endlessShort')] : []), ...level].join(' · ');
+    statusEl.textContent = statusText();
+    statusEl.setAttribute('data-phase', state.phase);
+    slotsEl.hidden = finished;
+    const slots = orderSlots(state);
+    slotsEl.textContent = postJammed() ? t('status.jammed') : t('status.slots', { n: state.draft.length, slots });
+    // Full plan (or no orders possible): highlighted, so the player notices without reading.
+    slotsEl.toggleAttribute('data-full', state.draft.length >= slots);
+    // Supply and income (economy): what the planned jobs leave is shown while any are planned.
+    const supply = w.supply?.[me()] ?? 0;
+    const left = plannedSupply(state);
+    const income = incomeOfSide(state.world, RULESET, me());
+    supplyEl.hidden = w.supply === undefined || hotEnd;
+    supplyEl.textContent = left === supply ? t('status.supply', { n: supply, income }) : t('status.supplyPlanned', { n: supply, left, income });
+    supplyEl.title = t('status.supplyHint');
+    lockBtn.disabled = finished;
+    // Hot-seat: the lock hands the device on, or (the last person) resolves the turn; it is final.
+    lockBtn.textContent = !isHotSeat(state) ? t('action.lock') : personsLeft(state).some((x) => x > me()) ? t('action.lockHandOver') : t('action.lockResolve');
+    concedeBtn.disabled = finished;
+    concedeBtn.hidden = confirming;
+    confirmBox.hidden = !confirming || finished;
+    if (hotEnd) {
+      // No counters of the side that planned last either.
+      supplyEl.textContent = '';
+      slotsEl.textContent = '';
+      return;
+    }
+    cursorDesc.textContent = describeCell(cursor.x, cursor.y);
+    renderSelection();
+    renderLists();
+    renderSummary();
+    // A replay is offered while the last turn's events can be played back.
+    replayBtn.disabled = playing !== null || lastReplay() === null;
+    draw();
+  }
+
+  /** Hot-seat result: the winner and the sides that are out, in words and letters (no positions). */
+  function renderResult(): void {
+    clear(resultEl);
+    resultEl.append(h('h3', {}, t('result.title')), h('p', { 'data-testid': 'rc-result-winner' }, statusOf(state)));
+    const out = state.world.out ?? [];
+    if (out.length > 0) resultEl.append(h('p', { 'data-testid': 'rc-result-out' }, t('result.out', { sides: out.map(sideMark).join(', ') })));
+  }
+
+  /** The seat rows of the setup: one per side of the chosen count (A: you, a person). */
+  function syncSeatRows(locked: boolean): void {
+    const sides = state.seats.length;
+    if (seatsBox.childElementCount !== sides + 1) {
+      clear(seatsBox);
+      seatsBox.append(h('legend', {}, t('setup.players')));
+      for (let side = 0; side < sides; side++) {
+        const mark = sideMark(side);
+        const badge = h('span', { class: 'rc-row-mark', style: `color:${sideColour(side)}` }, mark);
+        if (side === 0) {
+          seatsBox.append(h('div', { class: 'rc-seat-row', 'data-testid': 'rc-seat-0' }, badge, ' ', h('span', {}, t('setup.seat.you', { mark }))));
+          continue;
+        }
+        const name = `${uid}-seat-${side}`;
+        const choice = (seat: Seat) =>
+          h('label', { class: 'rc-seat-choice' }, h('input', { type: 'radio', name, value: seat, 'data-testid': `rc-seat-${side}-${seat}`, onchange: () => onSetup() }), h('span', {}, t(`setup.seat.${seat}`)));
+        // A computer seat's own difficulty (owner request 2026-10-29), offered with two or more opponents.
+        const level = h('select', { class: 'rc-seat-level', 'data-testid': `rc-level-${side}`, 'data-side': String(side), 'aria-label': t('setup.levelOf', { mark }), onchange: () => onSetup() }) as HTMLSelectElement;
+        for (const d of DIFFICULTIES) level.append(h('option', { value: d }, t(`level.${d}`)));
+        seatsBox.append(
+          h(
+            'div',
+            { class: 'rc-seat-row', 'data-testid': `rc-seat-${side}` },
+            h('span', { role: 'radiogroup', 'aria-label': t('setup.seat.label', { mark }), class: 'rc-seat-group' }, badge, ' ', h('span', {}, t('setup.seat.label', { mark })), choice('computer'), choice('person')),
+            level
+          )
+        );
+      }
+    }
+    for (const select of seatsBox.querySelectorAll<HTMLSelectElement>('select.rc-seat-level')) {
+      const side = Number(select.dataset.side);
+      select.value = levelOf(state, side);
+      select.disabled = locked;
+      select.hidden = sides < 3 || state.seats[side] !== 'computer';
+    }
+    for (const input of seatsBox.querySelectorAll<HTMLInputElement>('input[type="radio"]')) {
+      const side = Number(input.name.slice(input.name.lastIndexOf('-') + 1));
+      input.checked = state.seats[side] === input.value;
+      input.disabled = locked;
+    }
+    const hot = isHotSeat(state);
+    hotSeatHint.hidden = !hot || state.turnLimit !== null || locked;
+    // Several persons have no quick match (an open end is decided by the posts or giving up).
+    const quick = limitSelect.querySelector<HTMLOptionElement>('option[value="quick"]');
+    if (quick) quick.disabled = hot;
+  }
+
+  /** The difficulty chosen per seat in the setup rows (one opponent: the game's, from the main choice). */
+  function chosenLevels(): (Difficulty | undefined)[] {
+    if (state.seats.length < 3) return [];
+    const levels: (Difficulty | undefined)[] = [];
+    for (const select of seatsBox.querySelectorAll<HTMLSelectElement>('select.rc-seat-level')) levels[Number(select.dataset.side)] = isDifficulty(select.value) ? select.value : undefined;
+    return levels;
+  }
+
+  /** The seats chosen in the setup rows (missing rows: the computer). */
+  function chosenSeats(): Seat[] {
+    const seats: Seat[] = ['person'];
+    for (const input of seatsBox.querySelectorAll<HTMLInputElement>('input[type="radio"]:checked')) {
+      const side = Number(input.name.slice(input.name.lastIndexOf('-') + 1));
+      seats[side] = input.value === 'person' ? 'person' : 'computer';
+    }
+    return seats;
+  }
+
+  /** Hot-seat: the person who now has the device confirms; their own map and summary show. */
+  function onHandover(): void {
+    if (!state.handover) return;
+    // Nothing of the previous person carries over: no selection, placing mode, notice or armed sale.
+    select(null);
+    commit(confirmHandover(state));
+    homeCursor();
+    render();
+    canvas.focus();
+    announce(live, `${t('hot.planning', { mark: sideMark(me()) })} ${[...summaryList.querySelectorAll('li')].map((li) => li.textContent).join(' ')}`);
+    if (autoReplayBox.checked) startReplay();
+  }
+
+  /** The own Command Post is jammed: no orders this turn (the post knows its own radio; reveals nothing else). */
+  function postJammed(): boolean {
+    if (state.phase !== 'plan' || orderSlots(state) > 0) return false;
+    const post = commandPostOf(state.world, me());
+    return !!post && jammedCells(state.world, RULESET, me())[cellOf(state.world.map, post.x, post.y)] === 1;
+  }
+
+  const statusText = (): string => statusOf(state);
+
+  /** The status line of `s`: empty while planning (the counter in the top bar says it all), the result at the end. */
+  function statusOf(s: RcState): string {
+    if (s.phase === 'plan') return '';
+    if (isHotSeat(s)) {
+      if (s.winner === null) return t('result.drawSides');
+      // With teams the winning team's sides still in win together (only survivors win).
+      const winners = winnersOf(s);
+      return winners.length > 1 ? t('result.winners', { marks: winners.map(sideMark).join(', ') }) : t('result.winner', { mark: sideMark(s.winner) });
+    }
+    if (s.conceded) return t('status.conceded');
+    // The result is decided on the true world, so it is told from it (not from the picture).
+    const args = { own: teamValue(s.world, me()), enemy: opponentValue(s.world), limit: STALL_TURNS };
+    const result = s.result ?? 'draw';
+    const decidedByPost = outcome({ ...s.world, turn: 0 }, s.turnLimit) !== null;
+    if (decidedByPost) return result === 'won' ? t('status.won') : result === 'lost' ? t('status.lost') : t('status.draw', args);
+    if (s.settled) return t(`status.settled.${result}`, args);
+    if (s.turnLimit !== null) return t(result === 'won' ? 'status.wonScore' : result === 'lost' ? 'status.lostScore' : 'status.draw', args);
+    // Open end: the turn cap, or else the stalemate rule (a quick match, or an older save that had it).
+    if (s.world.turn >= MAX_TURNS) return t(`status.cap.${result}`, args);
+    return t(result === 'won' ? 'status.wonQuiet' : result === 'lost' ? 'status.lostQuiet' : 'status.drawQuiet', args);
+  }
+
+
+  /** The selection text: the short hint for the eye, the full description for screen readers (the card shows the rest). */
+  function setSelectionText(unit: Entity, hint: string): void {
+    clear(selectionText);
+    selectionText.append(h('span', { class: 'sr-only' }, `${describeUnit(unit)} `), h('span', {}, hint || shortState(unit)));
+  }
+
+  function renderSelection(): void {
+    const unit = selected === null ? undefined : known(selected);
+    const reachable = !!unit && unit.side === me() && inContact(unit);
+    const canOrder = !!unit && unit.side === me() && isMobile(unit) && reachable && state.phase === 'plan';
+    if (!unit) {
+      selectionText.textContent = t('panel.none');
+    } else if (!isMobile(unit)) {
+      setSelectionText(unit, structureHint(unit));
+    } else if (unit.side === me() && !reachable) {
+      setSelectionText(unit, t('panel.outOfContact'));
+    } else {
+      const hint = !canOrder ? '' : archetypeOf(RULESET, unit.kind)?.weapon ? t('panel.hint') : t('panel.hintUnarmed');
+      setSelectionText(unit, hint);
+    }
+    renderCard(unit);
+    renderJobs(unit);
+    selectionActions.hidden = !canOrder;
+    deployBtn.hidden = !unit || !needsDeploy(unit) || isSetUpOrPending(unit);
+    deployBtn.textContent = unit && deployKind(unit) === 'deployJammer' ? t('action.deployJammer') : t('action.deploy');
+    // The drone button tells where the drone is: aboard (launch), taking off this turn, or being replaced.
+    const drone = unit ? droneState(RULESET, unit) : undefined;
+    const launching = !!unit && state.draft.some((c) => c.unit === unit.id && c.order.type === 'launch');
+    launchBtn.hidden = !unit || drone === undefined || drone === 'flying';
+    launchBtn.disabled = drone !== 'aboard' || launching;
+    launchBtn.textContent = launching ? t('action.launchPlanned') : drone === 'rebuilding' ? t('action.launchRebuild', { n: unit?.rebuild ?? 0 }) : t('action.launch');
+    recallBtn.hidden = !unit || !carrierOf(world(), unit);
+    for (const b of modeButtons) b.setAttribute('aria-pressed', String(b.getAttribute('data-testid') === `rc-mode-${mode}`));
+    modeHint.textContent = mode === 'patrol' ? t('mode.hintPatrol') : mode === 'escort' ? t('mode.hintEscort') : '';
+    modeHint.hidden = mode === 'move';
+    if (unit && canOrder) {
+      const d = doctrineFor(state, unit.id);
+      retreatSelect.value = String(d.retreatBelow);
+      prioritySelect.value = d.priority;
+      coverBox.checked = d.seekCover;
+      holdFireBox.checked = d.holdFire;
+      lostContactSelect.value = d.lostContact;
+    }
+    cancelBtn.disabled = !unit || !state.draft.some((c) => c.unit === unit.id);
+  }
+
+  /** What a selected structure is for (economy): yard, command source, site or Extractor. */
+  function structureHint(unit: Entity): string {
+    const arch = archetypeOf(RULESET, unit.kind);
+    if (!arch) return t('panel.structure');
+    if (unit.build !== undefined) return t('panel.site', { n: unit.build });
+    if (unit.side !== me()) return t('panel.structure');
+    if (arch.production) return t('panel.yard');
+    if (arch.comms?.role === 'source' && RULESET.economy) return `${unit.kind === 'command-post' ? t('panel.static') : ''} ${t('panel.source')}`.trim();
+    if (arch.extractor) return t('panel.extractor', { n: arch.income });
+    return t('panel.structure');
+  }
+
+  /** The buildable structures a command source may place (finished structures with a build time). */
+  const BUILDABLE = Object.values(RULESET.archetypes).filter((a) => a.speed === 0 && a.buildTurns > 0).map((a) => a.id);
+
+  /** Production sheet of a yard, or the placement sheet of a command source: the planned jobs with cancel buttons. */
+  function renderJobs(unit: Entity | undefined): void {
+    clear(jobsEl);
+    const arch = unit && archetypeOf(RULESET, unit.kind);
+    const own = !!unit && unit.side === me() && state.phase === 'plan' && RULESET.economy && inContact(unit) && unit.build === undefined;
+    const yard = own && !!arch?.production;
+    const source = own && arch?.comms?.role === 'source' && (!needsDeploy(unit) || isSetUp(unit));
+    // Any finished own structure but a command source can be sold (not while disabled).
+    const sellable = own && arch?.speed === 0 && arch.comms?.role !== 'source' && isReady(unit);
+    const salePlanned = !!unit && plannedJobs(state, unit.id).some((c) => c.order.type === 'sell');
+    jobsEl.hidden = !unit || !arch || (!yard && !source && !sellable);
+    if (!unit || !arch || (!yard && !source && !sellable)) {
+      placing = null;
+      settleSell = null;
+      return;
+    }
+    if (settleSell !== unit.id) settleSell = null;
+    // Planned for sale: nothing more to produce, repair or place there (cancel the sale to change it).
+    const kinds = salePlanned ? [] : yard ? (arch.production ?? []) : source ? BUILDABLE : [];
+    const list = h('div', { class: 'rc-tiles', role: 'group', 'aria-label': t(yard ? 'jobs.produce' : 'jobs.build') });
+    const left = plannedSupply(state);
+    for (const kind of kinds) {
+      const a = archetypeOf(RULESET, kind);
+      if (!a) continue;
+      const short = a.cost > left;
+      const label = short ? `${t('jobs.item', { name: t(`unit.${kind}`), cost: a.cost, turns: a.buildTurns })} (${t('tile.short')})` : t('jobs.item', { name: t(`unit.${kind}`), cost: a.cost, turns: a.buildTurns });
+      const onclick = yard ? () => orderJob({ type: 'produce', kind }) : () => startPlacing(kind);
+      // A tile: the picture of what is made, its name, and cost and time as numbers (the label says it all in words).
+      list.append(
+        h(
+          'button',
+          { type: 'button', class: 'rc-tile', 'data-testid': `rc-job-${kind}`, 'aria-pressed': placing === kind ? 'true' : 'false', 'aria-label': label, 'data-short': short ? 'true' : 'false', onclick },
+          h('span', { class: 'rc-tile-pic', 'aria-hidden': 'true' }, unitIcon(kind, true)),
+          h('span', { class: 'rc-tile-name', 'aria-hidden': 'true' }, t(`unit.${kind}`)),
+          h('span', { class: 'rc-tile-meta', 'aria-hidden': 'true' }, t('jobs.costTime', { cost: a.cost, turns: a.buildTurns })),
+          ...(short ? [h('span', { class: 'rc-tile-short', 'aria-hidden': 'true' }, t('tile.short'))] : [])
+        )
+      );
+    }
+    const rows = h('ul', { class: 'rc-joblist' });
+    // A finished unit that found no free cell waits inside: say so instead of "0 turns left".
+    for (const q of unit.queue ?? []) rows.append(h('li', {}, q.left === 0 ? t('jobs.waiting', { name: t(`unit.${q.kind}`) }) : t('jobs.queue', { name: t(`unit.${q.kind}`), n: q.left })));
+    plannedJobs(state, unit.id).forEach((job, index) => {
+      const o = job.order;
+      const target = o.type === 'repair' ? state.world.entities.find((e) => e.id === o.target) : undefined;
+      const name = o.type === 'produce' || o.type === 'build' ? t(`unit.${o.kind}`) : target ? unitName(target) : unitName(unit);
+      const text =
+        o.type === 'build'
+          ? t('jobs.plannedAt', { name, x: o.x + 1, y: o.y + 1 })
+          : o.type === 'repair'
+            ? t('jobs.plannedRepair', { name })
+            : o.type === 'sell'
+              ? t('jobs.plannedSell', { n: plannedSaleRefund(state, unit.id) })
+              : t('jobs.planned', { name });
+      rows.append(h('li', {}, h('span', {}, text), h('button', { type: 'button', 'data-testid': `rc-job-cancel-${index}`, onclick: () => commit(cancelJob(state, unit.id, index), t('announce.cancelled', { name })) }, t('jobs.cancel', { name }))));
+    });
+    if ((yard || source) && !salePlanned) jobsEl.append(h('h4', {}, t(yard ? 'jobs.produce' : 'jobs.build')), list);
+    if (yard && !salePlanned) jobsEl.append(repairSection(unit, arch));
+    jobsEl.append(rows);
+    if (sellable && !salePlanned) {
+      const refund = plannedSaleRefund(state, unit.id);
+      jobsEl.append(
+        h(
+          'button',
+          { type: 'button', class: 'rc-sell', 'data-testid': 'rc-sell', onclick: (event: Event) => onSell(unit.id, event as MouseEvent) },
+          settleSell === unit.id ? t('jobs.sellConfirm', { n: refund }) : t('jobs.sell', { n: refund })
+        )
+      );
+    }
+    if (placing) {
+      const a = archetypeOf(RULESET, placing);
+      jobsEl.append(
+        h('p', { class: 'rc-hint', 'data-testid': 'rc-placing' }, t(a?.extractor ? 'jobs.chooseDeposit' : 'jobs.chooseCell', { name: t(`unit.${placing}`) })),
+        h('button', { type: 'button', 'data-testid': 'rc-placing-stop', onclick: () => stopPlacing() }, t('jobs.stop'))
+      );
+    }
+  }
+
+  /** Own damaged units of the kinds a yard makes, standing next to it: one button each (price in Supply). */
+  function repairSection(yard: Entity, arch: NonNullable<ReturnType<typeof archetypeOf>>): HTMLElement {
+    const box = h('div', { class: 'rc-repair', 'data-testid': 'rc-repair' }, h('h4', {}, t('jobs.repair')));
+    const left = plannedSupply(state);
+    const candidates = state.world.entities.filter((e) => {
+      const a = archetypeOf(RULESET, e.kind);
+      const planned = plannedJobs(state, yard.id).some((c) => c.order.type === 'repair' && c.order.target === e.id);
+      return e.side === me() && a && !planned && arch.production?.includes(e.kind) && e.hp < a.hp && Math.max(Math.abs(e.x - yard.x), Math.abs(e.y - yard.y)) <= 1;
+    });
+    if (candidates.length === 0) box.append(h('p', { class: 'rc-muted' }, t('jobs.repairNone')));
+    for (const e of candidates) {
+      const a = archetypeOf(RULESET, e.kind)!;
+      const price = repairPrice(a, e.hp);
+      const short = price > left;
+      const label = t('jobs.repairLabel', { name: unitName(e), hp: e.hp, max: a.hp, cost: price });
+      box.append(
+        h(
+          'button',
+          { type: 'button', class: 'rc-repair-item', 'data-testid': `rc-repair-${e.id}`, 'data-short': short ? 'true' : 'false', 'aria-label': short ? `${label} (${t('tile.short')})` : label, onclick: () => orderJob({ type: 'repair', target: e.id }) },
+          unitIcon(e.kind, true),
+          h(
+            'span',
+            { class: 'rc-repair-text', 'aria-hidden': 'true' },
+            h('span', {}, unitName(e)),
+            h('span', { class: 'rc-repair-meta' }, t('jobs.repairItem', { hp: e.hp, max: a.hp, cost: price })),
+            ...(short ? [h('span', { class: 'rc-tile-short' }, t('tile.short'))] : [])
+          )
+        )
+      );
+    }
+    return box;
+  }
+
+  /** Selling takes two presses: the first shows the refund on the button, the second plans it. */
+  let settleSell: number | null = null;
+  function onSell(id: number, event?: MouseEvent): void {
+    // The second click of a double-click (or double tap) is not a second, deliberate press.
+    if ((event?.detail ?? 0) > 1) return;
+    if (settleSell !== id) {
+      settleSell = id;
+      armedAt = performance.now();
+      render();
+      jobsEl.querySelector<HTMLElement>('[data-testid="rc-sell"]')?.focus();
+      return;
+    }
+    if (tooSoon()) return;
+    settleSell = null;
+    orderJob({ type: 'sell' });
+  }
+
+  /**
+   * Two-press confirmations (sale, end on strength): a second press within CONFIRM_GAP ms of
+   * arming is not deliberate (a quick double tap, a held Enter's auto-repeat) and is ignored.
+   * A timestamp, not a timer: nothing waits.
+   */
+  let armedAt = 0;
+  const tooSoon = (): boolean => performance.now() - armedAt < CONFIRM_GAP;
+
+  /** Queues a one-shot job (production) for the selected structure, or explains why not. */
+  function orderJob(order: Order): void {
+    if (selected === null) return;
+    const unit = known(selected);
+    const refusal = orderRefusal(state, selected, order);
+    const next = refusal === null ? planOrder(state, selected, order) : undefined;
+    if (!unit || !next) {
+      showRefusal(refusal);
+      return;
+    }
+    noticeEl.hidden = true;
+    if (order.type === 'repair' || order.type === 'sell') {
+      const target = order.type === 'repair' ? state.world.entities.find((e) => e.id === order.target) : unit;
+      commit(next, t(order.type === 'repair' ? 'announce.repair' : 'announce.sell', { name: target ? unitName(target) : '' }));
+      return;
+    }
+    const name = t(`unit.${order.type === 'produce' || order.type === 'build' ? order.kind : unit.kind}`);
+    commit(next, order.type === 'build' ? t('announce.site', { name, x: order.x + 1, y: order.y + 1 }) : t('announce.job', { name }));
+  }
+
+  function startPlacing(kind: string): void {
+    placing = placing === kind ? null : kind;
+    noticeEl.hidden = true;
+    render();
+    if (placing) announce(live, t(archetypeOf(RULESET, kind)?.extractor ? 'jobs.chooseDeposit' : 'jobs.chooseCell', { name: t(`unit.${kind}`) }));
+  }
+
+  function stopPlacing(): void {
+    placing = null;
+    render();
+  }
+
+  /* ---------- Unit card and legend ---------- */
+  /** Roster maxima, so every bar uses the same scale for all units. */
+  const ROSTER = Object.values(RULESET.archetypes);
+  const MAX = {
+    hp: Math.max(...ROSTER.map((a) => a.hp)),
+    damage: Math.max(...ROSTER.map((a) => a.weapon?.damage ?? 0)),
+    range: Math.max(...ROSTER.map((a) => a.weapon?.range ?? 0)),
+    speed: Math.max(...ROSTER.map((a) => a.speed)),
+    vision: Math.max(...ROSTER.map((a) => a.vision)),
+    radius: Math.max(...ROSTER.map((a) => a.comms?.radius ?? 0))
+  };
+  /** The armour classes drawn as the kind that stands for each (one picture vocabulary for map and card). */
+  const ARMOR_ICON: Record<(typeof ARMOR_CLASSES)[number], string> = { infantry: 'rifles', light: 'outrider', heavy: 'warden', structure: 'command-post', air: 'kite' };
+
+  /** Segments (of 5) for a value on the roster scale: at least one for anything above zero. */
+  const segments = (value: number, max: number): number => (value <= 0 || max <= 0 ? 0 : Math.max(1, Math.ceil((value / max) * 5 - 1e-9)));
+
+  /**
+   * One meter of the unit card (Proposal 2): pictogram and word in the term, five segments and
+   * the exact value in the description. The segments are decoration (aria-hidden); the value is
+   * always text, never the bar alone.
+   */
+  function meterRow(icon: keyof typeof PICTOGRAMS, label: string, filled: number, value: string, testId?: string): HTMLElement[] {
+    const seg = h('span', { class: 'rc-seg', 'aria-hidden': 'true' }, ...Array.from({ length: 5 }, (_, i) => h('i', { class: i < filled ? 'on' : '' })));
+    return [
+      h('dt', {}, pictogram(icon), h('span', {}, label)),
+      h('dd', testId ? { 'data-testid': testId } : {}, seg, h('bdi', { class: 'rc-meter-value' }, value))
+    ];
+  }
+
+  /** A fact of the "More" fold: term and value. */
+  const fact = (label: string, value: string, testId?: string): HTMLElement[] => [h('dt', {}, label), h('dd', testId ? { 'data-testid': testId } : {}, value)];
+
+  /** Small icon of a unit kind: the map shape (circle / diamond / square) with its glyph. */
+  function unitIcon(kind: string, own: boolean, side: number = own ? me() : 1): HTMLElement {
+    const icon = h('canvas', { class: 'rc-icon', width: CELL, height: CELL, 'aria-hidden': 'true' }) as HTMLCanvasElement;
+    let g: CanvasRenderingContext2D | null = null;
+    try {
+      g = icon.getContext('2d');
+    } catch {
+      g = null;
+    }
+    if (!g) return icon;
+    const colour = sideColour(side);
+    const surface = css('--wp-surface', '#ffffff');
+    if (drawIcon(g, kind, 0, 0, CELL / 44, { own, colour, surface, view: mapView })) return icon;
+    const c = CELL / 2;
+    const r = CELL * 0.34;
+    g.lineWidth = 3;
+    g.strokeStyle = colour;
+    g.fillStyle = own ? colour : surface;
+    g.beginPath();
+    if (isStructure({ kind })) g.rect(c - r, c - r, r * 2, r * 2);
+    else if (own) g.arc(c, c, r, 0, Math.PI * 2);
+    else {
+      g.moveTo(c, c - r - 2);
+      g.lineTo(c + r + 2, c);
+      g.lineTo(c, c + r + 2);
+      g.lineTo(c - r - 2, c);
+      g.closePath();
+    }
+    g.fill();
+    g.stroke();
+    g.strokeStyle = own ? surface : colour;
+    g.fillStyle = own ? surface : colour;
+    g.lineWidth = 2;
+    drawGlyph(g, kind, c, c);
+    return icon;
+  }
+
+  /** Card sections the player opened stay open while the card is redrawn (every render). */
+  const cardOpen = new Set<string>();
+  function section(id: string, title: string): HTMLDetailsElement {
+    const el = h('details', { class: 'rc-fold', 'data-testid': `rc-card-${id}` }, h('summary', {}, title)) as HTMLDetailsElement;
+    el.open = cardOpen.has(id);
+    el.addEventListener('toggle', () => (el.open ? cardOpen.add(id) : cardOpen.delete(id)));
+    return el;
+  }
+
+  function renderCard(unit: Entity | undefined): void {
+    clear(cardEl);
+    const arch = unit && archetypeOf(RULESET, unit.kind);
+    cardEl.hidden = !unit || !arch;
+    if (!unit || !arch) return;
+    const own = unit.side === me();
+    const cells = (n: number) => t('card.cells', { n });
+    cardEl.append(
+      h(
+        'div',
+        { class: 'rc-card-head' },
+        unitIcon(unit.kind, own, unit.side),
+        h('div', { class: 'rc-card-who' }, h('strong', {}, unitName(unit)), h('span', { class: 'rc-muted' }, `${sideName(unit.side)} · ${shortState(unit)}`))
+      )
+    );
+    // The meters (owner's choice, Proposal 2): one row per stat on the roster scale.
+    const meters = h('dl', { class: 'rc-meters', 'data-testid': 'rc-card-meters' });
+    meters.append(...meterRow('health', t('card.health'), segments(unit.hp, arch.hp), `${unit.hp} / ${arch.hp}`, 'rc-card-health'));
+    const w = arch.weapon;
+    if (w) {
+      meters.append(
+        ...meterRow('attack', t('card.damage'), segments(w.damage, MAX.damage), String(w.damage), 'rc-card-damage'),
+        ...meterRow('range', t('card.range'), segments(w.range, MAX.range), w.minRange > 0 ? t('card.rangeBetween', { min: w.minRange, max: w.range }) : cells(w.range))
+      );
+    } else if (arch.comms && arch.comms.radius > 0) {
+      meters.append(...meterRow('radio', t('card.radio'), segments(arch.comms.radius, MAX.radius), cells(arch.comms.radius)));
+    }
+    meters.append(
+      ...meterRow('move', t('card.speed'), segments(arch.speed, MAX.speed), arch.speed > 0 ? t('card.perTurn', { n: Math.round((arch.speed * RULESET.ticksPerTurn) / 4) }) : t('card.static')),
+      ...meterRow('sight', t('card.vision'), segments(arch.vision, MAX.vision), cells(arch.vision))
+    );
+    cardEl.append(meters);
+    // What the weapon does against each armour class is told once: the effect table behind "More"
+    // (owner, 2026-10-14). An unarmed unit says so right here.
+    if (!w) {
+      cardEl.append(h('p', { class: 'rc-hint', 'data-testid': 'rc-card-noweapon' }, pictogram('noweapon'), h('span', {}, `${t('card.weapon')}: ${t('card.noWeapon')}`)));
+    }
+    // Everything else behind "More" (folded by default; stays open across redraws once opened).
+    const more = section('more', t('card.more'));
+    const facts = h('dl', { class: 'rc-facts' });
+    facts.append(...fact(t('card.armor'), t(`armor.${arch.armor}`)));
+    if (w) {
+      // Rates per turn, not per tick (owner, 2026-10-18): the tick is the simulation's clock, the turn the player's.
+      const shots = RULESET.ticksPerTurn / Math.max(1, w.cooldown);
+      const delivery = w.effect?.kind === 'disabled' ? 'pulse' : w.delivery;
+      facts.append(...fact(t('card.rate'), `${t('card.perTurnShots', { n: perTurn(shots) })} · ${t(`card.delivery.${delivery}`)}`, 'rc-card-rate'));
+      if (w.stationary) facts.append(...fact(t('card.weapon'), t('card.stationary')));
+      if (w.effect?.kind === 'disabled') {
+        const turns = w.effect.ticks / RULESET.ticksPerTurn;
+        facts.append(...fact(t('card.weapon'), turns === 1 ? t('card.stunOne') : t('card.stunTurns', { n: perTurn(turns) }), 'rc-card-stun'));
+      }
+    }
+    if (arch.comms) {
+      const text = arch.comms.role === 'source' ? t('card.source', { r: arch.comms.radius, slots: arch.comms.orderSlots }) : t('card.relay', { r: arch.comms.radius });
+      facts.append(...fact(t('card.radio'), arch.comms.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text));
+    }
+    if (arch.ew) {
+      const text = arch.ew.role === 'jammer' ? t('card.jammer', { r: arch.ew.radius }) : t('card.tracer', { r: arch.ew.radius, b: arch.ew.burnThrough });
+      facts.append(...fact(t('card.ew'), arch.ew.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text));
+    }
+    // Drones: where a carrier's drone is (own units only), and a drone's leash.
+    const drone = unit.side === me() ? droneState(RULESET, unit) : undefined;
+    if (drone) {
+      const flying = unit.drone === undefined ? undefined : known(unit.drone);
+      const text = drone === 'aboard' ? t('card.droneAboard') : drone === 'flying' ? t('card.droneFlying', { name: flying ? unitName(flying) : t('unit.kite') }) : t('card.droneRebuild', { n: unit.rebuild ?? 0 });
+      facts.append(...fact(t('card.drone'), text, 'rc-card-drone'));
+    }
+    const carrier = carrierOf(world(), unit);
+    const leash = carrier && archetypeOf(RULESET, carrier.kind)?.carrier?.leash;
+    if (carrier && leash !== undefined) facts.append(...fact(t('card.leash'), t('card.leashValue', { n: leash, name: unitName(carrier) }), 'rc-card-leash'));
+    // Economy: what it costs and takes, what it yields or produces.
+    if (RULESET.economy) {
+      if (arch.buildTurns > 0) facts.append(...fact(t('card.cost'), t('card.supply', { n: arch.cost }), 'rc-card-cost'), ...fact(t('card.buildTime'), t('card.turns', { n: arch.buildTurns })));
+      if (arch.income > 0) facts.append(...fact(t('card.income'), t('card.incomeValue', { n: arch.income }), 'rc-card-income'));
+      if (arch.production) facts.append(...fact(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', ')));
+      const repairers = Object.values(RULESET.archetypes).filter((a) => a.production?.includes(arch.id)).map((a) => t(`unit.${a.id}`));
+      if (arch.speed > 0 && repairers.length > 0) facts.append(...fact(t('card.repair'), t('card.repairAt', { yards: repairers.join(', ') }), 'rc-card-repair'));
+      if (unit.side === me() && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) facts.append(...fact(t('card.sell'), t('card.sellValue', { n: plannedSaleRefund(state, unit.id) }), 'rc-card-sell'));
+    }
+    more.append(facts);
+    // The full effect table: one row per armour class with the exact %.
+    if (w) {
+      more.append(
+        h(
+          'table',
+          { class: 'rc-vs-table', 'data-testid': 'rc-card-vs' },
+          h('caption', {}, t('card.vs')),
+          // One row per armour class (fits a phone in every language; words never break).
+          ...ARMOR_CLASSES.map((cls) => h('tr', {}, h('th', { scope: 'row' }, unitIcon(ARMOR_ICON[cls], false, me() === 0 ? 1 : 0), h('span', {}, t(`armor.${cls}`))), h('td', {}, `${w.vs[cls]} %`)))
+        )
+      );
+    }
+    cardEl.append(more);
+  }
+
+  /** Swatch canvas painted by `paint`; the legend pairs each with its text. */
+  function swatch(paint: (g: CanvasRenderingContext2D) => void): HTMLElement {
+    const el = h('canvas', { class: 'rc-swatch', width: CELL, height: CELL, 'aria-hidden': 'true' }) as HTMLCanvasElement;
+    let g: CanvasRenderingContext2D | null = null;
+    try {
+      g = el.getContext('2d');
+    } catch {
+      g = null;
+    }
+    if (g) paint(g);
+    return el;
+  }
+
+  function renderLegend(): void {
+    const rows = h('ul', { class: 'rc-legend-list' });
+    const row = (el: HTMLElement, text: string) => rows.append(h('li', {}, el, h('span', {}, text)));
+    // Terrain: the same fill and pattern as on the map, with the numbers that matter.
+    for (const [code, spec] of Object.entries(RULESET.terrain)) {
+      const name = TERRAIN_NAMES[code] ?? 'plain';
+      const effect =
+        spec.cost === null
+          ? t('legend.impassable')
+          : [t('legend.move', { n: spec.cost }), spec.cover > 0 ? t('legend.cover', { n: spec.cover }) : '', spec.rangeBonus > 0 ? t('legend.rangeBonus', { n: spec.rangeBonus }) : '']
+              .filter(Boolean)
+              .join(' · ');
+      row(
+        swatch((g) => drawTerrainSwatch(g, code, mapView, css)),
+        `${t(`terrain.${name}`)}: ${effect}`
+      );
+    }
+    // Shapes and overlays.
+    const colourOwn = css('--wp-p1', '#24508f');
+    const colourEnemy = css('--wp-p2', '#9a3412');
+    const shape = (own: boolean, kind: string) => unitIcon(kind, own);
+    row(shape(true, 'rifles'), t('legend.own'));
+    row(shape(false, 'rifles'), t('legend.enemy'));
+    row(shape(true, 'command-post'), t('legend.structure'));
+    row(shape(true, 'tower-gun'), t('legend.tower'));
+    // One row per kind in the game: its picture and its name (what the symbols on the map mean).
+    const kinds = h('ul', { class: 'rc-legend-list rc-legend-kinds', 'data-testid': 'rc-legend-kinds' });
+    for (const kind of LEGEND_KINDS) kinds.append(h('li', {}, unitIcon(kind, true), h('span', {}, t(`unit.${kind}`))));
+    legendEl.append(h('h4', {}, t('legend.kinds')), kinds);
+    if (RULESET.economy) {
+      row(
+        swatch((g) => {
+          g.fillStyle = css('--rc-plain', '#ddd');
+          g.fillRect(0, 0, CELL, CELL);
+          g.strokeStyle = css('--rc-mark', '#00000055');
+          g.fillStyle = css('--rc-mark', '#00000055');
+          drawDeposit(g, 0, 0, 'plain', css('--wp-surface', '#ffffff'));
+        }),
+        t('legend.deposit')
+      );
+      row(
+        swatch((g) => {
+          g.fillStyle = css('--rc-plain', '#ddd');
+          g.fillRect(0, 0, CELL, CELL);
+          g.strokeStyle = css('--rc-mark', '#00000055');
+          g.fillStyle = css('--rc-mark', '#00000055');
+          drawDeposit(g, 0, 0, 'endless', css('--wp-surface', '#ffffff'));
+        }),
+        t('legend.depositEndless')
+      );
+      row(swatch((g) => drawIcon(g, 'muster', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), site: 2, view: mapView })), t('legend.site'));
+    }
+    row(swatch((g) => drawIcon(g, 'mast-truck', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), deployed: true, view: mapView })), t('legend.setUp'));
+    row(swatch((g) => drawIcon(g, 'rifles', 0, 0, CELL / 44, { own: false, colour: colourEnemy, surface: css('--wp-surface', '#ffffff'), ghost: true, view: mapView })), t('legend.ghost'));
+    row(
+      swatch((g) => {
+        drawTerrainSwatch(g, '.', mapView, css);
+        // Covered on the left, outside on the right.
+        drawCoverEdge(g, [[CELL / 2, 0, 0, 1, 1]]);
+      }),
+      t('legend.noCover')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        g.strokeStyle = css('--wp-danger', '#a1271b');
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.moveTo(4, CELL / 2);
+        for (let k = 1; k <= 4; k++) g.lineTo(4 + (k * (CELL - 8)) / 4, CELL / 2 + (k % 2 === 1 ? -5 : 5));
+        g.stroke();
+      }),
+      t('legend.jammed')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        leashRing(g, CELL / 2, CELL / 2, CELL * 0.38);
+      }),
+      t('legend.leash')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        drawFlash(g, 0, 0);
+      }),
+      t('legend.flash')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        drawFix(g, 0, 0);
+      }),
+      t('legend.intercept')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        drawTerrainSwatch(g, '.', mapView, css);
+        g.fillStyle = css('--rc-fog', 'rgba(250, 250, 247, 0.5)');
+        g.fillRect(0, 0, CELL, CELL);
+        g.fillStyle = css('--rc-fog-dot', 'rgba(29, 29, 27, 0.4)');
+        g.beginPath();
+        g.arc(CELL - 7, CELL - 7, 2, 0, Math.PI * 2);
+        g.fill();
+      }),
+      t('legend.fog')
+    );
+    legendEl.append(rows);
+  }
+
+  /** A compact list row: the map icon, the name, a health bar and one short state; the full description for screen readers. */
+  function unitRow(e: Entity, short: string): HTMLElement[] {
+    const arch = archetypeOf(RULESET, e.kind);
+    const max = arch?.hp ?? e.hp;
+    return [
+      h(
+        'span',
+        { class: 'rc-row', 'aria-hidden': 'true', 'data-side': e.side === me() ? 'own' : 'enemy' },
+        unitIcon(e.kind, e.side === me(), e.side),
+        several() && e.side !== me() ? h('span', { class: 'rc-row-mark', 'data-testid': `rc-mark-${e.id}`, style: `color:${sideColour(e.side)}` }, sideMark(e.side)) : null,
+        h('span', { class: 'rc-row-name' }, unitName(e)),
+        h('span', { class: 'rc-row-hp' }, h('span', { class: 'rc-stat-bar' }, h('span', { class: 'rc-stat-fill', style: `width:${Math.round((100 * e.hp) / max)}%` })), h('span', {}, `${e.hp}/${max}`)),
+        h('span', { class: 'rc-row-state' }, short)
+      ),
+      h('span', { class: 'sr-only' }, describeUnit(e))
+    ];
+  }
+
+  /** One short phrase for a list row: what matters most about the unit right now. */
+  function shortState(e: Entity): string {
+    if (e.side !== me()) return !isGhost(e) ? t('row.inSight') : ghostTick(e) === 0 ? t('row.knownStart') : t('row.lastSeen', { turn: reportTurn(ghostTick(e) ?? 0) });
+    if (e.build !== undefined) return t('list.site', { n: e.build });
+    if (e.queue && e.queue.length > 0) return t('list.queue', { n: e.queue.map((q) => t(`unit.${q.kind}`)).join(', ') });
+    if (isMobile(e) && !inContact(e)) return t(!isGhost(e) && jammed(e.x, e.y) ? 'contact.jammed' : 'contact.out');
+    const planned = draftFor(state, e.id);
+    return planned ? `→ ${describeOrder(e, planned)}` : describeOrder(e, e.order);
+  }
+
+  function renderLists(): void {
+    clear(ownList);
+    clear(enemyList);
+    clear(neutralList);
+    const own = world().entities.filter((e) => e.side === me());
+    // The neutral list stands whenever the game has empty seats (a fixed property: whether a neutral
+    // post is still known or was taken must not show by a heading appearing or vanishing).
+    const neutralSeats = hasNeutralSeats();
+    neutralPanel.hidden = !neutralSeats;
+    const enemies = world().entities.filter((e) => e.side !== me() && hostile(world(), me(), e.side) && !(neutralSeats && e.side === NEUTRAL));
+    // Allies have a list of their own whenever the game has teams with an ally (a fixed property).
+    const allies = world().entities.filter((e) => e.side !== me() && e.side !== NEUTRAL && !hostile(world(), me(), e.side));
+    clear(allyList);
+    allyPanel.hidden = !hasAllies();
+    for (const e of allies) allyList.append(h('li', { 'data-testid': `rc-ally-${e.id}`, class: 'rc-enemy-row' }, ...unitRow(e, shortState(e))));
+    if (allies.length === 0) allyList.append(h('li', {}, t('list.empty')));
+    for (const e of own) {
+      const btn = h(
+        'button',
+        { type: 'button', class: 'rc-unit', 'data-testid': `rc-unit-${e.id}`, 'aria-pressed': selected === e.id ? 'true' : 'false', 'data-planned': draftFor(state, e.id) ? 'true' : 'false', onclick: () => select(e.id) },
+        ...unitRow(e, shortState(e))
+      );
+      ownList.append(h('li', {}, btn));
+    }
+    if (own.length === 0) ownList.append(h('li', {}, t('list.empty')));
+    const attacker = selected === null ? undefined : known(selected);
+    const canAttack =
+      !!attacker && attacker.side === me() && isMobile(attacker) && inContact(attacker) && !!archetypeOf(RULESET, attacker.kind)?.weapon && state.phase === 'plan';
+    for (const e of enemies) {
+      const item = h('li', { 'data-testid': `rc-enemy-${e.id}`, class: 'rc-enemy-row' }, ...unitRow(e, shortState(e)));
+      if (canAttack && !isGhost(e) && canHurt(attacker, e)) {
+        item.append(h('button', { type: 'button', 'data-testid': `rc-attack-${e.id}`, onclick: () => orderSelected({ type: 'attack', target: e.id }) }, t('action.attack', { name: unitName(e) })));
+      }
+      enemyList.append(item);
+    }
+    if (enemies.length === 0) enemyList.append(h('li', {}, t('list.empty')));
+    if (!neutralSeats) return;
+    const neutral = world().entities.filter((e) => e.side === NEUTRAL);
+    for (const e of neutral) {
+      const item = h('li', { 'data-testid': `rc-neutral-${e.id}`, class: 'rc-enemy-row' }, ...unitRow(e, shortState(e)));
+      // A neutral post can be fired on like any post (it does not fire back), also from the list.
+      if (canAttack && !isGhost(e) && canHurt(attacker, e)) {
+        item.append(h('button', { type: 'button', 'data-testid': `rc-attack-${e.id}`, onclick: () => orderSelected({ type: 'attack', target: e.id }) }, t('action.attack', { name: unitName(e) })));
+      }
+      neutralList.append(item);
+    }
+    if (neutral.length === 0) neutralList.append(h('li', {}, t('list.empty')));
+  }
+
+  /** Whether the player has an ally: from the game's teams (a fixed property), never from the board. */
+  function hasAllies(): boolean {
+    const w = state.world;
+    return !!w.teams && Array.from({ length: w.sides }, (_, side) => side).some((side) => side !== me() && !hostile(w, me(), side));
+  }
+
+  /** Whether the game's map leaves seats empty (their posts start neutral): from the setup, never from the board. */
+  function hasNeutralSeats(): boolean {
+    const spec = specOf(state);
+    return !!spec && (scenarioFor(spec, state.opponents)?.entities.some((e) => e.side === NEUTRAL) ?? false);
+  }
+
+  function renderSummary(): void {
+    clear(summaryList);
+    const events = state.events;
+    if (events.length === 0) {
+      summaryList.append(h('li', {}, t('summary.none')));
+      return;
+    }
+    let dealt = 0;
+    let taken = 0;
+    let bumps = 0;
+    const lines: string[] = [];
+    const told = new Set<string>();
+    for (const e of events) {
+      if (e.t === 'hit') {
+        if (e.side === me()) taken += e.damage;
+        else dealt += e.damage;
+      } else if (e.t === 'bump') {
+        // As before several sides: every bump told to the player except a known enemy's (own units, also lost ones).
+        const side = unitById(state, e.id)?.side;
+        if (side === undefined || side === me()) bumps += 1;
+      } else if (e.t === 'destroyed') {
+        lines.push(t(e.side === me() ? 'summary.lostUnit' : 'summary.destroyedUnit', { name: unitName(e) }));
+      } else if (e.t === 'income') {
+        if (e.side === me()) lines.push(t('summary.income', { n: e.amount }));
+      } else if (e.t === 'produced') {
+        if (e.side === me()) lines.push(t('summary.produced', { name: unitName(e), yard: unitName(unitById(state, e.by) ?? { kind: 'muster', id: e.by }) }));
+      } else if (e.t === 'drone-launched') {
+        const carrier = unitById(state, e.by);
+        if (e.side === me() && carrier) lines.push(t('summary.droneLaunched', { name: unitName(carrier) }));
+      } else if (e.t === 'drone-docked') {
+        const carrier = unitById(state, e.by);
+        if (e.side === me() && carrier) lines.push(t('summary.droneDocked', { name: unitName({ kind: 'kite', id: e.id }), carrier: unitName(carrier) }));
+      } else if (e.t === 'drone-ready') {
+        const carrier = unitById(state, e.id);
+        if (e.side === me() && carrier) lines.push(t('summary.droneReady', { name: unitName(carrier) }));
+      } else if (e.t === 'built') {
+        const site = unitById(state, e.id);
+        if (site?.side === me()) lines.push(t('summary.built', { name: unitName(site) }));
+      } else if (e.t === 'site') {
+        if (e.side !== me()) lines.push(t('summary.enemySite', { name: unitName(e) }));
+      } else if (e.t === 'captured') {
+        const post = { kind: e.kind, id: e.id };
+        lines.push(e.to === me() ? t('summary.captured', { name: unitName(post) }) : e.from === me() ? t('summary.postLost', { name: unitName(post), side: sideName(e.to) }) : t('summary.capturedBy', { name: unitName(post), side: sideName(e.to) }));
+      } else if (e.t === 'eliminated') {
+        lines.push(t(e.side === me() ? 'summary.youOut' : 'summary.sideOut', { side: sideName(e.side) }));
+      } else if (e.t === 'missing') {
+        lines.push(t('summary.missing', { name: unitName(e) }));
+      } else if (e.t === 'flash') {
+        // Once per shooter, where it last fired from (the map marks the same cell).
+        const last = flashes().get(e.id);
+        if (last && !told.has(`flash:${e.id}`) && last.x === e.x && last.y === e.y) {
+          told.add(`flash:${e.id}`);
+          lines.push(t('summary.flash', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
+        }
+      } else if (e.t === 'intercept') {
+        // Once per unit fixed (the map marks where it was last tracked).
+        if (!told.has(`fix:${e.id}`)) {
+          told.add(`fix:${e.id}`);
+          lines.push(t('summary.intercept', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
+        }
+      } else if (e.t === 'repaired') {
+        const unit = unitById(state, e.id);
+        if (unit?.side === me()) lines.push(t('summary.repaired', { name: unitName(unit), hp: e.hp }));
+      } else if (e.t === 'sold') {
+        lines.push(e.side === me() ? t('summary.sold', { name: unitName(e), n: e.refund ?? 0 }) : t('summary.enemySold', { name: unitName(e) }));
+      } else if (e.t === 'site-blocked') {
+        if (e.side === me()) lines.push(t('summary.siteBlocked', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
+      } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason) && !told.has(`${e.id}:${e.reason}`)) {
+        // Orders the engine ended on its own are reported for the player's units, once per
+        // unit and reason in a turn.
+        const unit = unitById(state, e.id);
+        told.add(`${e.id}:${e.reason}`);
+        if (unit?.side === me()) lines.push(t(`summary.ended.${e.reason}`, { name: unitName(unit) }));
+      }
+    }
+    summaryList.append(h('li', {}, t('summary.damage', { dealt, taken })));
+    for (const line of lines) summaryList.append(h('li', {}, line));
+    if (bumps > 0) summaryList.append(h('li', {}, t('summary.bumps', { n: bumps })));
+  }
+
+  /* ---------- Canvas ---------- */
+  // Colours come from CSS custom properties on the game container (light/dark aware).
+  const css = (name: string, fallback: string) => getComputedStyle(shell).getPropertyValue(name).trim() || fallback;
+
+  function setZoom(z: number): void {
+    if (z === zoom) return;
+    zoom = z;
+    try {
+      context.preferences?.set('mapZoom', String(z));
+    } catch {
+      /* not kept: this session only */
+    }
+    for (const [i, b] of zoomButtons.entries()) b.setAttribute('aria-pressed', String(ZOOMS[i] === z));
+    reveal = 'centre';
+    render();
+    announce(live, t('zoom.changed', { size: percent(z) }));
+  }
+
+  /** Scrolls the large map's frame so the cursor cell is in view (centred, or only just). */
+  function revealCursor(how: 'centre' | 'near', scale: number): void {
+    const cell = CELL * scale;
+    const left = cursor.x * cell;
+    const top = cursor.y * cell;
+    const { clientWidth: fw, clientHeight: fh } = mapWrap;
+    if (fw === 0 || fh === 0) return;
+    if (how === 'centre') {
+      mapWrap.scrollLeft = left + cell / 2 - fw / 2;
+      mapWrap.scrollTop = top + cell / 2 - fh / 2;
+      return;
+    }
+    if (left < mapWrap.scrollLeft) mapWrap.scrollLeft = left;
+    else if (left + cell > mapWrap.scrollLeft + fw) mapWrap.scrollLeft = left + cell - fw;
+    if (top < mapWrap.scrollTop) mapWrap.scrollTop = top;
+    else if (top + cell > mapWrap.scrollTop + fh) mapWrap.scrollTop = top + cell - fh;
+  }
+
+  function draw(): void {
+    const w = world();
+    const width = w.map.w * CELL;
+    const height = w.map.h * CELL;
+    const large = w.map.w * w.map.h > LARGE_MAP_CELLS;
+    const scale = large ? zoom : 1;
+    canvas.style.width = `${width * scale}px`;
+    canvas.style.height = `${height * scale}px`;
+    mapWrap.classList.toggle('rc-large', large);
+    zoomGroup.hidden = !large;
+    if (reveal) {
+      if (large) revealCursor(reveal, scale);
+      reveal = null;
+    }
+    canvas.setAttribute('data-cols', String(w.map.w));
+    canvas.setAttribute('data-rows', String(w.map.h));
+    let g: CanvasRenderingContext2D | null = null;
+    try {
+      g = canvas.getContext('2d');
+    } catch {
+      g = null;
+    }
+    if (!g) return; // No canvas support (e.g. jsdom): the DOM lists remain fully usable.
+    // The device's pixel ratio, capped so a large map's canvas stays within what phone browsers draw
+    // (about 16.7 megapixels; a 48×32 map at 44 px a cell is 3 megapixels before scaling). A large map
+    // shown smaller needs only that share of the pixels (drawn as sharp, a quarter of the work at 50 %).
+    const ratio = Math.max(1, Math.min(3, globalThis.devicePixelRatio || 1, Math.sqrt(MAX_CANVAS_PIXELS / (width * height)))) * scale;
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    g.setTransform(ratio, 0, 0, ratio, 0, 0);
+    drawTerrain(g, w, ratio);
+    drawFog(g, w);
+    drawCoverage(g, w);
+    if (playing) {
+      drawReplay(g, w, playing.replay, playing.f);
+      return;
+    }
+    drawOrders(g, w);
+    drawLeash(g, w);
+    drawEvents(g);
+    for (const e of w.entities) drawUnit(g, e);
+    drawCursor(g);
+  }
+
+  /* ---------- Turn replay ---------- */
+  const reducedMotion = (): boolean => {
+    try {
+      return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    } catch {
+      return false;
+    }
+  };
+  /** The replay of the last turn as the planning side was told it, or null (nothing to show). */
+  const lastReplay = (): Replay | null => (state.world.turn > 0 && !state.handover && state.edit === null ? buildReplay(world().entities, state.events, state.world.tick, RULESET.ticksPerTurn) : null);
+
+  function startReplay(): void {
+    stopReplay(false);
+    const replay = lastReplay();
+    if (!replay) return;
+    const step = reducedMotion();
+    const ms = step ? REPLAY_STEP_MS : REPLAY_TICK_MS;
+    const now = performance.now();
+    playing = { replay, f: 0, start: now, frame: 0 };
+    replayStatus.textContent = t('replay.playing', { turn: state.world.turn });
+    replayBar.hidden = false;
+    replayBtn.hidden = true;
+    replayBtn.disabled = true;
+    const tick = (time: number) => {
+      if (!playing) return;
+      const raw = (time - playing.start) / ms;
+      if (raw >= replay.ticks) {
+        stopReplay(false);
+        return;
+      }
+      playing.f = step ? Math.floor(raw) : raw;
+      draw();
+      playing.frame = requestAnimationFrame(tick);
+    };
+    draw();
+    playing.frame = requestAnimationFrame(tick);
+  }
+
+  /** Ends the replay (`skipped`: cut short by the player) and shows the map as it is now. */
+  function stopReplay(skipped: boolean): void {
+    if (!playing) return;
+    cancelAnimationFrame(playing.frame);
+    playing = null;
+    replayBar.hidden = true;
+    replayBtn.hidden = false;
+    replayBtn.disabled = lastReplay() === null;
+    draw();
+    if (skipped) canvas.focus();
+  }
+
+  function onAutoReplay(): void {
+    try {
+      context.preferences?.set('replayTurns', autoReplayBox.checked);
+    } catch {
+      /* not kept: this session only */
+    }
+  }
+
+  /** One frame of the replay: the units where they stood at time `f`, and the shots of the tick under way. */
+  function drawReplay(g: CanvasRenderingContext2D, w: World, replay: Replay, f: number): void {
+    const now = new Map<number, { x: number; y: number }>();
+    for (const u of replay.units) {
+      const at = positionAt(u, f);
+      if (at) now.set(u.id, at);
+    }
+    for (const u of replay.units) {
+      const at = now.get(u.id);
+      if (!at) continue;
+      const known = w.entities.find((e) => e.id === u.id);
+      const arch = archetypeOf(RULESET, u.kind);
+      const base: Entity = known ?? { id: u.id, side: u.side, kind: u.kind, x: at.x, y: at.y, hp: arch?.hp ?? 1, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null };
+      drawUnit(g, { ...base, x: at.x, y: at.y });
+    }
+    // The shots of the tick under way show in the second part of its step: first the shooter is
+    // ringed and flashes, then the shot travels to its target (a line, or an arc for a shell), and
+    // the target is ringed where it lands. With reduced motion everything stands at once.
+    const tick = Math.floor(f) + 1;
+    const still = reducedMotion();
+    const p = still ? 1 : f - Math.floor(f);
+    if (p < 0.15) return;
+    const travel = Math.min(1, Math.max(0, (p - 0.3) / 0.4));
+    const mid = (x: number, y: number) => [x * CELL + CELL / 2, y * CELL + CELL / 2] as const;
+    const danger = css('--wp-danger', '#a1271b');
+    const ring = (x: number, y: number, r: number, width: number) => {
+      g.lineWidth = width;
+      g.setLineDash([]);
+      g.beginPath();
+      g.arc(...mid(x, y), r, 0, Math.PI * 2);
+      g.stroke();
+    };
+    g.save();
+    g.lineCap = 'round';
+    g.strokeStyle = danger;
+    for (const shot of replay.shots) {
+      if (shot.tick !== tick) continue;
+      if (shot.t === 'fire' || shot.t === 'shell') {
+        const a = now.get(shot.from);
+        const b = shot.t === 'fire' ? now.get(shot.to) : { x: shot.x, y: shot.y };
+        if (!a) continue;
+        // The shooter: a bold ring and its muzzle flash.
+        ring(a.x, a.y, CELL * 0.5, 3);
+        if (p < 0.45) drawFlash(g, a.x * CELL, a.y * CELL);
+        if (!b || travel === 0) continue;
+        const [ax, ay] = mid(a.x, a.y);
+        const [bx, by] = mid(b.x, b.y);
+        g.setLineDash(shot.t === 'shell' ? [4, 4] : []);
+        g.lineWidth = shot.t === 'shell' ? 2 : 2.5;
+        g.beginPath();
+        g.moveTo(ax, ay);
+        if (shot.t === 'fire') g.lineTo(ax + (bx - ax) * travel, ay + (by - ay) * travel);
+        else {
+          // The part of the arc flown so far (a quadratic Bézier split at `travel`).
+          const [qx, qy] = [(ax + bx) / 2, Math.min(ay, by) - CELL * 1.5];
+          const [c1x, c1y] = [ax + (qx - ax) * travel, ay + (qy - ay) * travel];
+          const [c2x, c2y] = [qx + (bx - qx) * travel, qy + (by - qy) * travel];
+          g.quadraticCurveTo(c1x, c1y, c1x + (c2x - c1x) * travel, c1y + (c2y - c1y) * travel);
+        }
+        g.stroke();
+      } else if (shot.t === 'burst') {
+        if (travel === 1) drawFlash(g, shot.x * CELL, shot.y * CELL);
+      } else {
+        const at = now.get(shot.id);
+        if (at && travel === 1) ring(at.x, at.y, CELL * 0.42, 2);
+      }
+    }
+    g.restore();
+  }
+
+  /** Hatches cells outside the own command coverage and rings the connected network nodes. */
+  function drawCoverage(g: CanvasRenderingContext2D, w: World): void {
+    const net = network();
+    g.save();
+    // The edge of the coverage: a line with short ticks on the side outside it (shape, not colour).
+    const covered = (x: number, y: number) => x < 0 || y < 0 || x >= w.map.w || y >= w.map.h || net.coverage[cellOf(w.map, x, y)] === 1;
+    const edges: CoverEdge[] = [];
+    for (let y = 0; y < w.map.h; y++)
+      for (let x = 0; x < w.map.w; x++) {
+        if (!covered(x, y)) continue;
+        if (!covered(x + 1, y)) edges.push([(x + 1) * CELL, y * CELL, 0, 1, 1]);
+        if (!covered(x - 1, y)) edges.push([x * CELL, y * CELL, 0, 1, -1]);
+        if (!covered(x, y + 1)) edges.push([x * CELL, (y + 1) * CELL, 1, 0, 1]);
+        if (!covered(x, y - 1)) edges.push([x * CELL, y * CELL, 1, 0, -1]);
+      }
+    drawCoverEdge(g, edges);
+    // Jammed cells: a zigzag across the cell (pattern, not colour alone).
+    g.strokeStyle = css('--wp-danger', '#a1271b');
+    g.lineWidth = 1.5;
+    g.beginPath();
+    for (let y = 0; y < w.map.h; y++) {
+      for (let x = 0; x < w.map.w; x++) {
+        if (!jammed(x, y)) continue;
+        const py = y * CELL + CELL / 2;
+        g.moveTo(x * CELL + 4, py);
+        for (let k = 1; k <= 4; k++) g.lineTo(x * CELL + 4 + (k * (CELL - 8)) / 4, py + (k % 2 === 1 ? -5 : 5));
+      }
+    }
+    g.stroke();
+    // Muzzle flashes: a burst on the cell an unseen enemy fired from (shape, not colour alone).
+    for (const f of flashes().values()) drawFlash(g, f.x * CELL, f.y * CELL);
+    // Fixes: a crosshair where a tracked enemy was last reported (shape, not colour alone).
+    for (const f of fixes().values()) drawFix(g, f.x * CELL, f.y * CELL);
+    g.lineWidth = 1;
+    g.strokeStyle = css('--wp-p1', '#24508f');
+    g.setLineDash([3, 6]);
+    for (const id of net.nodes) {
+      const node = unitById(state, id);
+      const r = node ? nodeRadius(w, RULESET, node) : 0;
+      if (!node || r === 0) continue;
+      const [cx, cy] = centre(node.x, node.y);
+      g.beginPath();
+      g.arc(cx, cy, r * CELL + CELL / 2, 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.restore();
+  }
+
+  /** A cell side on the edge of the coverage: start (px), direction (1, 0 or 0, 1), and the side outside it (±1). */
+  type CoverEdge = readonly [number, number, number, number, number];
+  function drawCoverEdge(g: CanvasRenderingContext2D, edges: readonly CoverEdge[]): void {
+    if (!edges.length) return;
+    const trace = () => {
+      g.beginPath();
+      for (const [x, y, dx, dy, out] of edges) {
+        g.moveTo(x, y);
+        g.lineTo(x + dx * CELL, y + dy * CELL);
+        // Ticks every 11 px, pointing outside (across the line).
+        for (let k = 5.5; k < CELL; k += 11) {
+          g.moveTo(x + dx * k, y + dy * k);
+          g.lineTo(x + dx * k + dy * out * 5, y + dy * k + dx * out * 5);
+        }
+      }
+    };
+    g.save();
+    g.lineCap = 'round';
+    g.setLineDash([]);
+    g.strokeStyle = css('--wp-surface', '#ffffff');
+    g.globalAlpha = 0.7;
+    g.lineWidth = 4;
+    trace();
+    g.stroke();
+    g.globalAlpha = 1;
+    g.strokeStyle = css('--rc-nocover', 'rgba(29, 29, 27, 0.6)');
+    g.lineWidth = 1.6;
+    trace();
+    g.stroke();
+    g.restore();
+  }
+
+  /** A per-turn figure in the UI locale: whole numbers as they are, others to one decimal (1.5 → "1,5" in German). */
+  const perTurn = (n: number): string => new Intl.NumberFormat(t.locale, { maximumFractionDigits: 1 }).format(n);
+
+  /** A fix in a cell at (px, py): a dashed ring with four ticks pointing in (a crosshair). */
+  function drawFix(g: CanvasRenderingContext2D, px: number, py: number): void {
+    const cx = px + CELL / 2;
+    const cy = py + CELL / 2;
+    const r = CELL * 0.36;
+    g.save();
+    g.strokeStyle = css('--wp-danger', '#a1271b');
+    g.lineWidth = 2;
+    g.setLineDash([4, 3]);
+    g.beginPath();
+    g.arc(cx, cy, r, 0, Math.PI * 2);
+    g.stroke();
+    g.setLineDash([]);
+    g.beginPath();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      g.moveTo(cx + dx * (r + 4), cy + dy * (r + 4));
+      g.lineTo(cx + dx * (r - 6), cy + dy * (r - 6));
+    }
+    g.stroke();
+    g.restore();
+  }
+
+  /** A muzzle flash burst in a cell at (px, py): eight rays round an open centre. */
+  function drawFlash(g: CanvasRenderingContext2D, px: number, py: number): void {
+    const cx = px + CELL / 2;
+    const cy = py + CELL / 2;
+    g.save();
+    g.strokeStyle = css('--wp-danger', '#a1271b');
+    g.lineWidth = 2;
+    g.setLineDash([]);
+    g.beginPath();
+    for (let k = 0; k < 8; k++) {
+      const a = (k * Math.PI) / 4;
+      const inner = k % 2 === 0 ? CELL * 0.14 : CELL * 0.18;
+      const outer = k % 2 === 0 ? CELL * 0.42 : CELL * 0.3;
+      g.moveTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner);
+      g.lineTo(cx + Math.cos(a) * outer, cy + Math.sin(a) * outer);
+    }
+    g.stroke();
+    g.restore();
+  }
+
+  /**
+   * Veils cells the player does not see now: a milky wash with soft edges (a mask of four samples per
+   * cell, scaled up smoothly) plus a dot in each such cell (not colour alone).
+   */
+  const FOG_RES = 4;
+  let fogMask: HTMLCanvasElement | null = null;
+  function drawFog(g: CanvasRenderingContext2D, w: World): void {
+    if (revealed()) return;
+    const observed = picture(state.world, me()).observed;
+    const fog = css('--rc-fog', 'rgba(250, 250, 247, 0.5)');
+    fogMask ??= h('canvas', {}) as HTMLCanvasElement;
+    fogMask.width = w.map.w * FOG_RES;
+    fogMask.height = w.map.h * FOG_RES;
+    const mg = fogMask.getContext('2d');
+    g.save();
+    if (mg) {
+      mg.clearRect(0, 0, fogMask.width, fogMask.height);
+      mg.fillStyle = fog;
+      for (let y = 0; y < w.map.h; y++)
+        for (let x = 0; x < w.map.w; x++) if (observed[cellOf(w.map, x, y)] !== 1) mg.fillRect(x * FOG_RES, y * FOG_RES, FOG_RES, FOG_RES);
+      g.imageSmoothingEnabled = true;
+      g.drawImage(fogMask, 0, 0, w.map.w * CELL, w.map.h * CELL);
+    }
+    g.fillStyle = css('--rc-fog-dot', 'rgba(29, 29, 27, 0.4)');
+    g.beginPath();
+    for (let y = 0; y < w.map.h; y++) {
+      for (let x = 0; x < w.map.w; x++) {
+        if (observed[cellOf(w.map, x, y)] === 1) continue;
+        if (!mg) g.fillRect(x * CELL, y * CELL, CELL, CELL);
+        g.moveTo(x * CELL + CELL - 5, y * CELL + CELL - 7);
+        g.arc(x * CELL + CELL - 7, y * CELL + CELL - 7, 2, 0, Math.PI * 2);
+      }
+    }
+    g.fill();
+    g.restore();
+  }
+
+  /** The terrain (drawn once per map, view and theme), then the deposits and the cell grid on top. */
+  function drawTerrain(g: CanvasRenderingContext2D, w: World, ratio: number): void {
+    terrainLayer.draw(g, w.map, mapView, css, ratio);
+    const halo = css('--wp-surface', '#ffffff');
+    g.strokeStyle = css('--rc-mark', '#00000055');
+    g.fillStyle = css('--rc-mark', '#00000055');
+    for (let y = 0; y < w.map.h; y++)
+      for (let x = 0; x < w.map.w; x++) {
+        const deposit = depositAt(w.map, x, y);
+        if (deposit) drawDeposit(g, x * CELL, y * CELL, deposit.endless ? 'endless' : 'plain', halo);
+      }
+    g.strokeStyle = css('--rc-grid', '#00000022');
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let x = 1; x < w.map.w; x++) {
+      g.moveTo(x * CELL + 0.5, 0);
+      g.lineTo(x * CELL + 0.5, w.map.h * CELL);
+    }
+    for (let y = 1; y < w.map.h; y++) {
+      g.moveTo(0, y * CELL + 0.5);
+      g.lineTo(w.map.w * CELL, y * CELL + 0.5);
+    }
+    g.stroke();
+  }
+
+  /** Diagonal hatching inside a structure under construction, and the turns left as a number. */
+  function drawSiteHatch(g: CanvasRenderingContext2D, x: number, y: number, size: number, colour: string, left: number): void {
+    g.save();
+    g.strokeStyle = colour;
+    g.lineWidth = 1.5;
+    g.beginPath();
+    for (let k = 6; k < size * 2; k += 6) {
+      g.moveTo(x + Math.min(k, size), y + Math.max(0, k - size));
+      g.lineTo(x + Math.max(0, k - size), y + Math.min(k, size));
+    }
+    g.stroke();
+    g.fillStyle = colour;
+    g.font = `bold ${Math.round(CELL * 0.32)}px sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(String(left), x + size / 2, y + size / 2);
+    g.restore();
+  }
+
+
+  const centre = (x: number, y: number) => [x * CELL + CELL / 2, y * CELL + CELL / 2] as const;
+
+  /** The leash of a drone: a dash-dot circle around its carrier, while either of them is selected. */
+  function drawLeash(g: CanvasRenderingContext2D, w: World): void {
+    const unit = selected === null ? undefined : w.entities.find((e) => e.id === selected && e.side === me());
+    if (!unit) return;
+    const carrier = unit.drone !== undefined ? unit : carrierOf(w, unit);
+    const leash = carrier && archetypeOf(RULESET, carrier.kind)?.carrier?.leash;
+    if (!carrier || leash === undefined || carrier.drone === undefined) return;
+    leashRing(g, ...centre(carrier.x, carrier.y), leash * CELL + CELL / 2);
+  }
+
+  function leashRing(g: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+    g.save();
+    g.strokeStyle = css('--wp-p1', '#24508f');
+    g.lineWidth = 2;
+    g.setLineDash([10, 4, 2, 4]);
+    g.beginPath();
+    g.arc(cx, cy, r, 0, Math.PI * 2);
+    g.stroke();
+    g.restore();
+  }
+
+  function drawOrders(g: CanvasRenderingContext2D, w: World): void {
+    for (const e of w.entities) {
+      if (e.side !== me()) continue;
+      const planned = draftFor(state, e.id);
+      const order = planned ?? e.order;
+      const [ax, ay] = centre(e.x, e.y);
+      let target: readonly [number, number] | undefined;
+      if (order.type === 'move') target = centre(order.x, order.y);
+      if (order.type === 'attack' || order.type === 'escort') {
+        const other = known(order.target);
+        if (other) target = centre(other.x, other.y);
+      }
+      if (order.type === 'patrol') target = centre(order.x, order.y);
+      if (!target) continue;
+      g.save();
+      g.globalAlpha = planned ? 1 : 0.4;
+      g.strokeStyle = css('--wp-p1', '#24508f');
+      g.lineWidth = planned ? 3 : 2;
+      // Move: dashed · attack: solid with a cross · escort: dotted · patrol: dashed with rings at both ends.
+      g.setLineDash(order.type === 'move' || order.type === 'patrol' ? [6, 5] : order.type === 'escort' ? [2, 4] : []);
+      if (order.type === 'patrol') {
+        const [rx, ry] = centre(order.rx, order.ry);
+        g.beginPath();
+        g.moveTo(rx, ry);
+        g.lineTo(ax, ay);
+        g.stroke();
+        for (const [px, py] of [target, [rx, ry] as const]) {
+          g.beginPath();
+          g.arc(px, py, 6, 0, Math.PI * 2);
+          g.stroke();
+        }
+      }
+      g.beginPath();
+      g.moveTo(ax, ay);
+      g.lineTo(target[0], target[1]);
+      g.stroke();
+      g.setLineDash([]);
+      if (order.type === 'attack') {
+        g.beginPath();
+        g.moveTo(target[0] - 8, target[1] - 8);
+        g.lineTo(target[0] + 8, target[1] + 8);
+        g.moveTo(target[0] + 8, target[1] - 8);
+        g.lineTo(target[0] - 8, target[1] + 8);
+        g.stroke();
+      }
+      g.restore();
+    }
+  }
+
+  /** Marks where units were destroyed in the last turn (a small ring with a cross). */
+  function drawEvents(g: CanvasRenderingContext2D): void {
+    g.save();
+    g.strokeStyle = css('--wp-danger', '#a1271b');
+    g.lineWidth = 2;
+    for (const e of state.events) {
+      if (e.t !== 'destroyed') continue;
+      const [cx, cy] = centre(e.x, e.y);
+      g.beginPath();
+      g.arc(cx, cy, CELL * 0.3, 0, Math.PI * 2);
+      g.moveTo(cx - 6, cy - 6);
+      g.lineTo(cx + 6, cy + 6);
+      g.moveTo(cx + 6, cy - 6);
+      g.lineTo(cx - 6, cy + 6);
+      g.stroke();
+    }
+    g.restore();
+  }
+
+  function drawUnit(g: CanvasRenderingContext2D, e: Entity): void {
+    const [cx, cy] = centre(e.x, e.y);
+    const own = e.side === me();
+    const colour = sideColour(e.side);
+    const surface = css('--wp-surface', '#ffffff');
+    const r = CELL * 0.34;
+    const ghost = isGhost(e);
+    g.save();
+    // Icon set A: frame for category and side, mark for function (icons.ts); the old token is the
+    // fallback where Path2D is missing.
+    // A drone above another unit is drawn smaller in the cell's upper corner, so both show.
+    const aloft = archetypeOf(RULESET, e.kind)?.layer === 'air' && world().entities.some((o) => o !== e && o.x === e.x && o.y === e.y);
+    const k = aloft ? 0.62 : 1;
+    const drawn = drawIcon(g, e.kind, e.x * CELL + (aloft ? CELL * 0.4 : 0), e.y * CELL - (aloft ? CELL * 0.06 : 0), (CELL / 44) * k, { own, colour, surface, ghost, view: mapView, deployed: isSetUp(e) && !ghost, ...(e.build !== undefined && { site: e.build }) });
+    if (!drawn) {
+      g.lineWidth = 3;
+      g.strokeStyle = colour;
+      g.fillStyle = own ? colour : surface;
+      // Last known position: hollow, dashed outline and a question mark (not colour alone).
+      if (ghost) {
+        g.setLineDash([4, 3]);
+        g.fillStyle = surface;
+      }
+      // A set-up vehicle (relay, post, jammer) stands on a plate: it works like a structure now.
+      if (isSetUp(e) && !ghost) {
+        g.fillStyle = css('--wp-border', '#cfcdc4');
+        g.fillRect(cx - r - 4, cy - r - 4, r * 2 + 8, r * 2 + 8);
+        g.fillStyle = own ? colour : surface;
+      }
+      g.beginPath();
+      if (isStructure(e)) g.rect(cx - r, cy - r, r * 2, r * 2);
+      else if (own) g.arc(cx, cy, r, 0, Math.PI * 2);
+      else {
+        g.moveTo(cx, cy - r - 2);
+        g.lineTo(cx + r + 2, cy);
+        g.lineTo(cx, cy + r + 2);
+        g.lineTo(cx - r - 2, cy);
+        g.closePath();
+      }
+      if (e.build !== undefined) {
+        // A site: outlined and hatched, with the turns left instead of the glyph.
+        g.fillStyle = surface;
+        g.fill();
+        g.stroke();
+        g.setLineDash([]);
+        drawSiteHatch(g, cx - r, cy - r, r * 2, colour, e.build);
+      } else {
+        g.fill();
+        g.stroke();
+        g.setLineDash([]);
+        // Kind glyph, drawn in the contrasting colour.
+        g.strokeStyle = own && !ghost ? surface : colour;
+        g.fillStyle = own && !ghost ? surface : colour;
+        g.lineWidth = 2;
+        drawGlyph(g, e.kind, cx, cy);
+      }
+    }
+    // Health bar under the unit, only when it is damaged (less clutter on the map).
+    const max = RULESET.archetypes[e.kind]?.hp ?? e.hp;
+    if (e.hp < max) {
+      const bw = CELL * 0.7;
+      g.globalAlpha = 1;
+      g.fillStyle = surface;
+      g.fillRect(cx - bw / 2 - 1, cy + CELL * 0.38 - 1, bw + 2, 6);
+      g.fillStyle = css('--wp-border', '#cfcdc4');
+      g.fillRect(cx - bw / 2, cy + CELL * 0.38, bw, 4);
+      g.fillStyle = colour;
+      g.fillRect(cx - bw / 2, cy + CELL * 0.38, (bw * e.hp) / max, 4);
+    }
+    if (ghost) {
+      g.globalAlpha = 1;
+      g.fillStyle = colour;
+      g.font = `bold ${Math.round(CELL * 0.3)}px sans-serif`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('?', e.x * CELL + 9, e.y * CELL + 10);
+    }
+    if (own && isMobile(e) && !inContact(e)) {
+      // "No contact" badge: a small crossed-out signal in the corner (not colour alone).
+      const bx = e.x * CELL + CELL - 10;
+      const by = e.y * CELL + 10;
+      g.strokeStyle = css('--wp-danger', '#a1271b');
+      g.lineWidth = 2;
+      g.beginPath();
+      g.arc(bx, by, 6, Math.PI * 1.15, Math.PI * 1.85);
+      g.moveTo(bx - 6, by + 6);
+      g.lineTo(bx + 6, by - 6);
+      g.stroke();
+    }
+    if (several()) {
+      // Several sides: the side's letter in a corner badge (colour is never the only cue).
+      const bx = e.x * CELL + 9;
+      const by = e.y * CELL + CELL - 9;
+      g.globalAlpha = 1;
+      g.setLineDash([]);
+      g.fillStyle = surface;
+      g.strokeStyle = colour;
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.arc(bx, by, 7.5, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+      g.fillStyle = colour;
+      g.font = `bold ${Math.round(CELL * 0.24)}px sans-serif`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(sideMark(e.side), bx, by + 0.5);
+    }
+    if (selected === e.id) {
+      g.strokeStyle = css('--wp-focus', '#b4530a');
+      g.lineWidth = 3;
+      g.strokeRect(e.x * CELL + 2, e.y * CELL + 2, CELL - 4, CELL - 4);
+    }
+    g.restore();
+  }
+
+  function drawGlyph(g: CanvasRenderingContext2D, kind: string, cx: number, cy: number): void {
+    g.beginPath();
+    switch (kind) {
+      case 'rifles':
+        for (const dx of [-6, 0, 6]) {
+          g.moveTo(cx + dx + 2, cy);
+          g.arc(cx + dx, cy, 2, 0, Math.PI * 2);
+        }
+        g.fill();
+        return;
+      case 'lancer':
+        g.moveTo(cx - 7, cy + 7);
+        g.lineTo(cx + 7, cy - 7);
+        g.moveTo(cx + 7, cy - 7);
+        g.lineTo(cx + 1, cy - 7);
+        g.moveTo(cx + 7, cy - 7);
+        g.lineTo(cx + 7, cy - 1);
+        g.stroke();
+        return;
+      case 'warden':
+        g.rect(cx - 7, cy - 3, 11, 7);
+        g.moveTo(cx + 4, cy);
+        g.lineTo(cx + 9, cy);
+        g.stroke();
+        return;
+      case 'howitzer':
+        g.arc(cx, cy + 4, 7, Math.PI, Math.PI * 2);
+        g.moveTo(cx, cy + 4);
+        g.lineTo(cx + 6, cy - 6);
+        g.stroke();
+        return;
+      case 'mast-truck':
+        g.moveTo(cx, cy + 7);
+        g.lineTo(cx, cy - 6);
+        g.moveTo(cx - 5, cy - 3);
+        g.arc(cx, cy - 6, 5, Math.PI * 0.85, Math.PI * 0.15, true);
+        g.stroke();
+        return;
+      case 'jammer':
+        // Lightning zigzag: the jamming signal.
+        g.moveTo(cx - 7, cy - 6);
+        g.lineTo(cx + 1, cy - 1);
+        g.lineTo(cx - 2, cy + 1);
+        g.lineTo(cx + 7, cy + 7);
+        g.stroke();
+        return;
+      case 'tracer':
+        // Listening arcs: direction finding.
+        g.arc(cx - 4, cy + 4, 4, -Math.PI / 2, 0);
+        g.moveTo(cx - 4, cy - 5);
+        g.arc(cx - 4, cy + 4, 9, -Math.PI / 2, 0);
+        g.stroke();
+        return;
+      case 'command-post':
+        g.moveTo(cx - 5, cy + 7);
+        g.lineTo(cx - 5, cy - 7);
+        g.lineTo(cx + 6, cy - 4);
+        g.lineTo(cx - 5, cy - 1);
+        g.stroke();
+        return;
+      case 'outrider':
+        // Two chevrons: fast.
+        for (const dx of [-5, 2]) {
+          g.moveTo(cx + dx - 3, cy - 6);
+          g.lineTo(cx + dx + 3, cy);
+          g.lineTo(cx + dx - 3, cy + 6);
+        }
+        g.stroke();
+        return;
+      case 'field-post':
+        // A small flag with a plus: a mobile command post.
+        g.moveTo(cx - 6, cy + 7);
+        g.lineTo(cx - 6, cy - 7);
+        g.lineTo(cx + 3, cy - 4);
+        g.lineTo(cx - 6, cy - 1);
+        g.moveTo(cx + 2, cy + 4);
+        g.lineTo(cx + 8, cy + 4);
+        g.moveTo(cx + 5, cy + 1);
+        g.lineTo(cx + 5, cy + 7);
+        g.stroke();
+        return;
+      case 'muster':
+        // A tent: where infantry musters.
+        g.moveTo(cx - 8, cy + 6);
+        g.lineTo(cx, cy - 7);
+        g.lineTo(cx + 8, cy + 6);
+        g.closePath();
+        g.moveTo(cx, cy - 7);
+        g.lineTo(cx, cy + 6);
+        g.stroke();
+        return;
+      case 'motor-pool':
+        // A wheel: where vehicles are built.
+        g.arc(cx, cy, 7, 0, Math.PI * 2);
+        g.moveTo(cx + 2.5, cy);
+        g.arc(cx, cy, 2.5, 0, Math.PI * 2);
+        for (const [dx, dy] of [[0, -7], [6, 3.5], [-6, 3.5]] as const) {
+          g.moveTo(cx, cy);
+          g.lineTo(cx + dx, cy + dy);
+        }
+        g.stroke();
+        return;
+      case 'extractor':
+        // A derrick over a drop: it draws Supply from a deposit.
+        g.moveTo(cx - 6, cy + 7);
+        g.lineTo(cx, cy - 7);
+        g.lineTo(cx + 6, cy + 7);
+        g.moveTo(cx - 3, cy);
+        g.lineTo(cx + 3, cy);
+        g.stroke();
+        return;
+      case 'relay-mast':
+        // A mast with waves on both sides.
+        g.moveTo(cx, cy + 7);
+        g.lineTo(cx, cy - 4);
+        g.moveTo(cx - 4, cy - 7);
+        g.arc(cx, cy - 4, 5, Math.PI * 1.15, Math.PI * 1.45);
+        g.moveTo(cx + 4, cy - 7);
+        g.arc(cx, cy - 4, 5, Math.PI * 1.85, Math.PI * 1.55, true);
+        g.stroke();
+        return;
+      default:
+        // Anything without its own glyph (towers): a ring with a cross.
+        g.arc(cx, cy, 6, 0, Math.PI * 2);
+        g.moveTo(cx - 4, cy);
+        g.lineTo(cx + 4, cy);
+        g.moveTo(cx, cy - 4);
+        g.lineTo(cx, cy + 4);
+        g.stroke();
+    }
+  }
+
+  function drawCursor(g: CanvasRenderingContext2D): void {
+    if (document.activeElement !== canvas) return;
+    g.save();
+    g.strokeStyle = css('--wp-focus', '#b4530a');
+    g.lineWidth = 2;
+    g.setLineDash([5, 4]);
+    g.strokeRect(cursor.x * CELL + 4, cursor.y * CELL + 4, CELL - 8, CELL - 8);
+    g.restore();
+  }
+
+  /* ---------- Interaction ---------- */
+  function commit(next: RcState, message?: string): void {
+    stopReplay(false);
+    state = next;
+    settleSell = null; // an armed sale never survives a change (a planned order, a locked turn)
+    context.requestSave();
+    if (state.phase === 'finished' && !reported && state.result) {
+      reported = true;
+      context.finished(resultOf(state));
+    }
+    render();
+    if (message) announce(live, message);
+  }
+
+  function resultOf(s: RcState): GameResult {
+    return { outcome: s.result ?? 'lost', stats: { turns: s.world.turn } };
+  }
+
+  function select(id: number | null): void {
+    selected = id;
+    mode = 'move';
+    placing = null;
+    noticeEl.hidden = true;
+    const unit = id === null ? undefined : known(id);
+    if (unit) {
+      cursor = { x: unit.x, y: unit.y };
+      reveal = 'near';
+    }
+    render();
+    if (unit) announce(live, t('announce.selected', { name: unitName(unit) }));
+  }
+
+  function orderSelected(order: Order): void {
+    if (selected === null) return;
+    const unit = known(selected);
+    const refusal = orderRefusal(state, selected, order);
+    const next = refusal === null ? planOrder(state, selected, order) : undefined;
+    if (!unit || !next) {
+      showRefusal(refusal);
+      return;
+    }
+    noticeEl.hidden = true;
+    mode = 'move';
+    commit(next, t('announce.planned', { name: unitName(unit), order: describeOrder(unit, order) }));
+  }
+
+  /** Shows why an order was refused, visibly and for screen readers. */
+  function showRefusal(refusal: string | null): void {
+    const specific = ['out-of-contact', 'no-slots', 'impassable', 'not-visible', 'no-weapon', 'no-supply', 'cannot-produce', 'queue-full', 'cannot-build', 'not-buildable', 'cannot-repair', 'cannot-sell', 'cannot-launch', 'leash'].includes(refusal ?? '');
+    const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
+    noticeEl.textContent = message;
+    noticeEl.hidden = false;
+    announce(live, message);
+  }
+
+  function setMode(next: ClickMode): void {
+    mode = next;
+    render();
+  }
+
+  /** Doctrine controls changed: plan the new doctrine (one order slot), or explain why not. */
+  function onDoctrine(): void {
+    if (selected === null) return;
+    const unit = known(selected);
+    if (!unit) return;
+    const doctrine: Doctrine = {
+      retreatBelow: Number(retreatSelect.value) as Doctrine['retreatBelow'],
+      priority: prioritySelect.value as Doctrine['priority'],
+      seekCover: coverBox.checked,
+      holdFire: holdFireBox.checked,
+      lostContact: (LOST_CONTACT as readonly string[]).includes(lostContactSelect.value) ? (lostContactSelect.value as LostContact) : 'regroup'
+    };
+    const refusal = doctrineRefusal(state, unit.id, doctrine);
+    const next = refusal === null ? planDoctrine(state, unit.id, doctrine) : undefined;
+    if (!next) {
+      showRefusal(refusal);
+      render(); // restores the controls to the doctrine that still applies
+      return;
+    }
+    noticeEl.hidden = true;
+    commit(next, t('announce.doctrine', { name: unitName(unit) }));
+  }
+
+  /** Scenario or turn limit changed before the first turn: start the game afresh with them. */
+  /** The map select: the built-in maps, the map being played if it is player-made, and the device's maps. */
+  function syncScenarioOptions(): void {
+    for (const opt of [...scenarioSelect.querySelectorAll('option')]) if (opt.value === 'custom' || opt.value.startsWith('slot:')) opt.remove();
+    if (state.map && !state.random) scenarioSelect.append(h('option', { value: 'custom' }, mapLabel(state.map)));
+    library().forEach((m, slot) => {
+      if (m && mapIssues(m).length === 0) scenarioSelect.append(h('option', { value: `slot:${slot}` }, `${t('setup.myMaps')}: ${mapLabel(m)}`));
+    });
+  }
+
+  /** The opponent counts the map in the select offers (random maps: one to three; player-made maps: as the map has bases). */
+  function syncOpponentOptions(): void {
+    const value = scenarioSelect.value;
+    const own = ownMap(value);
+    const spec = own ? customSpec(own) : scenarioById(value);
+    const counts = value === 'random' ? RANDOM_OPPONENTS : spec ? opponentCounts(spec) : [1];
+    const current = [...opponentsSelect.querySelectorAll('option')].map((o) => o.value).join(',');
+    if (current !== counts.join(',')) {
+      clear(opponentsSelect);
+      for (const n of counts) opponentsSelect.append(h('option', { value: String(n) }, t('setup.opponentCount', { n })));
+    }
+    // A single choice is no choice: the row is shown only for maps with several.
+    const label = opponentsSelect.parentElement;
+    if (label) label.hidden = counts.length < 2;
+  }
+
+  /** The team shapes of the game's map and opponent count (free-for-all first); the row only when there are any. */
+  function syncTeamOptions(): void {
+    const spec = specOf(state);
+    const shapes = spec ? teamShapes(spec, state.opponents) : [];
+    // A map made for teams has no free-for-all.
+    const values = spec && teamsOnly(spec) ? shapes : ['ffa', ...shapes];
+    if ([...teamsSelect.options].map((o) => o.value).join(',') !== values.join(',')) {
+      clear(teamsSelect);
+      for (const v of values) teamsSelect.append(h('option', { value: v }, t(`setup.teams.${v}`)));
+    }
+    teamsSelect.value = teamShapeOf(state.world) ?? 'ffa';
+    teamsLabel.hidden = shapes.length === 0;
+  }
+
+  /**
+   * The bases the player may start from on the game's map, count and teams, named by where their
+   * Command Post lies (thirds of the map); the row only when there is a choice.
+   */
+  function syncStartOptions(): void {
+    const spec = specOf(state);
+    const shape = teamShapeOf(state.world);
+    const seats = spec ? startSeats(spec, state.opponents, shape) : [];
+    const options = seats.map((seat) => {
+      const post = spec && scenarioFor(spec, state.opponents, shape, seat)?.entities.find((e) => e.side === PLAYER && e.kind === 'command-post');
+      return { seat, place: post ? placeOf(post.x, post.y, state.world.map.w, state.world.map.h) : 'centre' };
+    });
+    const key = options.map((o) => `${o.seat}:${o.place}`).join(',');
+    if (startSelect.dataset.options !== key) {
+      clear(startSelect);
+      for (const o of options) startSelect.append(h('option', { value: String(o.seat) }, t(`setup.start.${o.place}`)));
+      startSelect.dataset.options = key;
+    }
+    startSelect.value = String(state.start ?? seats[0] ?? 0);
+    startLabel.hidden = seats.length < 2;
+  }
+
+  /** The base chosen in the setup (null: the map's default). */
+  const chosenStart = (): number | null => (startSelect.value === '' ? null : Number(startSelect.value));
+
+  /** The team shape chosen in the setup (null: free-for-all). */
+  const chosenTeams = (): TeamShape | null => (teamsSelect.value === 'ffa' || teamsSelect.value === '' ? null : (teamsSelect.value as TeamShape));
+
+  /** The player-made map a value of the map select names (the one being played, or a device slot), if any. */
+  function ownMap(value: string): EditMap | null {
+    return (value.startsWith('slot:') ? library()[Number(value.slice(5))] : value === 'custom' ? state.map : null) ?? null;
+  }
+
+  /** Another random map: the next map number (a fixed step from the current one, no Math.random). */
+  function newRandomMap(): void {
+    if (state.phase !== 'plan' || state.log.length > 0 || !state.random) return;
+    randomSeed.value = String((Math.imul(state.random.seed, 1664525) + 1013904223) >>> 0);
+    onSetup();
+  }
+
+  function onDifficulty(): void {
+    if (state.phase !== 'plan' || state.log.length > 0) return;
+    const difficulty = difficultySelect.value;
+    if (!isDifficulty(difficulty) || difficulty === state.difficulty) return;
+    context.setDifficulty?.(difficulty); // the host's next "New game" and save envelope follow
+    // The main choice sets every computer seat (each can then be changed on its own).
+    const { levels: _levels, ...rest } = state;
+    void _levels;
+    commit({ ...rest, difficulty }, t('announce.difficulty', { level: t(`difficulty.${difficulty}`) }));
+  }
+
+  function onSetup(): void {
+    if (state.phase !== 'plan' || state.log.length > 0) return;
+    const value = scenarioSelect.value;
+    if (value === 'random') {
+      const [w, hh] = randomSize.value.split('x').map(Number);
+      const size = RANDOM_SIZES.find(([a, b]) => a === w && b === hh) ?? RANDOM_SIZES[1]!;
+      // Coming from another map: the map number starts from the game's seed.
+      // Read the number as the generator does (an unsigned 32-bit integer: fractions dropped, wrapped).
+      const typed = Number(randomSeed.value);
+      // Empty or not a number: keep the map being played (coming from another map: start from the game's seed).
+      const seed = state.random && randomSeed.value.trim() !== '' && Number.isFinite(typed) ? Math.trunc(typed) >>> 0 : (state.random?.seed ?? state.seed);
+      randomSeed.value = String(seed);
+      const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
+      syncOpponentOptions();
+      // One opponent: a two-side map; two or three: four bases, one in each corner.
+      const opponents = Number(opponentsSelect.value) || 1;
+      const asymmetric = randomAsym.checked && opponents === 1;
+      let map: EditMap;
+      try {
+        const name = t(asymmetric ? 'setup.randomNameAsymmetric' : 'setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME);
+        map = generateMap(size[0], size[1], seed, name, opponents > 1 ? 4 : 2, asymmetric);
+      } catch {
+        render(); // cannot happen for the offered sizes; the game stays as it is
+        return;
+      }
+      selected = null;
+      const recipe: RandomMap = { w: size[0], h: size[1], seed, ...(asymmetric && { asymmetric: true as const }) };
+      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, recipe, chosenTeams(), chosenStart(), chosenLevels()), t('announce.setup', { scenario: mapLabel(map) }));
+      homeCursor();
+      render();
+      return;
+    }
+    const own = ownMap(value);
+    const spec = scenarioById(value) ?? FIELD_EXERCISE;
+    const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
+    selected = null;
+    const map = own && mapIssues(own).length === 0 ? own : null;
+    syncOpponentOptions();
+    // A player-made map with three or four bases takes the count chosen (two-side maps: one).
+    const opponents = map && !map.seats ? 1 : Number(opponentsSelect.value) || 1;
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, null, chosenTeams(), chosenStart(), chosenLevels()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
+    homeCursor();
+    render();
+  }
+
+  function onHold(): void {
+    orderSelected({ type: 'hold' });
+  }
+
+  function onCancel(): void {
+    if (selected === null) return;
+    const unit = known(selected);
+    if (!unit || !draftFor(state, unit.id)) return;
+    commit(cancelOrder(state, unit.id), t('announce.cancelled', { name: unitName(unit) }));
+  }
+
+  /** Pointer or Enter on a map cell. */
+  function activateCell(x: number, y: number): void {
+    cursor = { x, y };
+    const here = unitsAt(x, y);
+    const ownHere = here.find((e) => e.side === me());
+    // A ghost marks where an enemy was, not where it is: its cell takes a move order.
+    const enemyHere = here.find((e) => e.side !== me() && hostile(world(), me(), e.side) && !isGhost(e));
+    const current = selected === null ? undefined : known(selected);
+    const canOrder = !!current && current.side === me() && isMobile(current) && state.phase === 'plan';
+    // Placing a structure: the clicked cell is where it goes (the source stays selected).
+    if (placing && current && current.side === me() && state.phase === 'plan') {
+      const kind = placing;
+      orderJob({ type: 'build', kind, x, y });
+      if (!noticeEl.hidden) {
+        render(); // refused: stay in placing mode with the reason shown, cursor on the cell
+        return;
+      }
+      placing = null;
+      render();
+      return;
+    }
+    if (canOrder && mode === 'escort' && ownHere && ownHere.id !== selected) {
+      orderSelected({ type: 'escort', target: ownHere.id });
+      return;
+    }
+    // An own ghost marks where a unit out of contact was last reported, not where it is: with a
+    // unit selected, its cell takes a move order (the ghost stays selectable in the list).
+    if (canOrder && mode === 'move' && ownHere && isGhost(ownHere) && !here.some((e) => e.side === me() && !isGhost(e))) {
+      orderSelected({ type: 'move', x, y });
+      return;
+    }
+    // A drone above a unit shares its cell: a second click selects the other one.
+    const ownLive = here.filter((e) => e.side === me() && !isGhost(e));
+    const at = ownLive.findIndex((e) => e.id === selected);
+    if (ownLive.length > 1 && at >= 0) {
+      select((ownLive[(at + 1) % ownLive.length] as Entity).id);
+      return;
+    }
+    if (ownHere && ownHere.id !== selected) {
+      select(ownHere.id);
+      return;
+    }
+    if (canOrder && mode === 'patrol' && current && !ownHere && !enemyHere) {
+      orderSelected({ type: 'patrol', x, y, rx: current.x, ry: current.y });
+      return;
+    }
+    if (canOrder && enemyHere) {
+      orderSelected({ type: 'attack', target: enemyHere.id });
+      return;
+    }
+    if (canOrder && (!ownHere || isGhost(ownHere))) {
+      orderSelected({ type: 'move', x, y });
+      return;
+    }
+    render();
+    announce(live, describeCell(x, y));
+  }
+
+  function onLock(): void {
+    if (state.phase !== 'plan') return;
+    confirming = false;
+    const next = lockTurn(state);
+    if (selected !== null && !unitById(next, selected)) selected = null;
+    commit(next);
+    // Hot-seat: the device goes on; only the hand-over is announced (no side's summary).
+    if (next.handover) {
+      selected = null;
+      announce(live, handoverTitle.textContent ?? '');
+      handoverBtn.focus();
+      return;
+    }
+    // render() has rebuilt the summary list; announce its fresh text.
+    announce(live, `${t('announce.resolved', { turn: next.world.turn })} ${[...summaryList.querySelectorAll('li')].map((li) => li.textContent).join(' ')}`);
+    if (autoReplayBox.checked) startReplay();
+  }
+
+  /** Shows or hides the give-up confirmation and keeps keyboard focus on a visible control. */
+  function setConfirming(value: boolean): void {
+    confirming = value;
+    render();
+    (value ? confirmBox.querySelector<HTMLElement>('[data-testid="rc-concede-no"]') : concedeBtn)?.focus();
+  }
+
+  function onSettle(): void {
+    if (!canSettle(state)) return;
+    if (!settleArmed) {
+      settleArmed = true;
+      armedAt = performance.now();
+      render();
+      return;
+    }
+    if (tooSoon()) return;
+    settleArmed = false;
+    const next = settle(state);
+    commit(next, statusOf(next));
+    statusEl.focus();
+  }
+
+  function onConcede(): void {
+    confirming = false;
+    const next = concede(state);
+    if (next.handover) {
+      selected = null;
+      commit(next);
+      announce(live, handoverTitle.textContent ?? '');
+      handoverBtn.focus();
+      return;
+    }
+    commit(next, isHotSeat(next) ? statusOf(next) : t('status.conceded'));
+    // The game buttons are now disabled; move focus to the result instead of losing it.
+    statusEl.focus();
+  }
+
+  const onCanvasClick = (event: MouseEvent) => {
+    // A click on the map during a replay only ends it.
+    if (playing) {
+      stopReplay(true);
+      return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const x = Math.floor(((event.clientX - rect.left) / rect.width) * world().map.w);
+    const y = Math.floor(((event.clientY - rect.top) / rect.height) * world().map.h);
+    if (x < 0 || y < 0 || x >= world().map.w || y >= world().map.h) return;
+    activateCell(x, y);
+  };
+
+  const onCanvasKey = (event: KeyboardEvent) => {
+    // Any key on the map during a replay ends it (and does nothing else).
+    if (playing) {
+      event.preventDefault();
+      stopReplay(true);
+      return;
+    }
+    const { w, h: rows } = world().map;
+    const moves: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const delta = moves[event.key];
+    if (delta) {
+      event.preventDefault();
+      cursor = { x: Math.max(0, Math.min(w - 1, cursor.x + delta[0])), y: Math.max(0, Math.min(rows - 1, cursor.y + delta[1])) };
+      reveal = 'near';
+      render();
+      return;
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      activateCell(cursor.x, cursor.y);
+    } else if (event.key === 'Escape') {
+      select(null);
+    } else if (event.key === 'h' || event.key === 'H') {
+      onHold();
+    } else if (event.key === 'Delete' || event.key === 'Backspace') {
+      onCancel();
+    }
+  };
+
+  canvas.addEventListener('click', onCanvasClick);
+  canvas.addEventListener('keydown', onCanvasKey);
+  canvas.addEventListener('focus', () => draw());
+  canvas.addEventListener('blur', () => draw());
+
+  const homeCursor = () => {
+    const post = world().entities.find((e) => e.side === me() && e.kind === 'command-post');
+    cursor = post ? { x: post.x, y: post.y } : { x: 0, y: 0 };
+    reveal = 'centre';
+  };
+
+  /* ---------- Instance ---------- */
+  return {
+    newGame(options: NewGameOptions) {
+      // An open map draft survives "New game" (it is the player's work, not the game's).
+      const draft = state.edit;
+      editor.forget();
+      state = { ...newGame(normalizeSeed(options.seed), FIELD_EXERCISE, isDifficulty(options.difficulty) ? options.difficulty : 'normal', null), edit: draft };
+      context.setDifficulty?.(state.difficulty); // an unknown host value fell back to 'normal'
+      selected = null;
+      confirming = false;
+      reported = false;
+      homeCursor();
+      render();
+    },
+    restore(saved: RcState) {
+      settleSell = null;
+      editor.forget();
+      const spec = specOf(saved);
+      state = spec ? structuredClone(saved) : newGame(saved.seed, FIELD_EXERCISE, saved.difficulty, null);
+      // Hot-seat: whoever opens the game first passes it to the person planning (nobody's plan shows).
+      if (state.phase === 'plan' && isHotSeat(state) && personsLeft(state).length > 1) state = { ...state, handover: true };
+      context.setDifficulty?.(state.difficulty); // the save decides the level, not the host's select
+      selected = null;
+      confirming = false;
+      reported = state.phase === 'finished';
+      homeCursor();
+      render();
+    },
+    serialize: () => structuredClone(state),
+    pause() {},
+    resume() {},
+    reset() {
+      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless, state.random, teamShapeOf(state.world), state.start ?? null, state.levels ?? []), edit: state.edit };
+      selected = null;
+      confirming = false;
+      reported = false;
+      homeCursor();
+      context.requestSave();
+      render();
+    },
+    dispose() {
+      stopReplay(false);
+      canvas.removeEventListener('click', onCanvasClick);
+      canvas.removeEventListener('keydown', onCanvasKey);
+      clear(root);
+    }
+  };
+}

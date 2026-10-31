@@ -1,0 +1,13 @@
+{
+  "name": "@wp/cards",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./cards.css": "./src/cards.css" },
+  "dependencies": {
+    "@wp/game-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@wp/localization": "workspace:*"
+  }
+}

@@ -5,15 +5,19 @@ import type { SupportedLocale } from '@wp/localization';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { COMPUTER_REVEAL_MS } from '../src/view';
+import { connectFourSettings } from '../src/settings';
 import { isValidState, type ConnectFourState } from '../src/rules';
+
+const STANDARD = { size: '7x6', connect: 4, pullOut: false };
 
 /** A legal game that fills the board without any line of four. */
 const DRAW_MOVES = [3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 6, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6];
 
 let instances: GameInstance<ConnectFourState>[] = [];
 
-function mount(options: { reducedMotion?: boolean; locale?: SupportedLocale } = {}) {
+function mount(options: { reducedMotion?: boolean; locale?: SupportedLocale; preferences?: Record<string, unknown> } = {}) {
   const ctx: TestContext = createTestContext(game as GameModule<unknown>, options.locale ?? 'en');
+  for (const [k, v] of Object.entries(options.preferences ?? {})) ctx.preferences.set(k, v);
   const context = { ...ctx.context, reducedMotion: options.reducedMotion ?? true };
   const instance = game.create(context);
   instances.push(instance);
@@ -21,18 +25,38 @@ function mount(options: { reducedMotion?: boolean; locale?: SupportedLocale } = 
   const column = (c: number) => root.querySelector<HTMLButtonElement>(`[data-testid="column-${c}"]`)!;
   const cell = (r: number, c: number) => root.querySelector<HTMLElement>(`[data-testid="cell-${r}-${c}"]`)!;
   /** Board picture, top row first: '.', '1', '2'. */
-  const picture = () =>
-    Array.from({ length: 6 }, (_, r) => Array.from({ length: 7 }, (_, c) => cell(r, c).dataset.disc || '.').join('')).join('/');
+  const picture = () => {
+    const cols = root.querySelectorAll('[data-column]').length;
+    const rows = root.querySelectorAll('[data-testid^="cell-"]').length / cols;
+    return Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => cell(r, c).dataset.disc || '.').join('')).join('/');
+  };
   const status = () => root.querySelector('[data-testid="status"]')!.textContent;
+  /** Like the host's start screen (ADR 0017): a new game with the current settings, one of them changed. */
   const select = (name: string, value: string) => {
-    const el = root.querySelector<HTMLSelectElement>(`[data-testid="option-${name}"]`)!;
-    el.value = value;
-    el.dispatchEvent(new Event('change'));
+    const s = instance.serialize();
+    const settings: Record<string, string | number> = {
+      opponent: s.opponent,
+      starter: s.starter,
+      size: s.variant.size,
+      goal: s.variant.connect,
+      rule: s.variant.pullOut ? 'pullOut' : 'classic'
+    };
+    if (name !== 'strength') settings[name] = value;
+    instance.newGame({ seed: s.seed, difficulty: name === 'strength' ? value : s.difficulty, settings });
   };
   const button = (id: string) => root.querySelector<HTMLButtonElement>(`[data-testid="${id}"]`)!;
   const play = (...cols: number[]) => cols.forEach((c) => column(c).click());
+  const action = (value: 'drop' | 'pull') => {
+    const input = root.querySelector<HTMLInputElement>(`[data-testid="action-${value}"]`)!;
+    input.checked = true;
+    input.dispatchEvent(new Event('change'));
+  };
+  const pull = (c: number) => {
+    action('pull');
+    column(c).click();
+  };
   const key = (target: HTMLElement, k: string) => target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
-  return { ctx, instance, root, column, cell, picture, status, select, button, play, key };
+  return { ctx, instance, root, column, cell, picture, status, select, button, play, key, action, pull };
 }
 
 afterEach(() => {
@@ -129,7 +153,7 @@ describe('four-in-a-row view', () => {
       expect(cell(5, c).classList.contains('is-winning')).toBe(true);
     }
     expect(cell(4, 0).hasAttribute('data-winning')).toBe(false);
-    expect(column(0).getAttribute('aria-label')).toBe('Column 1, from the bottom: filled (part of the four), hollow.');
+    expect(column(0).getAttribute('aria-label')).toBe('Column 1, from the bottom: filled (part of the winning line), hollow.');
     expect(ctx.results).toEqual([{ outcome: 'completed', stats: { moves: 7 } }]);
     expect(button('undo').disabled).toBe(true);
     expect(column(5).getAttribute('aria-disabled')).toBe('true');
@@ -191,17 +215,16 @@ describe('four-in-a-row view', () => {
     instance.newGame({ seed: 21, difficulty: 'easy' });
     column(3).click();
     select('strength', 'hard');
-    expect(instance.serialize()).toEqual({ seed: 21, difficulty: 'hard', opponent: 'computer', starter: 'human', moves: [], rng: 21 });
+    expect(instance.serialize()).toEqual({ seed: 21, difficulty: 'hard', opponent: 'computer', starter: 'human', variant: STANDARD, moves: [], rng: 21 });
     column(3).click();
     button('restart').click();
     expect(instance.serialize().moves).toEqual([]);
     expect(instance.serialize().difficulty).toBe('hard');
-    select('opponent', 'human');
-    expect(root.querySelector('[data-testid="option-starter"]')!.closest('label')!.hidden).toBe(true);
-    expect(root.querySelector('[data-testid="option-strength"]')!.closest('label')!.hidden).toBe(true);
+    // The options live only on the host's start screen (ADR 0017).
+    expect(root.querySelector('select, [data-testid^="option-"]')).toBeNull();
   });
 
-  it('reset returns to the seeded start, and newGame keeps opponent preferences', () => {
+  it('reset returns to the seeded start; newGame takes the start-screen settings, defaults for invalid ones', () => {
     const { instance, column, select } = mount();
     instance.newGame({ seed: 2, difficulty: 'medium' });
     select('opponent', 'human');
@@ -209,8 +232,10 @@ describe('four-in-a-row view', () => {
     column(0).click();
     instance.reset();
     expect(instance.serialize()).toEqual(start);
-    instance.newGame({ seed: 3, difficulty: 'nonsense' });
-    expect(instance.serialize()).toEqual({ seed: 3, difficulty: 'easy', opponent: 'human', starter: 'human', moves: [], rng: 3 });
+    instance.newGame({ seed: 3, difficulty: 'nonsense', settings: { opponent: 'human', size: '10x10', goal: 6, rule: 'nope' } });
+    expect(instance.serialize()).toEqual({ seed: 3, difficulty: 'easy', opponent: 'human', starter: 'human', variant: STANDARD, moves: [], rng: 3 });
+    instance.newGame({ seed: 4 });
+    expect(instance.serialize()).toEqual({ seed: 4, difficulty: 'easy', opponent: 'computer', starter: 'human', variant: STANDARD, moves: [], rng: 4 });
   });
 
   it('delays only the drawing of the computer’s reply; the logical state is complete at once', () => {
@@ -310,3 +335,132 @@ describe('four-in-a-row view', () => {
     expect(other.root.querySelectorAll('[data-last]')).toHaveLength(1);
   });
 });
+
+describe('variants: board size, goal and the pull-out rule', () => {
+  const human = (m: ReturnType<typeof mount>) => m.select('opponent', 'human');
+
+  it('declares the variant as start-screen settings and rebuilds the board for a new size', () => {
+    expect(connectFourSettings()).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'size', values: ['7x6', '8x7', '9x7'] })]));
+    const m = mount();
+    m.instance.newGame({ seed: 5 });
+    m.select('size', '9x7');
+    m.select('goal', '5');
+    expect(m.root.querySelectorAll('[data-column]')).toHaveLength(9);
+    expect(m.root.querySelectorAll('[data-testid^="cell-"]')).toHaveLength(63);
+    expect(m.root.querySelector('[data-testid="board"]')!.getAttribute('aria-label')).toBe('Board with 9 columns and 7 rows');
+    expect(m.column(4).tabIndex).toBe(0);
+    expect(m.instance.serialize().variant).toEqual({ size: '9x7', connect: 5, pullOut: false });
+    m.column(8).click();
+    expect(m.cell(6, 8).dataset.disc).toBe('1');
+    // Back to the standard size.
+    m.select('size', '7x6');
+    expect(m.root.querySelectorAll('[data-testid^="cell-"]')).toHaveLength(42);
+  });
+
+  it('starts with the chosen variant and ignores invalid settings', () => {
+    const chosen = mount();
+    chosen.instance.newGame({ seed: 1, settings: { size: '8x7', goal: 4, rule: 'pullOut' } });
+    expect(chosen.instance.serialize().variant).toEqual({ size: '8x7', connect: 4, pullOut: true });
+    expect(chosen.root.querySelectorAll('[data-column]')).toHaveLength(8);
+    const broken = mount();
+    broken.instance.newGame({ seed: 1, settings: { size: '10x10', goal: '9', rule: 1 } });
+    expect(broken.instance.serialize().variant).toEqual(STANDARD);
+  });
+
+  it('needs five in a row on 9 × 7 when the goal is five', () => {
+    const m = mount();
+    m.instance.newGame({ seed: 1 });
+    human(m);
+    m.select('size', '9x7');
+    m.select('goal', '5');
+    m.play(0, 0, 1, 1, 2, 2, 3, 3);
+    expect(m.ctx.results).toEqual([]);
+    expect(m.status()).toBe('Filled discs to move.');
+    m.play(4);
+    expect(m.status()).toBe('The filled discs win with five in a row.');
+    for (const c of [0, 1, 2, 3, 4]) expect(m.cell(6, c).hasAttribute('data-winning')).toBe(true);
+    expect(m.ctx.results).toEqual([{ outcome: 'completed', stats: { moves: 9 } }]);
+  });
+
+  it('pulls one of your own bottom discs out by choosing "pull out", then a column', () => {
+    vi.useFakeTimers();
+    const m = mount();
+    m.instance.newGame({ seed: 1 });
+    human(m);
+    const choice = m.root.querySelector<HTMLElement>('[data-testid="action-choice"]')!;
+    const help = m.root.querySelector<HTMLElement>('[data-testid="help"]')!;
+    expect(choice.hidden).toBe(true);
+    expect(help.hidden).toBe(true);
+    m.select('rule', 'pullOut');
+    expect(choice.hidden).toBe(false);
+    expect(choice.tagName).toBe('FIELDSET');
+    expect(help.hidden).toBe(false);
+    expect(help.textContent).toContain('after 168 moves');
+    // No disc yet: nothing can be pulled.
+    expect(m.root.querySelector<HTMLInputElement>('[data-testid="action-pull"]')!.disabled).toBe(true);
+    m.play(0, 0, 1);
+    // Hollow to move: its only bottom disc… there is none (column 0 bottom is filled).
+    expect(m.root.querySelector<HTMLInputElement>('[data-testid="action-pull"]')!.disabled).toBe(true);
+    m.play(2);
+    m.action('pull');
+    expect(m.root.querySelector('.wp-connect-four')!.getAttribute('data-action')).toBe('pull');
+    // Filled to move: bottom discs of columns 1 and 2 (0-based 0 and 1) are filled.
+    expect(m.column(0).getAttribute('aria-disabled')).toBe('false');
+    expect(m.column(1).getAttribute('aria-disabled')).toBe('false');
+    expect(m.column(2).getAttribute('aria-disabled')).toBe('true');
+    expect(m.column(3).getAttribute('aria-disabled')).toBe('true');
+    expect(m.cell(5, 0).hasAttribute('data-pullable')).toBe(true);
+    expect(m.cell(5, 2).hasAttribute('data-pullable')).toBe(false);
+    expect(m.column(0).getAttribute('aria-label')).toBe('Column 1: pull out your bottom disc. From the bottom: filled, hollow.');
+    // A column without an own bottom disc only explains why.
+    m.column(2).click();
+    vi.runAllTimers();
+    expect(m.root.querySelector('[data-testid="announcer"]')!.textContent).toBe(
+      'Column 3 has none of your discs at the bottom — choose another column or drop a disc.'
+    );
+    expect(m.instance.serialize().moves).toEqual([0, 0, 1, 2]);
+    m.column(0).click();
+    expect(m.instance.serialize().moves).toEqual([0, 0, 1, 2, -1]);
+    expect(m.picture().split('/').slice(4).join('/')).toBe('......./212....');
+    expect(m.cell(5, 0).dataset.disc).toBe('2');
+    expect(m.root.querySelectorAll('[data-pullable]')).toHaveLength(0);
+    // Back to dropping after every move.
+    expect(m.root.querySelector<HTMLInputElement>('[data-testid="action-drop"]')!.checked).toBe(true);
+    vi.runAllTimers();
+    expect(m.root.querySelector('[data-testid="announcer"]')!.textContent).toBe(
+      'Filled disc pulled out of column 1; the discs above fell down. Hollow discs to move.'
+    );
+    expect(isValidState(m.instance.serialize())).toBe(true);
+  });
+
+  it('lets the computer answer a pull-out and restores a pull-out game exactly', () => {
+    const m = mount();
+    m.instance.newGame({ seed: 12, difficulty: 'medium', settings: { rule: 'pullOut' } });
+    m.play(3);
+    m.pull(3);
+    const saved = m.instance.serialize();
+    expect(saved.moves[2]).toBe(-4);
+    expect(saved.moves).toHaveLength(4);
+    const other = mount();
+    other.instance.restore(saved);
+    expect(other.instance.serialize()).toEqual(saved);
+    expect(other.picture()).toBe(m.picture());
+    expect(other.root.querySelector<HTMLElement>('[data-testid="help"]')!.hidden).toBe(false);
+  });
+
+  it('calls the third repetition of a position a draw', () => {
+    const m = mount();
+    m.instance.newGame({ seed: 1 });
+    human(m);
+    m.select('rule', 'pullOut');
+    for (let round = 0; round < 2; round++) {
+      m.play(0, 1);
+      m.pull(0);
+      m.pull(1);
+    }
+    expect(m.status()).toBe('Draw — the same position has come up for the third time.');
+    expect(m.ctx.results).toEqual([{ outcome: 'draw', stats: { moves: 8 } }]);
+    expect(m.root.querySelector<HTMLElement>('[data-testid="action-choice"]')!.hidden).toBe(true);
+  });
+});
+

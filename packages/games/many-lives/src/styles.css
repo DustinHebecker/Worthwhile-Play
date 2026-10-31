@@ -1,0 +1,114 @@
+/* Many Lives — warm paper look; 360 px and up; logical properties only (RTL-safe); 44 px targets. */
+.ml {
+  --ml-paper: #fbf6ec;
+  --ml-ink: #3b3127;
+  --ml-wall: #e8d9c0;
+  --ml-roof: #b4573a;
+  --ml-window: #9cc3d5;
+  --ml-door: #7a5236;
+  --ml-sky: #f3ead8;
+  --ml-ground: #c9b48f;
+  --ml-green: #6f9a5a;
+  --ml-accent: #a4532e;
+  --ml-neg: #a1301f;
+  --ml-pos: #2f6b3a;
+  display: grid;
+  gap: 0.75rem;
+  max-inline-size: 46rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .ml {
+    --ml-paper: #2b2620;
+    --ml-ink: #efe6d6;
+    --ml-wall: #5a4c3b;
+    --ml-roof: #c57a5c;
+    --ml-window: #6d97ab;
+    --ml-door: #a07a5a;
+    --ml-sky: #352e26;
+    --ml-ground: #5f5240;
+    --ml-green: #8fbb7a;
+    --ml-accent: #e39a6d;
+    --ml-neg: #f08d7a;
+    --ml-pos: #8fd19b;
+  }
+}
+.ml h2 { margin: 0; font-size: 1.15rem; }
+.ml p { margin: 0; }
+.ml-muted { color: var(--wp-muted); font-size: 0.9rem; }
+.ml-wip {
+  border-inline-start: 4px solid var(--ml-accent);
+  padding: 0.5rem 0.75rem;
+  background: var(--wp-surface);
+  border-radius: var(--wp-radius);
+  font-size: 0.9rem;
+}
+.ml-status, .ml-card, .ml-budget, .ml-log {
+  background: var(--ml-paper);
+  color: var(--ml-ink);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.ml-status-line { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-weight: 600; }
+.ml-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.25rem 0.75rem;
+}
+.ml-stat { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 0.5rem; font-size: 0.85rem; }
+.ml-stat meter { grid-column: 1 / -1; inline-size: 100%; block-size: 0.6rem; }
+.ml-stat-value { font-variant-numeric: tabular-nums; }
+.ml-scene { margin: 0; }
+.ml-scene-art { display: block; inline-size: 100%; block-size: auto; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); }
+.ml-s-sky { fill: var(--ml-sky); }
+.ml-s-ground { fill: var(--ml-ground); }
+.ml-s-wall { fill: var(--ml-wall); stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-roof { fill: var(--ml-roof); stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-tarp { fill: var(--ml-roof); stroke: var(--ml-ink); stroke-width: 1.5; opacity: 0.85; }
+.ml-s-lamp { fill: none; stroke: var(--ml-ink); stroke-width: 3; }
+.ml-s-window { fill: var(--ml-window); stroke: var(--ml-ink); stroke-width: 1; }
+.ml-s-door, .ml-s-trunk { fill: var(--ml-door); }
+.ml-s-plant { fill: var(--ml-green); }
+.ml-s-board { fill: #2f4a3a; stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-chalk { stroke: #f4f1e8; stroke-width: 2; stroke-linecap: round; fill: none; }
+.ml-s-book { stroke: var(--ml-ink); stroke-width: 1; }
+.ml-s-book-0 { fill: #b4573a; }
+.ml-s-book-1 { fill: #5b7fa8; }
+.ml-s-book-2 { fill: #d1a23f; }
+.ml-s-book-3 { fill: #6f9a5a; }
+.ml-s-tool { fill: #8d8f94; stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-desk { fill: var(--ml-door); }
+.ml-s-screen { fill: #4b6475; stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-paper { fill: #fffdf7; stroke: var(--ml-ink); stroke-width: 1; }
+.ml-s-lens { fill: none; stroke: var(--ml-ink); stroke-width: 3; }
+.ml-s-lens-handle { stroke: var(--ml-ink); stroke-width: 4; stroke-linecap: round; }
+.ml-s-ball { fill: #d1a23f; stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-clothes { fill: var(--ml-accent); stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-legs { fill: #4b5563; }
+.ml-s-clothes-2 { fill: #5b7fa8; stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-eye { fill: #2b211c; }
+.ml-s-mouth { fill: none; stroke: #2b211c; stroke-width: 1.8; stroke-linecap: round; }
+.ml-choices, .ml-time { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ml-choices button, .ml-time button { min-block-size: var(--wp-touch, 44px); flex: 1 1 12rem; text-align: start; }
+.ml-help { font-size: 0.85rem; color: var(--wp-muted); border-block-start: 1px dashed var(--wp-border); padding-block-start: 0.5rem; }
+.ml-budget-list { display: grid; grid-template-columns: 1fr auto; gap: 0.15rem 1rem; margin: 0; }
+.ml-budget-list dd { margin: 0; text-align: end; font-variant-numeric: tabular-nums; }
+.ml-neg { color: var(--ml-neg); }
+.ml-pos { color: var(--ml-pos); }
+.ml-total { font-weight: 700; border-block-start: 1px solid var(--wp-border); padding-block-start: 0.15rem; }
+.ml-log-list { margin: 0; padding-inline-start: 1.25rem; display: grid; gap: 0.15rem; font-size: 0.9rem; }
+
+.ml h3 { margin: 0.25rem 0 0; font-size: 1rem; }
+.ml-timeline { display: block; inline-size: 100%; block-size: auto; }
+.ml-t-money { fill: var(--ml-window); opacity: 0.6; }
+.ml-t-sat { fill: none; stroke: var(--ml-accent); stroke-width: 2.5; stroke-linejoin: round; }
+.ml-t-axis { stroke: var(--ml-ink); stroke-width: 1; }
+.ml-table { border-collapse: collapse; inline-size: 100%; font-variant-numeric: tabular-nums; }
+.ml-table th, .ml-table td { text-align: end; padding: 0.15rem 0.5rem; border-block-end: 1px solid var(--wp-border); }
+.ml-table th:first-child, .ml-table td:first-child { text-align: start; }

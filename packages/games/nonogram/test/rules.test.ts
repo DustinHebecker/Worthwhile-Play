@@ -2,11 +2,16 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import {
   CROSSED,
+  DENSITIES,
   DIFFICULTIES,
+  EXPERT_MAX_ATTEMPTS,
+  EXPERT_MAX_DENSITY,
+  EXPERT_MIN_DENSITY,
   FILLED,
   MAX_COUNTER,
   MAX_DENSITY,
   MIN_DENSITY,
+  MIN_ROUNDS,
   SIZES,
   UNKNOWN,
   applyCell,
@@ -17,6 +22,7 @@ import {
   colOf,
   createInitialState,
   generatePuzzle,
+  generateWithRounds,
   indexOf,
   isLineSolvable,
   isNonogramState,
@@ -31,13 +37,14 @@ import {
   showMistakes,
   solveByLines,
   solveLine,
+  solveRounds,
   tapAction,
   toDifficulty,
   wrongCells,
   type Knowledge,
   type NonogramState
 } from '../src/rules';
-import { bruteSolveLine, cluesFromGrid, countSolutionsBacktracking, countSolutionsExhaustive, runsOf } from './oracle';
+import { allLinesFor, bruteSolveLine, cluesFromGrid, countSolutionsBacktracking, countSolutionsExhaustive, placementsFor, runsOf } from './oracle';
 
 const bit = fc.integer({ min: 0, max: 1 });
 const lineArb = fc.array(bit, { minLength: 0, maxLength: 12 });
@@ -275,6 +282,32 @@ describe('independent oracle self-check', () => {
     );
   });
 
+  it('builds the same line placements constructively as by enumerating all bit patterns', () => {
+    expect(placementsFor([], 3)).toEqual([[0, 0, 0]]);
+    expect(placementsFor([3], 3)).toEqual([[1, 1, 1]]);
+    expect(placementsFor([2, 2], 4)).toEqual([]);
+    const sorted = (lines: number[][]) => lines.map((l) => l.join('')).sort();
+    fc.assert(
+      fc.property(fc.array(bit, { minLength: 0, maxLength: 11 }), (line) => {
+        const clue = runsOf(line);
+        const placements = placementsFor(clue, line.length);
+        expect(sorted(placements)).toEqual(sorted(allLinesFor(clue, line.length)));
+        expect(new Set(placements.map((l) => l.join(''))).size).toBe(placements.length);
+      }),
+      { numRuns: 150 }
+    );
+  });
+
+  it('counts solutions of larger boards consistently with the exhaustive strategy', () => {
+    fc.assert(
+      fc.property(gridArb(6), (grid) => {
+        const clues = cluesFromGrid(grid, 6);
+        expect(countSolutionsBacktracking(clues, 4)).toBe(countSolutionsExhaustive(clues, 4));
+      }),
+      { numRuns: 15 }
+    );
+  }, 60_000);
+
   it('finds multiple solutions for a known ambiguous puzzle', () => {
     expect(countSolutionsExhaustive(cluesFromGrid([1, 0, 0, 1], 2))).toBe(2);
     expect(countSolutionsBacktracking(cluesFromGrid([1, 0, 0, 1], 2))).toBe(2);
@@ -287,6 +320,8 @@ describe('generation', () => {
     const seeds = new Set<number>();
     for (let a = 0; a < 50; a++) seeds.add(attemptSeed(12345, a));
     for (let s = 0; s < 50; s++) seeds.add(attemptSeed(s, 0));
+    // Neighbouring seeds must not share retry sequences.
+    for (let s = 0; s < 200; s++) for (let a = 0; a < 8; a++) expect(attemptSeed(s, a)).not.toBe(attemptSeed(s ^ 1, a ^ 1));
     expect(seeds.size).toBe(100);
     for (const s of seeds) expect(Number.isInteger(s) && s >= 0 && s <= 0xffffffff).toBe(true);
   });
@@ -386,6 +421,200 @@ describe('generation', () => {
     // Typical is well below 1 ms on a desktop; generous bounds absorb slow CI and phones.
     expect((performance.now() - start) / runs).toBeLessThan(50);
     expect(slowest).toBeLessThan(200);
+  });
+});
+
+describe('solver rounds (difficulty metric)', () => {
+  it('counts the sweeps that made progress', () => {
+    // A full grid is solved in the first sweep; the second sweep changes nothing.
+    expect(solveRounds(cluesOf([1, 1, 1, 1], 2))).toEqual({ grid: [1, 1, 1, 1], solved: true, contradiction: false, rounds: 1 });
+    // An empty grid: rows fix everything as empty.
+    expect(solveRounds(cluesOf([0, 0, 0, 0, 0, 0, 0, 0, 0], 3)).rounds).toBe(1);
+    // Rows alone fix nothing here (row clue [1] in width 3), columns fix it: still one sweep.
+    expect(solveRounds(cluesOf([1, 0, 0, 1, 0, 0, 1, 0, 0], 3))).toMatchObject({ solved: true, rounds: 1 });
+    // Ambiguous: no sweep makes progress.
+    expect(solveRounds(cluesOf([1, 0, 0, 1], 2))).toEqual({ grid: [-1, -1, -1, -1], solved: false, contradiction: false, rounds: 0 });
+  });
+
+  it('solves a mixed 3×3 picture in one sweep (columns complete what rows started)', () => {
+    const picture = [1, 0, 0, 1, 1, 1, 1, 0, 1];
+    expect(solveRounds(cluesOf(picture, 3))).toEqual({ grid: picture, solved: true, contradiction: false, rounds: 1 });
+  });
+
+  it('reports contradictions', () => {
+    const result = solveRounds({ rows: [[2], [2]], cols: [[], []] });
+    expect(result.contradiction).toBe(true);
+    expect(result.solved).toBe(false);
+    expect(result.rounds).toBe(0);
+    // A contradiction found in a later line of the first sweep.
+    expect(solveRounds({ rows: [[1], []], cols: [[2], []] }).contradiction).toBe(true);
+  });
+
+  it('reaches the same fixpoint as the queue-based solver and never fewer rounds than needed', () => {
+    fc.assert(
+      fc.property(gridArb(6), (grid) => {
+        const clues = cluesOf(grid, 6);
+        const rounds = solveRounds(clues);
+        const queue = solveByLines(clues);
+        expect(rounds.grid).toEqual(queue.grid);
+        expect(rounds.solved).toBe(queue.solved);
+        expect(rounds.contradiction).toBe(false);
+        // Every sweep that counts fixed at least one cell.
+        expect(rounds.rounds).toBeLessThanOrEqual(rounds.grid.filter((v) => v !== -1).length);
+        if (rounds.grid.some((v) => v !== -1)) expect(rounds.rounds).toBeGreaterThanOrEqual(1);
+      }),
+      { numRuns: 200 }
+    );
+  });
+});
+
+describe('expert (15×15) generation', { timeout: 60_000 }, () => {
+  it('declares the expert difficulty last, with a larger, sparser board', () => {
+    expect(DIFFICULTIES).toEqual(['easy', 'medium', 'hard', 'expert']);
+    expect(SIZES.expert).toBe(15);
+    expect(DENSITIES.expert).toEqual([EXPERT_MIN_DENSITY, EXPERT_MAX_DENSITY]);
+    expect(EXPERT_MAX_DENSITY).toBeLessThan(MAX_DENSITY);
+    expect(EXPERT_MIN_DENSITY).toBeLessThan(MIN_DENSITY);
+    for (const d of ['easy', 'medium', 'hard'] as const) {
+      expect(DENSITIES[d]).toEqual([MIN_DENSITY, MAX_DENSITY]);
+      expect(MIN_ROUNDS[d]).toBe(0);
+    }
+    expect(MIN_ROUNDS.expert).toBe(7);
+    expect(toDifficulty('expert')).toBe('expert');
+  });
+
+  it('draws pictures within an explicit density range', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const filled = randomPicture(seed, 15, EXPERT_MIN_DENSITY, EXPERT_MAX_DENSITY).filter((v) => v === 1).length;
+      expect(filled).toBeGreaterThanOrEqual(Math.ceil(225 * EXPERT_MIN_DENSITY));
+      expect(filled).toBeLessThanOrEqual(Math.floor(225 * EXPERT_MAX_DENSITY));
+    }
+    expect(randomPicture(3, 6, 0.5, 0.5).filter((v) => v === 1)).toHaveLength(18);
+    // The default range is the classic one, so existing difficulties generate as before.
+    expect(randomPicture(4, 10)).toEqual(randomPicture(4, 10, MIN_DENSITY, MAX_DENSITY));
+  });
+
+  it('produces unique, line-solvable, deterministic 15×15 puzzles that need many rounds (property)', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 0xffffffff }), (seed) => {
+        const puzzle = generatePuzzle(seed, 'expert');
+        expect(puzzle).toHaveLength(225);
+        expect(generatePuzzle(seed, 'expert')).toEqual(puzzle);
+        const filled = puzzle.filter((v) => v === 1).length;
+        expect(filled).toBeGreaterThanOrEqual(Math.ceil(225 * EXPERT_MIN_DENSITY));
+        expect(filled).toBeLessThanOrEqual(Math.floor(225 * EXPERT_MAX_DENSITY));
+        const result = solveRounds(cluesOf(puzzle, 15));
+        expect(result.solved).toBe(true);
+        expect(result.grid).toEqual(puzzle);
+        expect(result.rounds).toBeGreaterThanOrEqual(MIN_ROUNDS.expert);
+        expect(isLineSolvable(puzzle, 15)).toBe(true);
+        expect(countSolutionsBacktracking(cluesFromGrid(puzzle, 15))).toBe(1);
+      }),
+      { numRuns: 10 }
+    );
+  });
+
+  it('returns the first candidate that needs enough rounds, in attempt order', () => {
+    const seed = 2024;
+    const qualifies = (attempt: number) => {
+      const result = solveRounds(cluesOf(randomPicture(attemptSeed(seed, attempt), 15, EXPERT_MIN_DENSITY, EXPERT_MAX_DENSITY), 15));
+      return result.solved && result.rounds >= MIN_ROUNDS.expert;
+    };
+    let attempt = 0;
+    while (!qualifies(attempt)) attempt++;
+    expect(attempt).toBeLessThan(EXPERT_MAX_ATTEMPTS);
+    expect(generatePuzzle(seed, 'expert')).toEqual(randomPicture(attemptSeed(seed, attempt), 15, EXPERT_MIN_DENSITY, EXPERT_MAX_DENSITY));
+  });
+
+  it('falls back to the line-solvable candidate with the most rounds (first on ties)', () => {
+    const density = [MIN_DENSITY, MAX_DENSITY] as const;
+    const seed = 7;
+    const attempts = 30;
+    let best: number[] | null = null;
+    let bestRounds = -1;
+    for (let a = 0; a < attempts; a++) {
+      const candidate = randomPicture(attemptSeed(seed, a), 8, density[0], density[1]);
+      const result = solveRounds(cluesOf(candidate, 8));
+      if (result.solved && result.rounds > bestRounds) {
+        best = candidate;
+        bestRounds = result.rounds;
+      }
+    }
+    expect(best).not.toBeNull();
+    // Unreachable round requirement: the best candidate wins.
+    expect(generateWithRounds(seed, 8, density, 99, attempts)).toEqual(best);
+    // A requirement of 0 takes the first line-solvable candidate.
+    const first = Array.from({ length: attempts }, (_, a) => randomPicture(attemptSeed(seed, a), 8, density[0], density[1])).find((p) => isLineSolvable(p, 8));
+    expect(generateWithRounds(seed, 8, density, 0, attempts)).toEqual(first);
+  });
+
+  it('repairs the last candidate when no candidate is line-solvable', () => {
+    const density = [0.2, 0.2] as const;
+    const seed = [0, 1, 2, 3, 4, 5].find((s) => !isLineSolvable(randomPicture(attemptSeed(s, 0), 15, 0.2, 0.2), 15)) as number;
+    const candidate = randomPicture(attemptSeed(seed, 0), 15, 0.2, 0.2);
+    const repaired = generateWithRounds(seed, 15, density, 3, 1);
+    expect(repaired).toEqual(repairPicture(candidate, 15));
+    expect(isLineSolvable(repaired, 15)).toBe(true);
+    // Zero attempts still draw one candidate.
+    expect(generateWithRounds(seed, 15, density, 3, 0)).toEqual(repaired);
+  });
+
+  it('is measurably harder than the hard 10×10 puzzles', () => {
+    const stats = (difficulty: 'hard' | 'expert') => {
+      const size = SIZES[difficulty];
+      let rounds = 0;
+      let numbers = 0;
+      for (let seed = 0; seed < 12; seed++) {
+        const clues = cluesOf(generatePuzzle(seed * 9973 + 3, difficulty), size);
+        rounds += solveRounds(clues).rounds;
+        numbers += [...clues.rows, ...clues.cols].reduce((sum, clue) => sum + clue.length, 0) / (2 * size);
+      }
+      return { rounds: rounds / 12, numbers: numbers / 12 };
+    };
+    const hard = stats('hard');
+    const expert = stats('expert');
+    // Measured: hard ≈ 3.3 rounds and 2.8 clue numbers per line; expert ≈ 8.7 and 4.0.
+    expect(expert.rounds).toBeGreaterThanOrEqual(MIN_ROUNDS.expert);
+    expect(expert.rounds).toBeGreaterThan(hard.rounds * 1.5);
+    expect(expert.numbers).toBeGreaterThan(hard.numbers + 0.7);
+  });
+
+  it('generates a 15×15 puzzle fast enough for a phone', () => {
+    const runs = 30;
+    const start = performance.now();
+    let slowest = 0;
+    for (let seed = 0; seed < runs; seed++) {
+      const t0 = performance.now();
+      generatePuzzle(seed * 31 + 5, 'expert');
+      slowest = Math.max(slowest, performance.now() - t0);
+    }
+    // Desktop without coverage: median ≈ 5 ms, worst of 1000 seeds ≈ 55 ms; the attempt cap bounds the rest.
+    // Under coverage on a loaded runner the same work measured 138 ms on average (2026-10-15), so these
+    // bounds only catch an order-of-magnitude regression; the work itself is bounded by EXPERT_MAX_ATTEMPTS.
+    expect((performance.now() - start) / runs).toBeLessThan(600);
+    expect(slowest).toBeLessThan(4000);
+  });
+
+  it('creates and validates expert game states', () => {
+    const s = createInitialState(99, 'expert');
+    expect(s).toMatchObject({ difficulty: 'expert', size: 15 });
+    expect(s.cells).toEqual(new Array(225).fill(UNKNOWN));
+    expect(s.solution).toEqual(generatePuzzle(99, 'expert'));
+    expect(isNonogramState(clone(s))).toBe(true);
+    const played = applyCell(applyCell(s, 224, 'cross'), s.solution.indexOf(1), 'fill');
+    expect(isNonogramState(clone(played))).toBe(true);
+    expect(isNonogramState({ ...clone(s), size: 10 })).toBe(false);
+    expect(isNonogramState({ ...clone(s), difficulty: 'hard' })).toBe(false);
+    expect(isNonogramState({ ...clone(s), lastCheck: 225 })).toBe(true);
+    expect(isNonogramState({ ...clone(s), lastCheck: 226 })).toBe(false);
+    expect(isSolved(solveState(s))).toBe(true);
+  });
+
+  it('keeps accepting saves of the existing difficulties', () => {
+    for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+      const s = createInitialState(11, difficulty);
+      expect(isNonogramState(clone(applyCell(s, 0, 'cross')))).toBe(true);
+    }
   });
 });
 
@@ -555,7 +784,9 @@ describe('isNonogramState', () => {
     ['an array', () => []],
     ['bad seed', (s: NonogramState) => ({ ...s, seed: -1 })],
     ['fractional seed', (s: NonogramState) => ({ ...s, seed: 1.5 })],
-    ['unknown difficulty', (s: NonogramState) => ({ ...s, difficulty: 'expert' })],
+    ['unknown difficulty', (s: NonogramState) => ({ ...s, difficulty: 'master' })],
+    ['expert difficulty with a 5×5 board', (s: NonogramState) => ({ ...s, difficulty: 'expert' })],
+    ['expert difficulty with a 5×5 board and size 15', (s: NonogramState) => ({ ...s, difficulty: 'expert', size: 15 })],
     ['size mismatch', (s: NonogramState) => ({ ...s, size: 8 })],
     ['short solution', (s: NonogramState) => ({ ...s, solution: s.solution.slice(1) })],
     ['long solution', (s: NonogramState) => ({ ...s, solution: [...s.solution, 0] })],

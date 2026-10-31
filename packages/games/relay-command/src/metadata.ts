@@ -1,0 +1,22 @@
+import type { GameMetadata } from '@wp/game-core';
+import { messages } from './messages';
+
+export const metadata: GameMetadata = {
+  id: 'relay-command',
+  stateVersion: 12,
+  skills: ['strategy', 'planning', 'spatial'],
+  typicalMinutes: [10, 20],
+  inputMethods: ['pointer', 'touch', 'keyboard'],
+  capabilities: {
+    offline: true,
+    audio: 'none',
+    aiOptional: false,
+    webgpu: 'none',
+    network: 'none',
+    pauseable: true
+  },
+  difficulties: ['easy', 'normal', 'hard'],
+  // The game's own setup (map, length, opponents, seats) is its start screen (ADR 0015).
+  setupInGame: true,
+  messages
+};

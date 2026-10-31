@@ -7,7 +7,6 @@
   max-width: 32rem;
   margin-inline: auto;
 }
-.wp-tic-tac-toe .ttt-toolbar,
 .wp-tic-tac-toe .ttt-actions {
   display: flex;
   flex-wrap: wrap;
@@ -16,16 +15,7 @@
   justify-content: center;
   width: 100%;
 }
-.wp-tic-tac-toe .ttt-field {
-  display: grid;
-  gap: 0.2rem;
-  font-size: 0.9rem;
-  min-width: 0;
-  max-width: 100%;
-}
-.wp-tic-tac-toe .ttt-field[hidden] { display: none; }
-.wp-tic-tac-toe .ttt-field select { max-width: 100%; }
-.wp-tic-tac-toe .ttt-status { margin: 0; text-align: center; }
+.wp-tic-tac-toe .ttt-status { margin: 0; text-align: center; white-space: pre-line; }
 
 .wp-tic-tac-toe .ttt-board {
   --ttt-gap: 6px;
@@ -88,6 +78,156 @@
   stroke-dasharray: 0.3 0.12;
 }
 
+.wp-tic-tac-toe .ttt-hint,
+.wp-tic-tac-toe .ttt-keys {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--wp-text-muted, var(--wp-text));
+}
+.wp-tic-tac-toe .ttt-slot { display: grid; justify-items: center; width: 100%; }
+
+/* ---------- Board in board ---------- */
+.wp-tic-tac-toe .ttt-nested {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+}
+@media (min-width: 46rem) {
+  .wp-tic-tac-toe .ttt-nested { grid-template-columns: 1fr 1fr; align-items: start; }
+  .wp-tic-tac-toe:has(.ttt-nested) { max-width: 48rem; }
+}
+.wp-tic-tac-toe .ttt-overview {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(var(--wp-touch, 44px), 1fr));
+  gap: 6px;
+  padding: 6px;
+  width: min(100%, 22rem);
+  background: var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+}
+.wp-tic-tac-toe .ttt-mini {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  min-width: var(--wp-touch, 44px);
+  min-height: var(--wp-touch, 44px);
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: calc(var(--wp-radius, 10px) - 4px);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+}
+.wp-tic-tac-toe .ttt-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+}
+.wp-tic-tac-toe .ttt-mini-cell {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  aspect-ratio: 1;
+  background: var(--wp-surface-2);
+  border-radius: 2px;
+}
+.wp-tic-tac-toe .ttt-mini-cell .ttt-glyph { width: 80%; height: 80%; stroke-width: 14; animation: none; }
+.wp-tic-tac-toe .ttt-mini-cell[data-mark='X'],
+.wp-tic-tac-toe .ttt-mini-claim[data-mark='X'] { color: var(--wp-p1); }
+.wp-tic-tac-toe .ttt-mini-cell[data-mark='O'],
+.wp-tic-tac-toe .ttt-mini-claim[data-mark='O'] { color: var(--wp-p2); }
+/* A claimed board: one big shape over the faded small board. */
+.wp-tic-tac-toe .ttt-mini-claim {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  pointer-events: none;
+}
+.wp-tic-tac-toe .ttt-mini-claim:not([data-mark='']) { display: grid; }
+.wp-tic-tac-toe .ttt-mini-claim .ttt-glyph { width: 92%; height: 92%; stroke-width: 9; }
+.wp-tic-tac-toe .ttt-mini[data-claim='X'] .ttt-mini-grid,
+.wp-tic-tac-toe .ttt-mini[data-claim='O'] .ttt-mini-grid { opacity: 0.3; }
+/* Full without a winner: hatched and faded (counts for nobody). */
+.wp-tic-tac-toe .ttt-mini[data-claim='draw'] .ttt-mini-grid { opacity: 0.45; }
+.wp-tic-tac-toe .ttt-mini[data-claim='draw'] {
+  background-image: repeating-linear-gradient(-45deg, transparent 0 6px, color-mix(in srgb, var(--wp-text) 22%, transparent) 6px 8px);
+}
+/* Where the next move may go: forced board = thick solid frame + "Play here" tag; free choice = dashed frame. */
+.wp-tic-tac-toe .ttt-mini.is-target { border: 4px solid var(--wp-text); }
+.wp-tic-tac-toe .ttt-mini.is-free { border: 2px dashed var(--wp-text); }
+.wp-tic-tac-toe .ttt-mini[aria-current='true'] { box-shadow: 0 0 0 3px var(--wp-surface), 0 0 0 5px var(--wp-focus); }
+.wp-tic-tac-toe .ttt-mini.is-winning {
+  border: 4px double var(--wp-text);
+  background-image: repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--wp-text) 14%, transparent) 7px 10px);
+}
+.wp-tic-tac-toe .ttt-mini:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; z-index: 1; }
+.wp-tic-tac-toe .ttt-here {
+  position: absolute;
+  inset-block-end: -2px;
+  inset-inline: 0;
+  margin-inline: auto;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.4;
+  border-radius: 4px;
+  background: var(--wp-text);
+  color: var(--wp-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wp-tic-tac-toe .ttt-here[hidden] { display: none; }
+.wp-tic-tac-toe .ttt-zoom {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+  width: 100%;
+}
+.wp-tic-tac-toe .ttt-zoom-title { margin: 0; font-weight: 600; text-align: center; }
+.wp-tic-tac-toe .ttt-zoom-note { margin: 0; font-size: 0.9rem; text-align: center; }
+.wp-tic-tac-toe .ttt-zoom-note[hidden] { display: none; }
+.wp-tic-tac-toe .ttt-zoom-board { width: min(100%, 17rem); }
+.wp-tic-tac-toe .ttt-zoom-board.is-target { outline: 4px solid var(--wp-text); outline-offset: 2px; }
+
+/* ---------- Order & Chaos ---------- */
+.wp-tic-tac-toe .ttt-oc { display: grid; gap: 0.6rem; justify-items: center; width: 100%; }
+.wp-tic-tac-toe .ttt-symbols { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.wp-tic-tac-toe .ttt-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--wp-touch, 44px);
+  min-width: var(--wp-touch, 44px);
+  padding-inline: 0.75rem;
+  border: 2px solid var(--wp-border);
+}
+.wp-tic-tac-toe .ttt-symbol .ttt-glyph { width: 1.4rem; height: 1.4rem; animation: none; }
+.wp-tic-tac-toe .ttt-symbol[data-mark='X'] .ttt-glyph { color: var(--wp-p1); }
+.wp-tic-tac-toe .ttt-symbol[data-mark='O'] .ttt-glyph { color: var(--wp-p2); }
+/* The chosen symbol: thick frame and a check-like underline, not only colour. */
+.wp-tic-tac-toe .ttt-symbol[aria-pressed='true'] {
+  border: 3px solid var(--wp-text);
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
+  font-weight: 700;
+}
+.wp-tic-tac-toe .ttt-oc-board {
+  --ttt-gap: 4px;
+  grid-template-columns: repeat(6, minmax(var(--wp-touch, 44px), 1fr));
+  width: min(100%, 26rem);
+}
+
 @keyframes ttt-pop {
   from { transform: scale(0.6); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -98,5 +238,8 @@
 }
 @media (forced-colors: active) {
   .wp-tic-tac-toe .ttt-cell.is-winning { outline: 4px solid CanvasText; outline-offset: -6px; }
+  .wp-tic-tac-toe .ttt-mini.is-target,
+  .wp-tic-tac-toe .ttt-mini.is-winning { border-color: CanvasText; }
+  .wp-tic-tac-toe .ttt-here { forced-color-adjust: none; background: CanvasText; color: Canvas; }
   .wp-tic-tac-toe .ttt-strike line { stroke: CanvasText; }
 }

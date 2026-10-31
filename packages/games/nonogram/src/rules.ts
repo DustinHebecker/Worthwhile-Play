@@ -12,19 +12,48 @@ import { createRng, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
  * on regenerating the puzzle.
  */
 
-export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+export const DIFFICULTIES = ['easy', 'medium', 'hard', 'expert'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
 
 /** Board edge length per difficulty (square boards). */
-export const SIZES: Readonly<Record<Difficulty, number>> = { easy: 5, medium: 8, hard: 10 };
+export const SIZES: Readonly<Record<Difficulty, number>> = { easy: 5, medium: 8, hard: 10, expert: 15 };
 
-/** Fill density range of generated pictures (inclusive fractions of all cells). */
+/** Fill density range of generated pictures (inclusive fractions of all cells) for easy to hard. */
 export const MIN_DENSITY = 0.5;
 export const MAX_DENSITY = 0.6;
 
-/** Random candidates tried before the deterministic repair fallback is used. */
+/**
+ * Expert boards use a sparser picture: fewer filled cells mean more, shorter blocks per line
+ * and longer chains of deductions (measured: ~4 clue numbers per line instead of ~2.8).
+ */
+export const EXPERT_MIN_DENSITY = 0.45;
+export const EXPERT_MAX_DENSITY = 0.55;
+
+/** Density range per difficulty. */
+export const DENSITIES: Readonly<Record<Difficulty, readonly [number, number]>> = {
+  easy: [MIN_DENSITY, MAX_DENSITY],
+  medium: [MIN_DENSITY, MAX_DENSITY],
+  hard: [MIN_DENSITY, MAX_DENSITY],
+  expert: [EXPERT_MIN_DENSITY, EXPERT_MAX_DENSITY]
+};
+
+/**
+ * Minimum number of solver rounds (see `solveRounds`) a puzzle must need. Hard 10×10 puzzles
+ * need ~3.4 rounds on average; expert puzzles need at least 7, so the player has to carry
+ * deductions back and forth between rows and columns many times. 0 = no requirement.
+ */
+export const MIN_ROUNDS: Readonly<Record<Difficulty, number>> = { easy: 0, medium: 0, hard: 0, expert: 7 };
+
+/** Random candidates tried before the deterministic repair fallback is used (easy to hard). */
 export const MAX_ATTEMPTS = 400;
+
+/**
+ * Candidate cap for expert puzzles. About one candidate in ten qualifies (line-solvable and at
+ * least `MIN_ROUNDS.expert` rounds), so the cap is practically never reached; it bounds the
+ * worst-case generation time on slow phones. Each candidate costs well under 1 ms on a desktop.
+ */
+export const EXPERT_MAX_ATTEMPTS = 300;
 
 /** Upper bound for counters in untrusted saves (far beyond any real game). */
 export const MAX_COUNTER = 1_000_000;
@@ -219,6 +248,39 @@ export function solveByLines(clues: Clues, start?: readonly Knowledge[]): SolveR
   return { grid, solved: grid.every((v) => v !== -1), contradiction: false };
 }
 
+export interface RoundsResult extends SolveResult {
+  /** Number of full sweeps (all rows, then all columns) that changed at least one cell. */
+  rounds: number;
+}
+
+/**
+ * Difficulty metric: solves like a person working in sweeps — every row, then every column,
+ * repeated until nothing changes — and counts the sweeps that made progress. More rounds mean
+ * longer chains of deductions where one line only opens up after others were worked out.
+ */
+export function solveRounds(clues: Clues): RoundsResult {
+  const size = clues.rows.length;
+  const grid = new Array<Knowledge>(size * size).fill(-1);
+  let rounds = 0;
+  for (;;) {
+    let changed = false;
+    for (let line = 0; line < 2 * size; line++) {
+      const isRow = line < size;
+      const index = isRow ? line : line - size;
+      const cells = isRow ? rowOf(grid, size, index) : colOf(grid, size, index);
+      const solved = solveLine(isRow ? (clues.rows[index] as number[]) : (clues.cols[index] as number[]), cells);
+      if (!solved) return { grid, solved: false, contradiction: true, rounds };
+      for (let j = 0; j < size; j++) {
+        if (solved[j] === cells[j]) continue;
+        grid[isRow ? index * size + j : j * size + index] = solved[j] as Knowledge;
+        changed = true;
+      }
+    }
+    if (!changed) return { grid, solved: grid.every((v) => v !== -1), contradiction: false, rounds };
+    rounds++;
+  }
+}
+
 /** True when line logic alone determines the full picture for these clues. */
 export function isLineSolvable(solution: readonly number[], size: number): boolean {
   const result = solveByLines(cluesOf(solution, size));
@@ -229,17 +291,22 @@ export function isLineSolvable(solution: readonly number[], size: number): boole
 
 /** Deterministic per-attempt seed derivation (FNV-style mix of seed and attempt number). */
 export function attemptSeed(seed: number, attempt: number): number {
-  let h = (seed ^ 0x9e3779b9) >>> 0;
-  h = Math.imul(h ^ attempt, 0x01000193) >>> 0;
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0;
-  return (h ^ (h >>> 13)) >>> 0;
+  // Avalanche the seed fully before mixing in the attempt, so that neighbouring seeds never share
+  // retry sequences (the former xor-based mix mapped (s, a) and (s ^ 1, a ^ 1) to the same value).
+  const fmix = (x: number): number => {
+    let h = x >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+    return (h ^ (h >>> 16)) >>> 0;
+  };
+  return fmix((fmix(seed ^ 0x9e3779b9) + Math.imul(attempt + 1, 0x27d4eb2f)) >>> 0);
 }
 
-/** Random picture with a fill count between `MIN_DENSITY` and `MAX_DENSITY` of all cells. */
-export function randomPicture(seed: number, size: number): number[] {
+/** Random picture with a fill count between `minDensity` and `maxDensity` of all cells. */
+export function randomPicture(seed: number, size: number, minDensity = MIN_DENSITY, maxDensity = MAX_DENSITY): number[] {
   const rng = createRng(seed);
   const total = size * size;
-  const count = rng.int(Math.ceil(total * MIN_DENSITY), Math.floor(total * MAX_DENSITY));
+  const count = rng.int(Math.ceil(total * minDensity), Math.floor(total * maxDensity));
   const picture = new Array<number>(total).fill(0);
   for (const i of rng.shuffle([...picture.keys()]).slice(0, count)) picture[i] = 1;
   return picture;
@@ -262,8 +329,39 @@ export function repairPicture(picture: readonly number[], size: number): number[
   }
 }
 
+/**
+ * Seeded puzzle that must need at least `minRounds` solver rounds: the first line-solvable
+ * candidate that does is used. Bounded by `maxAttempts`; if no candidate qualifies, the
+ * line-solvable candidate with the most rounds is used (the first one on ties), and only if none
+ * was line-solvable at all, the last candidate is repaired. Always deterministic per seed.
+ */
+export function generateWithRounds(
+  seed: number,
+  size: number,
+  density: readonly [number, number],
+  minRounds: number,
+  maxAttempts: number
+): number[] {
+  let best: number[] | null = null;
+  let bestRounds = -1;
+  let candidate: number[] = [];
+  // At least one candidate, so the repair fallback always has a full-size picture.
+  for (let attempt = 0; attempt < Math.max(1, maxAttempts); attempt++) {
+    candidate = randomPicture(attemptSeed(seed, attempt), size, density[0], density[1]);
+    const result = solveRounds(cluesOf(candidate, size));
+    if (!result.solved) continue;
+    if (result.rounds >= minRounds) return candidate;
+    if (result.rounds > bestRounds) {
+      best = candidate;
+      bestRounds = result.rounds;
+    }
+  }
+  return best ?? repairPicture(candidate, size);
+}
+
 /** The seeded puzzle for a difficulty: a picture whose clues are solvable without guessing. */
 export function generatePuzzle(seed: number, difficulty: Difficulty): number[] {
+  if (difficulty === 'expert') return generateWithRounds(seed, SIZES.expert, DENSITIES.expert, MIN_ROUNDS.expert, EXPERT_MAX_ATTEMPTS);
   const size = SIZES[difficulty];
   let candidate: number[] = [];
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {

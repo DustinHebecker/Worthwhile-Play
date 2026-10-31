@@ -457,7 +457,7 @@ export const messages: GameMessages = {
   },
   pt: {
     title: 'Quebra-código',
-    tagline: 'Deduza um código oculto com experiências cuidadosas.',
+    tagline: 'Deduza um código oculto com experimentos cuidadosos.',
     rules: 'Decifre o código oculto em no máximo 10 tentativas. Após cada tentativa, um ponto cheio ● indica um símbolo certo no lugar certo e um anel ○ um símbolo certo no lugar errado; a ordem dos pontos não revela posições.',
     'difficulty.easy': 'Fácil',
     'difficulty.standard': 'Padrão',

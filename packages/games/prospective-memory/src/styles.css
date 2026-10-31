@@ -1,0 +1,98 @@
+/* Keep in Mind (prospective memory): all rules scoped under .wp-pm. Uses shared --wp-* tokens and logical properties. */
+.wp-pm {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+.wp-pm p { margin: 0; }
+.wp-pm [hidden] { display: none !important; }
+.wp-pm__intro,
+.wp-pm__play,
+.wp-pm__summary {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: min(100%, 30rem);
+}
+.wp-pm__summary:focus { outline: none; }
+.wp-pm__summary:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 4px; }
+.wp-pm__task { font-weight: 700; }
+.wp-pm__muted { color: var(--wp-muted); font-size: 0.95rem; }
+.wp-pm__status { font-variant-numeric: tabular-nums; }
+.wp-pm__ack { min-height: 1.5em; color: var(--wp-muted); }
+/* Intentions: a framed card with a marker in front of each line (not colour alone). */
+.wp-pm__box {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  border: 2px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+  text-align: start;
+}
+.wp-pm__label { font-weight: 700; }
+.wp-pm__intentions,
+.wp-pm__results,
+.wp-pm__tips {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  text-align: start;
+}
+.wp-pm__results { width: 100%; }
+.wp-pm__heading { margin: 0.5rem 0 0; font-size: 1.05rem; justify-self: start; text-align: start; }
+.wp-pm__summary > p { text-align: start; }
+.wp-pm__item {
+  display: grid;
+  place-items: center;
+  width: min(100%, 11rem);
+  aspect-ratio: 1;
+  border: 2px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  user-select: none;
+}
+.wp-pm__shape { width: 78%; height: 78%; overflow: visible; }
+.wp-pm__fill { fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.wp-pm__outline { fill: none; stroke: currentColor; stroke-width: 7; stroke-linejoin: round; }
+.wp-pm__dot { fill: currentColor; }
+.wp-pm__dot--on-fill { fill: var(--wp-surface); }
+.wp-pm__answers {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+}
+.wp-pm__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.wp-pm__row--intentions { grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
+.wp-pm__answer {
+  min-height: var(--wp-touch);
+  min-width: var(--wp-touch);
+  touch-action: manipulation;
+  overflow-wrap: anywhere;
+}
+.wp-pm__answer--sort {
+  min-height: calc(var(--wp-touch) * 1.5);
+  font-size: 1.2rem;
+}
+/* Intention buttons: dashed border distinguishes them from the sorting buttons (shape, not only colour). */
+.wp-pm__answer--intention { border-style: dashed; }
+/* Gentle one-time fade-in of each shape only; fully static with reduced motion. */
+.wp-pm--motion .wp-pm__shape { animation: wp-pm-in 180ms ease-out; }
+@keyframes wp-pm-in {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-pm--motion .wp-pm__shape { animation: none; }
+}

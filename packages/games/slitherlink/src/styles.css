@@ -1,0 +1,164 @@
+/* Loop (Slitherlink). All rules are scoped under .wp-slitherlink; the board mirrors in RTL. */
+.wp-slitherlink {
+  --sl-cell-max: 56px;
+  --sl-line: 5px;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+.wp-slitherlink p { margin: 0; }
+/* Shared button styles set display; keep the hidden attribute authoritative. */
+.wp-slitherlink [hidden] { display: none !important; }
+
+/*
+ * Geometry: positions use doubled coordinates (--y, --x): dots at even/even, cells at
+ * odd/odd, edges in between, so 100% / (2n) is half a cell. The board is at most
+ * 56 px per cell and shrinks to fit (10 × 10 on a 360 px phone ≈ 29 px cells).
+ * The edge diamonds along the border reach half a cell outside the board; the wrapper's
+ * padding keeps them on the page.
+ */
+.wp-slitherlink .sl-wrap { padding: 16px; max-width: 100%; box-sizing: border-box; overflow-x: clip; }
+.wp-slitherlink .sl-board {
+  position: relative;
+  width: min(100%, calc(var(--n, 5) * var(--sl-cell-max)));
+  aspect-ratio: 1;
+  margin-inline: auto;
+  container-type: inline-size;
+  touch-action: manipulation;
+}
+.wp-slitherlink .sl-edge,
+.wp-slitherlink .sl-dot,
+.wp-slitherlink .sl-clue {
+  position: absolute;
+  top: calc(var(--y) * 100% / (2 * var(--n)));
+  inset-inline-start: calc(var(--x) * 100% / (2 * var(--n)));
+  box-sizing: border-box;
+}
+
+/* Clues: a number centred in its cell; never a pointer target. */
+.wp-slitherlink .sl-clue {
+  inline-size: calc(100% / var(--n));
+  block-size: calc(100% / var(--n));
+  margin-block-start: calc(-50% / var(--n));
+  margin-inline-start: calc(-50% / var(--n));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--wp-text);
+}
+@supports (width: 1cqi) {
+  .wp-slitherlink .sl-clue { font-size: min(1.5rem, calc(100cqi / var(--n) * 0.5)); }
+}
+.wp-slitherlink .sl-badge {
+  position: absolute;
+  inset-block-start: 3px;
+  inset-inline-end: 4px;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 700;
+}
+.wp-slitherlink .sl-clue[data-status='done'] .sl-num { color: var(--wp-muted); }
+.wp-slitherlink .sl-clue[data-status='done'] .sl-badge { color: var(--wp-ok); }
+/* Impossible clue: "!" badge plus a dashed underline (not colour only). */
+.wp-slitherlink .sl-clue[data-status='over'] .sl-num { color: var(--wp-danger); text-decoration: underline dashed; }
+.wp-slitherlink .sl-clue[data-status='over'] .sl-badge { color: var(--wp-danger); }
+
+/*
+ * Edges: each one is a transparent square of side cell/√2 rotated by 45°, i.e. the diamond
+ * between its two end points and the two neighbouring cell centres. The diamonds tile the
+ * board, so every tap lands on the nearest line.
+ */
+.wp-slitherlink .sl-edge {
+  inline-size: calc(70.7107% / var(--n));
+  block-size: calc(70.7107% / var(--n));
+  margin-block-start: calc(-35.3553% / var(--n));
+  margin-inline-start: calc(-35.3553% / var(--n));
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  transform: rotate(45deg);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 1;
+}
+.wp-slitherlink .sl-seg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 999px;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.wp-slitherlink .sl-edge[data-orientation='horizontal'] .sl-seg { inline-size: 130%; block-size: var(--sl-line); }
+.wp-slitherlink .sl-edge[data-orientation='vertical'] .sl-seg { inline-size: var(--sl-line); block-size: 130%; }
+/* Unknown: a faint dotted guide. */
+.wp-slitherlink .sl-edge[data-state='unknown'] .sl-seg { background: transparent; border: 1px dotted var(--wp-border); block-size: 0; }
+.wp-slitherlink .sl-edge[data-orientation='vertical'][data-state='unknown'] .sl-seg { inline-size: 0; block-size: 130%; }
+/* Line: a thick solid stroke. */
+.wp-slitherlink .sl-edge[data-state='line'] .sl-seg { background: var(--wp-text); }
+/* Cross: an "×" at the middle of the edge. */
+.wp-slitherlink .sl-edge[data-state='cross'] .sl-seg::after {
+  content: '×';
+  color: var(--wp-muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+@media (hover: hover) {
+  .wp-slitherlink .sl-edge[data-state='unknown']:hover .sl-seg { border-color: var(--wp-accent); border-style: solid; }
+}
+.wp-slitherlink .sl-edge:focus-visible { outline: none; }
+.wp-slitherlink .sl-edge:focus-visible .sl-seg { box-shadow: 0 0 0 3px var(--wp-focus); }
+.wp-slitherlink .sl-board.is-solved .sl-edge { cursor: default; }
+.wp-slitherlink .sl-board.is-solved .sl-edge[data-state='cross'] .sl-seg::after { content: none; }
+
+/* Dots: keyboard focus targets only (pointer input goes to the edges). */
+.wp-slitherlink .sl-dot {
+  --sl-dot: 14px;
+  inline-size: var(--sl-dot);
+  block-size: var(--sl-dot);
+  margin-block-start: calc(var(--sl-dot) / -2);
+  margin-inline-start: calc(var(--sl-dot) / -2);
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: none;
+  z-index: 2;
+}
+.wp-slitherlink .sl-dot::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--wp-text);
+}
+.wp-slitherlink .sl-dot:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 3px; }
+/* Armed (Space pressed): a second, dashed ring, not colour only. */
+.wp-slitherlink .sl-dot[aria-pressed='true'] { outline: 3px dashed var(--wp-accent); outline-offset: 6px; }
+
+/* Controls */
+.wp-slitherlink .sl-controls { display: grid; gap: 0.6rem; justify-items: center; }
+.wp-slitherlink .sl-actions { justify-content: center; }
+.wp-slitherlink .sl-check-result {
+  padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-accent);
+  background: var(--wp-surface-2); border-radius: 6px;
+}
+.wp-slitherlink .sl-help { display: grid; gap: 0.25rem; font-size: 0.85rem; }

@@ -1,7 +1,7 @@
-/** The 16 UI locales, matching the Home Workout project. BCP-47 identifiers. */
-export const SUPPORTED_LOCALES = ['de', 'en', 'nl', 'es', 'fr', 'ru', 'zh-Hans', 'ko', 'ja', 'ar', 'pt', 'it', 'pl', 'tr', 'uk', 'hi'] as const;
+import { SUPPORTED_LOCALES, type SupportedLocale } from '@wp/game-core';
 
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+/** The 16 UI locales (BCP-47), defined in @wp/game-core so that `GameMetadata.locales` can name them. */
+export { SUPPORTED_LOCALES, type SupportedLocale };
 export type TextDirection = 'ltr' | 'rtl';
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
@@ -24,7 +24,7 @@ export const LOCALE_DEFINITIONS: readonly LocaleDefinition[] = [
   { code: 'ko', direction: 'ltr', nativeName: '한국어' },
   { code: 'ja', direction: 'ltr', nativeName: '日本語' },
   { code: 'ar', direction: 'rtl', nativeName: 'العربية' },
-  { code: 'pt', direction: 'ltr', nativeName: 'Português' },
+  { code: 'pt', direction: 'ltr', nativeName: 'Português (Brasil)' },
   { code: 'it', direction: 'ltr', nativeName: 'Italiano' },
   { code: 'pl', direction: 'ltr', nativeName: 'Polski' },
   { code: 'tr', direction: 'ltr', nativeName: 'Türkçe' },
@@ -41,6 +41,9 @@ export function isSupportedLocale(value: unknown): value is SupportedLocale {
 export function localeDirection(locale: SupportedLocale): TextDirection {
   return LOCALE_DEFINITIONS.find((d) => d.code === locale)?.direction ?? 'ltr';
 }
+
+/** Defined in @wp/game-core (games depend only on it); re-exported for the shell's language helpers. */
+export { bcp47Tag } from '@wp/game-core';
 
 /**
  * Maps an arbitrary BCP-47 tag to a supported UI locale, or `undefined` if there is

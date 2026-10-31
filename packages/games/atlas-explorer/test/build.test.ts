@@ -1,0 +1,362 @@
+import { describe, expect, it } from 'vitest';
+import fc from 'fast-check';
+import { decodeInts, encodeInts } from '../src/codec';
+import { EE_X_MAX, project } from '../src/geo';
+import { readCollection, str, num, type Path } from '../src/build/geojson';
+import { areNeighbours, boxWithin, dropSmallParts, featureReaches, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, LINE_NEAR_SHIFT, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, touchesLand, unhatchedLengthKm } from '../src/build/facts';
+import { compareViews, makeGrid, rasterize } from '../src/build/raster';
+import { simplify } from '../src/build/simplify';
+import { arcUsers, buildTopology, dissolve, quantizeRing, ringPoints } from '../src/build/topology';
+
+const sq = (x0: number, y0: number, x1: number, y1: number): Path => [
+  [x0, y0],
+  [x1, y0],
+  [x1, y1],
+  [x0, y1],
+  [x0, y0]
+];
+
+describe('encoding', () => {
+  it('round-trips integers below 2^51, including large jumps and negatives', () => {
+    fc.assert(
+      fc.property(fc.array(fc.oneof(fc.integer({ min: -100, max: 100 }), fc.integer(), fc.constant(2 ** 51 - 1), fc.constant(1 - 2 ** 51))), (xs) => {
+        expect(decodeInts(encodeInts(xs))).toEqual(xs);
+      })
+    );
+  });
+
+  it('writes only URL-safe characters, one per small value', () => {
+    const s = encodeInts([0, -1, 1, -16, 15, 1_000_000]);
+    expect(s).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(encodeInts([0, -1, 1, 15])).toHaveLength(4);
+    expect(() => decodeInts('ab"')).toThrow();
+    expect(() => decodeInts('g')).toThrow(/truncated/);
+    expect(() => encodeInts([0.5])).toThrow();
+    expect(() => encodeInts([2 ** 51])).toThrow();
+  });
+});
+
+describe('GeoJSON reading', () => {
+  it('reads polygons, multipolygons and lines and rejects junk', () => {
+    const fs = readCollection({
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', properties: { NAME: ' A ', N: 3 }, geometry: { type: 'Polygon', coordinates: [sq(0, 0, 1, 1)] } },
+        { type: 'Feature', properties: {}, geometry: { type: 'MultiPolygon', coordinates: [[sq(0, 0, 1, 1)], [sq(2, 2, 3, 3)]] } },
+        { type: 'Feature', properties: null, geometry: { type: 'MultiLineString', coordinates: [[[0, 0], [1, 1]]] } },
+        { type: 'Feature', properties: {}, geometry: null },
+        { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [5, 6] } }
+      ]
+    });
+    expect(fs.map((f) => [f.polygons.length, f.lines.length, f.points.length])).toEqual([[1, 0, 0], [2, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]);
+    expect(fs[4]!.points[0]).toEqual([5, 6]);
+    expect(str(fs[0]!.props, 'NAME')).toBe('A');
+    expect(num(fs[0]!.props, 'N')).toBe(3);
+    expect(num(fs[0]!.props, 'X')).toBeNaN();
+    expect(() => readCollection({ type: 'Feature' })).toThrow();
+    expect(() => readCollection({ type: 'FeatureCollection', features: [{ geometry: { type: 'GeometryCollection', coordinates: [] } }] })).toThrow();
+    expect(() => readCollection({ type: 'FeatureCollection', features: [{ geometry: { type: 'LineString', coordinates: [[0, 'x']] } }] })).toThrow();
+  });
+});
+
+describe('topology', () => {
+  it('quantises, closes and densifies rings the same way in both directions', () => {
+    const r = quantizeRing([[0, 0], [3, 0], [3, 1]], 50, 50)!;
+    expect(r.slice(0, 2)).toEqual([0, 0]);
+    expect(r.slice(-2)).toEqual([0, 0]);
+    // 3° edge split into 1° steps.
+    expect(r.slice(0, 8)).toEqual([0, 0, 50, 0, 100, 0, 150, 0]);
+    const back = quantizeRing([[3, 1], [3, 0], [0, 0]], 50, 40)!;
+    const fwd = quantizeRing([[0, 0], [3, 0], [3, 1]], 50, 40)!;
+    const pts = (a: number[]) => new Set(a.map((_, i) => (i % 2 ? '' : `${a[i]},${a[i + 1]}`)).filter(Boolean));
+    expect(pts(back)).toEqual(pts(fwd));
+    expect(quantizeRing([[0, 0], [0.001, 0], [0, 0.001]], 50, 50)).toBeNull();
+  });
+
+  it('turns two squares sharing an edge into one shared arc and two rings', () => {
+    const topo = buildTopology(
+      [
+        { owner: 0, rings: [sq(0, 0, 1, 1)] },
+        { owner: 1, rings: [sq(1, 0, 2, 1)] }
+      ],
+      50,
+      1000
+    );
+    expect(topo.rings).toHaveLength(2);
+    const users = arcUsers(topo);
+    const shared = users.filter((u) => u.length === 2);
+    expect(shared).toHaveLength(1);
+    // Used once in each direction.
+    expect(shared[0]!.map(([, rev]) => rev).sort()).toEqual([false, true]);
+    // Every ring closes and has its four corners.
+    for (const ring of topo.rings) {
+      const p = ringPoints(topo.arcs, ring.arcs);
+      expect(p.slice(0, 2)).toEqual(p.slice(-2));
+      expect(p.length / 2 - 1).toBe(4);
+    }
+  });
+
+  it('shares a border traced with different vertices on each side (noding)', () => {
+    // Both squares share x = 1, but the left one has an extra vertex on it and the right one another.
+    const left: Path = [[0, 0], [1, 0], [1, 0.3], [1, 1], [0, 1], [0, 0]];
+    const right: Path = [[1, 0], [2, 0], [2, 1], [1, 1], [1, 0.7], [1, 0]];
+    const topo = buildTopology([{ owner: 0, rings: [left] }, { owner: 1, rings: [right] }], 50, 1000);
+    const users = arcUsers(topo);
+    const shared = users.filter((u) => u.length === 2);
+    expect(shared).toHaveLength(1);
+    const arc = topo.arcs[users.indexOf(shared[0]!)]!;
+    // The shared arc holds both extra vertices.
+    expect(arc.length / 2).toBe(4);
+  });
+
+  it('finds junctions at large coordinates (point keys do not overflow)', () => {
+    // Two countries far from (0, 0) sharing one edge, as Kenya and Tanzania do.
+    const a: Path = [[36, -3], [37, -3], [37, -2], [36, -2], [36, -3]];
+    const b: Path = [[37, -3], [38, -3], [38, -2], [37, -2], [37, -3]];
+    const topo = buildTopology([{ owner: 0, rings: [a] }, { owner: 1, rings: [b] }], 50, 1000);
+    expect(arcUsers(topo).filter((u) => u.length === 2)).toHaveLength(1);
+  });
+
+  it('stores identical rings (e.g. an overlay equal to a country) once', () => {
+    const topo = buildTopology(
+      [
+        { owner: 0, rings: [sq(0, 0, 1, 1)] },
+        { owner: 1, rings: [[...sq(0, 0, 1, 1)].reverse()] }
+      ],
+      50,
+      1000
+    );
+    expect(topo.arcs).toHaveLength(1);
+    expect(topo.rings.map((r) => r.arcs.length)).toEqual([1, 1]);
+  });
+
+  it('dissolves the internal border of two units of one country', () => {
+    const topo = buildTopology(
+      [
+        { owner: 0, rings: [sq(0, 0, 1, 1)] },
+        { owner: 1, rings: [sq(1, 0, 2, 1)] },
+        { owner: 2, rings: [sq(2, 0, 3, 1)] }
+      ],
+      50,
+      1000
+    );
+    const merged = dissolve(topo, (o) => (o === 2 ? 1 : 0));
+    const g0 = merged.rings.filter((r) => r.owner === 0);
+    expect(g0).toHaveLength(1);
+    const pts = ringPoints(merged.arcs, g0[0]!.arcs);
+    // The outline of the 2 × 1 rectangle: the internal edge at x = 1 is gone.
+    const xs = new Set<number>();
+    for (let i = 0; i < pts.length; i += 2) xs.add(pts[i]!);
+    expect([...xs].sort((a, b) => a - b)).toEqual([0, 50, 100]);
+    expect(pts.slice(0, 2)).toEqual(pts.slice(-2));
+    expect(ringAreaKm2(Array.from({ length: pts.length / 2 }, (_, i) => [pts[2 * i]! / 50, pts[2 * i + 1]! / 50]))).toBeCloseTo(2 * ringAreaKm2(sq(0, 0, 1, 1)), 0);
+  });
+
+  it('keeps a group untouched when its owner is not grouped', () => {
+    const topo = buildTopology([{ owner: 5, rings: [sq(0, 0, 1, 1)] }], 50, 1000);
+    expect(dissolve(topo, () => null).rings).toEqual(topo.rings);
+  });
+});
+
+describe('simplification', () => {
+  const cell = (2 * EE_X_MAX) / 16384;
+  const opts = { threshold: 36, cell, unit: 50, maxSpan: 150 };
+
+  it('keeps the ends, never moves a point and keeps closed rings at four points', () => {
+    fc.assert(
+      fc.property(fc.array(fc.tuple(fc.integer({ min: -200, max: 200 }), fc.integer({ min: -200, max: 200 })), { minLength: 2, maxLength: 60 }), (raw) => {
+        const pts = raw.flat();
+        const out = simplify(pts, opts);
+        expect(out.slice(0, 2)).toEqual(pts.slice(0, 2));
+        expect(out.slice(-2)).toEqual(pts.slice(-2));
+        // Subsequence of the input points.
+        let j = 0;
+        for (let i = 0; i < pts.length && j < out.length; i += 2) if (pts[i] === out[j] && pts[i + 1] === out[j + 1]) j += 2;
+        expect(j).toBe(out.length);
+      })
+    );
+    const ring = [0, 0, 1, 0, 2, 0, 2, 1, 2, 2, 1, 2, 0, 2, 0, 1, 0, 0];
+    const s = simplify(ring, { ...opts, threshold: 1e12 });
+    expect(s.length / 2).toBe(4);
+    expect(s.slice(0, 2)).toEqual(s.slice(-2));
+  });
+
+  it('removes collinear points but never makes a segment longer than the limit', () => {
+    const line: number[] = [];
+    for (let x = 0; x <= 1000; x += 10) line.push(x, 0);
+    const s = simplify(line, opts);
+    for (let i = 2; i < s.length; i += 2) expect(s[i]! - s[i - 2]!).toBeLessThanOrEqual(150);
+    expect(s.length).toBeLessThan(line.length);
+  });
+
+  it('keeps a long thin spike when its tip would move too far', () => {
+    // A 1-unit wide spike 400 units (8°) long: a tiny triangle, but far from the base line.
+    const spike = [0, 0, 100, 0, 100, 400, 101, 400, 101, 0, 200, 0];
+    expect(simplify(spike, { ...opts, threshold: 1000, maxSpan: 1000 })).not.toContain(400);
+    expect(simplify(spike, { ...opts, threshold: 1000, maxSpan: 1000, maxDeviation: 5 })).toContain(400);
+  });
+
+  it('keeps a sharp detail above the threshold', () => {
+    const spike = [0, 0, 100, 0, 101, 300, 102, 0, 200, 0];
+    expect(simplify(spike, opts)).toContain(300);
+  });
+
+  it('leaves no hatched sliver wider than the deviation limit (hatched edges and fine rings)', () => {
+    // Every original point stays within `maxDeviation` cells of the simplified line, so the ground between the source
+    // edge and the drawn edge (a hatched sliver over a country, or disputed ground drawn as a country) is never wider.
+    const toCells = (x: number, y: number, unit: number) => {
+      const [px, py] = project(x / unit, y / unit);
+      return [px / cell, py / cell] as const;
+    };
+    const deviation = (pts: number[], out: number[], unit: number) => {
+      let worst = 0;
+      for (let i = 0; i < pts.length; i += 2) {
+        const [qx, qy] = toCells(pts[i]!, pts[i + 1]!, unit);
+        let best = Infinity;
+        for (let j = 2; j < out.length; j += 2) {
+          const [ax, ay] = toCells(out[j - 2]!, out[j - 1]!, unit);
+          const [bx, by] = toCells(out[j]!, out[j + 1]!, unit);
+          const dx = bx - ax;
+          const dy = by - ay;
+          const t = dx || dy ? Math.max(0, Math.min(1, ((qx - ax) * dx + (qy - ay) * dy) / (dx * dx + dy * dy))) : 0;
+          best = Math.min(best, Math.hypot(qx - ax - t * dx, qy - ay - t * dy));
+        }
+        worst = Math.max(worst, best);
+      }
+      return worst;
+    };
+    fc.assert(
+      fc.property(fc.array(fc.tuple(fc.integer({ min: -3, max: 3 }), fc.integer({ min: 1, max: 4 })), { minLength: 3, maxLength: 80 }), fc.constantFrom(1, 2), (steps, limit) => {
+        // A jagged edge: small sideways steps along a line, in 1/50°.
+        const pts: number[] = [0, 0];
+        for (const [dy, dx] of steps) pts.push(pts[pts.length - 2]! + dx, pts[pts.length - 1]! + dy);
+        const out = simplify(pts, { ...opts, threshold: 1e9, maxDeviation: limit });
+        expect(deviation(pts, out, 50)).toBeLessThanOrEqual(limit + 1e-9);
+      })
+    );
+    // Fine rings (1/1000°) are simplified by the deviation limit alone (threshold ∞): 0.05 cells, about 100 m.
+    const ring = [0, 0, 400, 0, 800, 1, 1200, 0, 1200, 900, 600, 900, 0, 900, 0, 0];
+    const fine = simplify(ring, { threshold: Infinity, cell, unit: 1000, maxSpan: 3000, maxDeviation: 0.05 });
+    expect(deviation(ring, fine, 1000)).toBeLessThanOrEqual(0.05);
+    expect(fine.length).toBeLessThan(ring.length);
+  });
+});
+
+describe('facts', () => {
+  it('measures spherical areas', () => {
+    // A 1° × 1° cell at the Equator: about 12,364 km².
+    expect(ringAreaKm2(sq(0, 0, 1, 1))).toBeGreaterThan(12_300);
+    expect(ringAreaKm2(sq(0, 0, 1, 1))).toBeLessThan(12_400);
+    expect(polygonAreaKm2([sq(0, 0, 2, 2), sq(0.5, 0.5, 1.5, 1.5)])).toBeCloseTo(ringAreaKm2(sq(0, 0, 2, 2)) - ringAreaKm2(sq(0.5, 0.5, 1.5, 1.5)), 3);
+    // Sampling agrees with the formula.
+    const inside = makeLocator([[sq(0, 0, 1, 1).flat()]]);
+    expect(sampledAreaKm2([0, 0, 1, 1], 0.05, (x, y) => inside(x, y) >= 0) / ringAreaKm2(sq(0, 0, 1, 1))).toBeCloseTo(1, 2);
+  });
+
+  it('drops small islands but keeps the largest part', () => {
+    const big = [sq(0, 0, 1, 1)];
+    const small = [sq(5, 5, 5.01, 5.01)];
+    expect(dropSmallParts([big, small], 100)).toEqual([big]);
+    expect(dropSmallParts([small], 100)).toEqual([small]);
+    expect(dropSmallParts([], 100)).toEqual([]);
+  });
+
+  it('keeps small parts with a land border (exclaves such as Ceuta and Melilla), not small islands', () => {
+    // Country A: a big part and two small ones; the first small part shares two border vertices with country B.
+    const big = [sq(0, 0, 1, 1)];
+    const exclave = [sq(3, 3, 3.02, 3.02)];
+    const island = [sq(5, 5, 5.01, 5.01)];
+    const neighbourB = [sq(3.02, 3, 3.1, 3.02)];
+    const vertices = new Set(neighbourB[0]!.map(([x, y]) => `${x},${y}`));
+    const shared = (x: number, y: number) => vertices.has(`${x},${y}`);
+    expect(touchesLand(exclave, shared)).toBe(true);
+    expect(touchesLand(island, shared)).toBe(false);
+    // One shared vertex is a corner touch, not a border.
+    expect(touchesLand([sq(3.1, 3.02, 3.2, 3.2)], shared)).toBe(false);
+    expect(dropSmallParts([big, exclave, island], 100, (p) => touchesLand(p, shared))).toEqual([big, exclave]);
+  });
+
+  it('finds the coarse rings a fine part replaces by their boxes', () => {
+    expect(boxWithin([1, 1, 2, 2], [1, 1, 2, 2])).toBe(true);
+    expect(boxWithin([0.98, 1, 2, 2], [1, 1, 2, 2])).toBe(false);
+    expect(boxWithin([0.98, 1, 2, 2.02], [1, 1, 2, 2], 0.03)).toBe(true);
+    expect(boxWithin([0, 0, 3, 3], [1, 1, 2, 2], 0.03)).toBe(false);
+  });
+
+  it('applies the neighbour rule: 5 km of border outside hatched areas, either side', () => {
+    const hatch = makeLocator([[sq(0, 0.5, 1, 1).flat()]]);
+    const inHatch = (x: number, y: number) => hatch(x, y) >= 0;
+    // A border along x = 1 from y = 0 to 1: the upper half has the hatch on its west side.
+    const border = [1, 0, 1, 0.25, 1, 0.5, 1, 0.75, 1, 1];
+    expect(unhatchedLengthKm(border, inHatch)).toBeCloseTo(lineLengthKm(border) / 2, 3);
+    expect(segmentHatched(1, 0.6, 1, 0.7, inHatch)).toBe(true);
+    expect(segmentHatched(1, 0.1, 1, 0.2, inHatch)).toBe(false);
+    // A hatch on the east side counts too.
+    const east = makeLocator([[sq(1, 0, 2, 1).flat()]]);
+    expect(segmentHatched(1, 0.1, 1, 0.2, (x, y) => east(x, y) >= 0)).toBe(true);
+    // A segment whose middle lies next to a hatched area counts too (e.g. a border's last segment at a coast).
+    expect(unhatchedLengthKm([1, 0, 1, 0.25], () => false, [1.5], () => true)).toBe(0);
+    expect(areNeighbours(5)).toBe(true);
+    expect(areNeighbours(4.99)).toBe(false);
+  });
+
+  it('measures lines inside a territory and the special lines crossed', () => {
+    const inside = makeLocator([[sq(0, 0, 1, 1).flat()]]);
+    const line: number[] = [];
+    for (let i = 0; i <= 30; i++) line.push(-1 + i / 10, 0.5);
+    // One degree of the line lies inside: about 111 km.
+    expect(lengthInsideKm([line], (x, y) => inside(x, y) >= 0)).toBeCloseTo(lineLengthKm(line) / 3, 0);
+    expect(lengthInsideKm([[5, 5, 6, 6]], (x, y) => inside(x, y) >= 0)).toBe(0);
+  });
+
+  it('counts a physical region as reaching into a country only with a meaningful share', () => {
+    // ≥ 10 % of the country or ≥ 5 % of the feature (values from the 10m data).
+    expect(featureReaches(11_914, 622_984, 9_100_000)).toBe(false); // the Sahara's edge in the Central African Republic
+    expect(featureReaches(54_726, 629_000, 9_100_000)).toBe(false); // … in South Sudan (8.7 % of it)
+    expect(featureReaches(209_811, 16_900_000, 209_000)).toBe(true); // the Urals: 1 % of Russia, all of the range
+    expect(featureReaches(364, 451, 39_000)).toBe(true); // the Pyrenees cover most of Andorra
+    expect(featureReaches(100, 1000, 1e6)).toBe(true);
+    expect(featureReaches(99.9, 1000, 1e6)).toBe(false);
+    expect(featureReaches(50, 1e6, 1000)).toBe(true);
+    expect(featureReaches(49.9, 1e6, 1000)).toBe(false);
+    expect(featureReaches(0, 0, 0)).toBe(false);
+  });
+
+  it('knows which lines cross a territory', () => {
+    expect(linesCrossed([[sq(-5, -5, 5, 30)]])).toBe(LINE_BITS.equator | LINE_BITS.cancer | LINE_BITS.meridian);
+    expect(linesCrossed([[sq(10, -30, 20, -20)]])).toBe(LINE_BITS.capricorn);
+    expect(linesCrossed([[sq(10, 60, 20, 70)]])).toBe(LINE_BITS.arctic);
+    expect(linesCrossed([[sq(10, 1, 20, 2)], [sq(10, -2, 20, -1)]])).toBe(0);
+    // Within 0.5° of a line a territory is only "near" it (simplification could flip it): Niger reaches 23.52° N and
+    // Chad 23.45° N (the Tropic of Cancer is 23.44°), Peru 0.03° S, Grímsey 66.57° N, Togo 0.17° W.
+    const near = (bits: number) => bits << LINE_NEAR_SHIFT;
+    expect(linesCrossed([[sq(2, 11.7, 16, 23.52)]])).toBe(near(LINE_BITS.cancer));
+    expect(linesCrossed([[sq(13, 7.5, 24, 23.45)]])).toBe(near(LINE_BITS.cancer));
+    expect(linesCrossed([[sq(10, 1, 20, 23.94)]])).toBe(near(LINE_BITS.cancer));
+    expect(linesCrossed([[sq(10, 1, 20, 23.95)]])).toBe(LINE_BITS.cancer);
+    expect(linesCrossed([[sq(10, 1, 20, 22.94)]])).toBe(0);
+    expect(linesCrossed([[sq(-81, -18, -69, -0.03)]])).toBe(near(LINE_BITS.equator));
+    expect(linesCrossed([[sq(-24, 63.4, -13.5, 66.4)], [sq(-18, 66.53, -17.9, 66.57)]])).toBe(near(LINE_BITS.arctic));
+    expect(linesCrossed([[sq(-0.17, 6, 1.8, 11)]])).toBe(near(LINE_BITS.meridian));
+    // One part clearly across wins over another only near.
+    expect(linesCrossed([[sq(10, 20, 20, 30)], [sq(30, 10, 31, 23.5)]])).toBe(LINE_BITS.cancer);
+    expect(interiorPoint([sq(0, 0, 2, 2)])).toEqual([1, 1]);
+  });
+});
+
+describe('worldview raster', () => {
+  it('paints polygons with holes and reports disagreements outside the mask', () => {
+    const g = makeGrid(1);
+    const a = rasterize(g, [[[sq(0, 0, 10, 10), sq(2, 2, 4, 4)]], [[sq(20, 0, 30, 10)]]]);
+    expect(a[(90 - 5) * g.w + 185]).toBe(1);
+    expect(a[(90 - 3) * g.w + 183]).toBe(0);
+    expect(a[(90 - 5) * g.w + 205]).toBe(2);
+    const b = rasterize(g, [[[sq(0, 0, 10, 10)]], [[sq(20, 0, 25, 10)]]]);
+    const mask = new Uint8Array(g.w * g.h);
+    const d = compareViews(g, a, ['AAA', 'BBB'], b, ['AAA', 'BBB'], mask);
+    expect(d.map((x) => `${x.from}>${x.to}:${x.cells}`).sort()).toEqual(['>AAA:4', 'BBB>:50']);
+    // Masking the hole hides its disagreement.
+    for (let j = 86; j < 88; j++) for (let i = 182; i < 184; i++) mask[j * g.w + i] = 1;
+    expect(compareViews(g, a, ['AAA', 'BBB'], b, ['AAA', 'BBB'], mask).map((x) => x.from + '>' + x.to)).toEqual(['BBB>']);
+  });
+});

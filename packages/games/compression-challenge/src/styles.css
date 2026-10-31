@@ -1,0 +1,91 @@
+/* Compression Challenge. All rules are scoped under .wp-compression-challenge and use logical properties (RTL-safe). */
+.wp-compression-challenge {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+.wp-compression-challenge .cc-board { display: grid; gap: 0.75rem; }
+.wp-compression-challenge p { margin: 0; }
+.wp-compression-challenge h2 { margin: 0; font-size: 1.15rem; }
+.wp-compression-challenge h3 { margin: 0; font-size: 1.02rem; }
+.wp-compression-challenge fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 0.5rem; }
+.wp-compression-challenge legend { padding: 0; margin-block-end: 0.5rem; font-weight: 600; }
+
+.wp-compression-challenge .cc-intro { display: grid; gap: 0.35rem; }
+
+/* Step progress chips: status shown by symbol and text, not colour alone. */
+.wp-compression-challenge .cc-steps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.wp-compression-challenge .cc-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.65rem;
+  border: 1px solid var(--wp-border); border-radius: 999px; background: var(--wp-surface); font-size: 0.92rem;
+}
+.wp-compression-challenge .cc-chip-current { border-color: var(--wp-accent); border-width: 2px; font-weight: 600; }
+.wp-compression-challenge .cc-chip-done { color: var(--wp-muted); }
+.wp-compression-challenge .cc-chip-mark { font-weight: 700; }
+
+.wp-compression-challenge .cc-step { display: grid; gap: 0.75rem; }
+.wp-compression-challenge .cc-step > h2:focus { outline-offset: 4px; }
+
+/* The source text, collapsible after step 1. */
+.wp-compression-challenge .cc-source { display: grid; gap: 0.5rem; }
+.wp-compression-challenge .cc-source summary {
+  cursor: pointer; min-height: var(--wp-touch); display: flex; align-items: center; font-weight: 600; color: var(--wp-accent);
+}
+.wp-compression-challenge .cc-source-text { line-height: 1.6; }
+.wp-compression-challenge .cc-legend { font-size: 0.9rem; margin-block-end: 0.35rem; }
+.wp-compression-challenge .cc-core-mark { font-weight: 700; }
+
+/* Choices: the whole card is the 44 px+ target. */
+.wp-compression-challenge .cc-option {
+  display: flex; align-items: flex-start; gap: 0.6rem; min-height: var(--wp-touch);
+  padding: 0.6rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius);
+  background: var(--wp-surface); cursor: pointer;
+}
+.wp-compression-challenge .cc-option input { width: 1.4rem; height: 1.4rem; min-height: 0; margin: 0.1rem 0 0; flex: none; accent-color: var(--wp-accent); }
+.wp-compression-challenge .cc-option-text { min-width: 0; overflow-wrap: anywhere; }
+.wp-compression-challenge .is-checked { border-color: var(--wp-accent); border-width: 2px; }
+.wp-compression-challenge .cc-option.is-revealed { display: grid; gap: 0.35rem; cursor: default; }
+.wp-compression-challenge .cc-option.is-best { border-inline-start: 6px solid var(--wp-ok); }
+.wp-compression-challenge .cc-badge { display: inline-block; margin-inline-start: 0.4rem; padding: 0 0.5rem; border-radius: 999px; background: var(--wp-surface-2); font-size: 0.9rem; }
+.wp-compression-challenge .cc-badge-yours { border: 1px solid var(--wp-accent); }
+.wp-compression-challenge .cc-count { font-size: 0.92rem; }
+
+.wp-compression-challenge .cc-panel {
+  display: grid; gap: 0.6rem; padding: 0.75rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-compression-challenge .cc-feedback { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.wp-compression-challenge .cc-verdict { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.5rem; border-radius: 8px; background: var(--wp-surface-2); }
+.wp-compression-challenge .cc-verdict > div { display: grid; gap: 0.2rem; min-width: 0; }
+.wp-compression-challenge .cc-symbol {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid currentColor; font-weight: 700;
+}
+.wp-compression-challenge .cc-verdict-hit .cc-symbol,
+.wp-compression-challenge .cc-verdict-skipped .cc-symbol { color: var(--wp-ok); }
+.wp-compression-challenge .cc-verdict-miss .cc-symbol,
+.wp-compression-challenge .cc-verdict-extra .cc-symbol { color: var(--wp-danger); }
+.wp-compression-challenge .cc-verdict-label { font-weight: 600; }
+.wp-compression-challenge .cc-reason { font-size: 0.92rem; }
+
+.wp-compression-challenge .cc-oneliner {
+  display: grid; gap: 0.35rem; padding: 0.6rem 0.75rem; border-inline-start: 4px solid var(--wp-accent);
+  background: var(--wp-surface-2); border-radius: 6px;
+}
+.wp-compression-challenge .cc-oneliner-text { font-size: 1.1rem; font-weight: 600; }
+
+.wp-compression-challenge .cc-compare { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.wp-compression-challenge .cc-compare label { display: block; font-weight: 600; margin-block-end: 0.35rem; }
+.wp-compression-challenge textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.wp-compression-challenge .cc-model,
+.wp-compression-challenge .cc-own { padding: 0.6rem 0.75rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-compression-challenge .cc-own { border-inline-start-style: dashed; }
+.wp-compression-challenge .cc-model-label { font-weight: 600; margin-block-end: 0.35rem; }
+.wp-compression-challenge .cc-checks { gap: 0.4rem; }
+
+.wp-compression-challenge .cc-notice { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-focus); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-compression-challenge .cc-actions { justify-content: flex-start; }
+
+.wp-compression-challenge .cc-summary { display: grid; gap: 0.75rem; }
+.wp-compression-challenge .cc-summary-list { display: grid; gap: 0.35rem; margin: 0; padding-inline-start: 1.6rem; }

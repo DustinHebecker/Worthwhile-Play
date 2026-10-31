@@ -10,17 +10,19 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | # | Milestone | Priority | Depends on | Status |
 |---|---|---|---|---|
 | M0 | **Foundation**: monorepo, CI, app shell, localization (16 locales, RTL), GameModule contract, persistence + autosave, seeded RNG, PWA/offline, shared contract tests, Cloudflare deploy, 3 reference games | P0 | – | ✅ |
-| M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
-| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out done; `puzzle-core` extraction pending |
-| M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
-| M4 | **Systems & hypothesis games** | P1 | M2 | ⏳ |
-| M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | ⏳ |
-| M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
-| M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | ⏳ |
-| M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ |
+| M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | 🚧 L1 done: local deck library (`/decks`, import CSV/JSON with preview and row-level errors, export JSON, delete), built-in decks *First words* (60 nouns × 16 languages), *Flags & countries* (CLDR via the browser) and *Capitals* (56 countries; capital names written for the project in all 16 languages, country names from CLDR; South Africa, Indonesia, Tunisia and Mongolia deliberately left out, see `packages/learning-content/src/builtin/capitals.ts`; Ukraine added with each language's current standard exonym, e.g. Kyiv, Kyjiw, Київ, Киев, キーウ) and the first term↔definition deck *AI basics* (40 terms with short, neutral definitions written for the project in all 16 languages; no definition contains its own term, all unique per language), Memory variants picture↔word, word↔translation, flag↔country, country↔capital, AI term↔definition (definition boards: at most 3 columns, taller cards), own decks, read aloud (speech synthesis, best effort). L2 done: optional spaced repetition — local learning records (Leitner boxes, whole days; IndexedDB v3 store `learning`), "Items worth reviewing" overview and per-deck counts in the library with an explanation of the schedule, the *Review* flash-card game (`/games/review?deck=<id>`; review / new cards / practice; front→back, back→front, mixed; optional typed answers; idempotent record writes), confirmed "Delete learning records" in Settings; no streaks, goals, reminders or notifications. Memory deliberately writes no learning records (play stays play; *Review* is the intentional learning step). *Capitals* and *AI basics* are also reviewable in *Review* (country ↔ capital, term ↔ definition). "Create with an AI" (ADR 0013): the import page offers a guide for AIs in the UI language (`/ai/deck-guide.<locale>.md`, generated from one source and tested against the importer) to give to an AI of the person's choice, and imports its answer from a direct link `/decks/import#deck=<base64url JSON>` (preview, confirmation, nothing sent to a server) or a JSON file; the app itself calls no AI service. Next: business vocabulary deck, maps/neighbours, audio packs; optional export of learning records |
+| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
+| M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | ✅ Four in a Row, Chess (own engine, no third-party code) |
+| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program, Circuit, Flow Lab, Rule Hunt, Fix the Machine done |
+| M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch, Stay on Task, Deep Read, Faces & Names done |
+| M6 | **Communication exercises** with deterministic evaluation (ADR 0010) | P2 | M0 | ✅ Ambiguity Detector, Audience Switch, Briefing Game, Compression Challenge |
+| M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | 🚧 |
+| M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | 🚧 design with owner decisions: [docs/design/adventures.md](design/adventures.md) (ADR 0014); next: engine core (E1) |
 | M9 | **Optional local AI** (WebLLM, explicit download, deterministic checks first) | P2 | M6 | ⏳ |
 
-Cross-cutting, continuous: accessibility review, native-speaker review of translations (currently AI-assisted), performance budget per game chunk, documentation/ADRs.
+Cross-cutting, continuous: accessibility review, native-speaker review of translations (currently AI-assisted; Portuguese is consistently Brazilian Portuguese, guarded by a test), performance budget per game chunk, documentation/ADRs.
+
+Platform capabilities for games (host, ADRs 0002/0011/0012): preferences (small per-device options), per-locale content preload, and a per-game library for things players create (IndexedDB, 50 items × 64 KiB, first user: Relay Command maps) with Settings controls: delete all or per game, export everything to one JSON file (local only) and import it again (untrusted, checked item by item; existing items kept unless "replace" is chosen). Follow-up: sharing a single item from inside a game.
 
 ## Backlog
 
@@ -29,53 +31,98 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Board | Tic-Tac-Toe | M0 | ✅ | reference game; human vs human / computer |
 | Logic | Mastermind → shown as **Code Breaker** | M0 | ✅ | reference game (id `mastermind`); renamed because "Mastermind" is a trademark; consistency-check helper |
 | Memory | Classic Memory | M0 | ✅ | reference game; first consumer of the deck model |
-| Memory | image↔word, word↔image, word↔definition, audio↔word, audio↔translation | M1 | ⏳ | deck variants, arbitrary language pairs |
-| Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | ⏳ | content packs |
-| Logic | Sokoban | M2 | ⏳ | property: player exists exactly once |
+| Memory | image↔word, word↔image, word↔definition, audio↔word, audio↔translation | M1 | 🚧 | picture↔word, word↔translation (any pair of the 16 languages from Settings → learning languages), flag↔country, country↔capital, AI term↔definition (*AI basics*) and own decks (front↔back, also word↔definition) done; read aloud via speech synthesis (best effort); audio↔word with bundled audio pending |
+| Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | 🚧 | done: deck library with CSV/JSON import/export (local only), *First words* (60 nouns, 16 languages), *Flags & countries* (60 countries, CLDR names from the browser), *Capitals* (56 countries × 16 languages), *AI basics* (40 AI terms with definitions × 16 languages), spaced repetition ("Items worth reviewing", *Review* game), "Create with an AI" (guide link, direct import links); pending: maps/neighbours, business vocabulary, larger vocabulary as downloadable packs |
+| Logic | Sokoban → shown as **Crate Pusher** | M2 | ✅ | 62 original levels in 4 difficulties, solver-verified optimal push counts |
 | Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
-| Logic | Bridges / Hashi | M2 | ⏳ | |
-| Logic | Slitherlink | M2 | ⏳ | |
-| Logic | Einstein / Constraint Grid | M2 | ⏳ | generator + independent solver |
+| Logic | Bridges / Hashi | M2 | ✅ | generated, solvable by logic (capacity, crossing, isolation); uniqueness via oracle |
+| Logic | Slitherlink ("Loop") | M2 | ✅ | unique solution checked by an independent exhaustive solver |
+| Logic | Einstein / Constraint Grid → shown as **Logic Grid** | M2 | ✅ | generated, minimal clue sets; uniqueness via brute-force oracle; clue templates in 16 locales |
 | Logic | Lights Out | M2 | ✅ | GF(2) solver, minimal-solution hints |
-| Logic | River Crossing | M2 | ⏳ | |
-| Logic | Rush-Hour-style sliding | M2 | ⏳ | |
-| Logic | Skyscrapers / Towers | M2 | ⏳ | |
-| Logic | Deterministic Minesweeper | M2 | ⏳ | no-guess generation |
+| Logic | River Crossing | M2 | ✅ | data-driven rule engine; 24 original-themed puzzles, optimum verified by independent BFS |
+| Logic | Skyscrapers | M2 | ✅ | generator + line solver; uniqueness verified by independent oracle |
+| Logic | Deterministic Minesweeper → shown as **Mine Logic** | M2 | ✅ | no-guess generation (solver + brute-force oracle); mistakes are undoable, never punished |
 | Board | Connect Four → shown as **Four in a Row** | M3 | ✅ | alpha-beta, 3 levels |
-| Board | Chess | M3 | ⏳ | full rules incl. repetition/50-move/insufficient material |
-| Logic | Minimal Proof | M4 | ⏳ | |
-| Hypothesis | Rule Discovery | M4 | ⏳ | value-of-information feedback |
-| Hypothesis | Black Box | M4 | ⏳ | |
-| Algorithms | Logic Path | M4 | ⏳ | |
-| Systems | Systems Puzzle | M4 | ⏳ | |
-| Systems | Debug the System | M4 | ⏳ | |
-| Systems | Graph Detective | M4 | ⏳ | |
-| Spatial | Circuit Puzzle | M4 | ⏳ | |
-| Spatial | Laser Circuit | M4 | ⏳ | shares beam logic with Laser tower |
-| Memory | Faces & Names | M5 | ⏳ | mnemonic, self-generated associations |
-| Memory | Spatial Memory, Sequence Memory | M5 | ⏳ | |
-| Memory | Prospective Memory | M5 | ⏳ | |
-| Memory | Association / Mnemonic exercises | M5 | ⏳ | |
-| Memory | N-back (optional) | M5 | ⏳ | |
-| Attention | Signal Watch | M5 | ⏳ | explicit session lengths |
-| Attention | Deep Read | M5 | ⏳ | |
-| Attention | Distractor Control | M5 | ⏳ | must not become irritating |
-| Attention | Visual / peripheral search | M5 | ⏳ | |
-| Communication | Audience Switch | M6 | ⏳ | |
-| Communication | Compression Challenge | M6 | ⏳ | |
-| Communication | Briefing Game | M6 | ⏳ | |
-| Communication | Ambiguity Detector | M6 | ⏳ | |
-| Strategy | Shared strategy/TD engine | M7 | ⏳ | deterministic simulation |
+| Board | Chess | M3 | ✅ | own engine (no third-party engine); full rules verified by perft; AI uses strategic evaluation and human-like candidate selection (not only depth + piece-square tables); optional move explanations; puzzle modes "Find the best move" and "Mate in N" (positions verified by own solver, original or CC0-licensed); menu above the board (computer/two players/best move/mate in N, random colour); variation board in all modes; best-move puzzles with lines of 1–3 moves |
+| Logic | Minimal Proof → shown as **Proof Chain** | M4 | ✅ | generated rule systems (→, ∧, ∨, simple negation); shortest proof verified by oracle |
+| Hypothesis | Rule Discovery → shown as **Rule Hunt** | M4 | ✅ | 2-4-6-style task; confirmation-bias feedback and information value of each test after solving |
+| Hypothesis | Black Box | M4 | ✅ | 15 rule families; challenge inputs rule out all consistent alternatives of the family |
+| Algorithms | Logic Path → shown as **Robot Program** | M4 | ✅ | small command language (repeat, conditional); 24 original levels, limits proven by exhaustive program search |
+| Algorithms | Mini Optimizer → shown as **Best Plan** | M4 | ✅ | `mini-optimizer`: three planning problems (road network with optional Steiner junctions, capacitated delivery trips, workshop production mix); generated instances, exact optimum (junction subsets × Kruskal, Held–Karp + partition DP, full enumeration) checked against independent brute-force oracles; gap shown after a check, a best plan only on request (design `docs/design/mini-optimizer.md`) |
+| Planning | **Pixel Peel** (de: *Pixel für Pixel*) | — | ✅ prototype | `pixel-peel`: peel an original pixel picture colour by colour with shooters that run around its edge; few waiting places, so the order matters; 12 self-drawn motifs (seasons, landscapes, animals) as data; every position proven solvable (stored witness, DFS solver checked against a BFS oracle), proven hint with a safe undo target, unlimited undo (design `docs/design/pixel-peel.md`) |
+| Systems | Systems Puzzle → shown as **Flow Lab** | M4 | ✅ | integer tank/valve simulation with float switches and delays; 24 original puzzles proven solvable by brute force |
+| Systems | Debug the System → shown as **Fix the Machine** | M4 | ✅ | generated register machines with one injected bug; unique single-rule fix verified by brute force |
+| Systems | Graph Detective → shown as **Network Detective** | M4 | ✅ | 5 task types (bridge, augment, shortest route, single point of failure, min cut); algorithms checked against brute-force oracle |
+| Systems | Fermi estimation → shown as **Estimation Lab** (de: **Schätzlabor**) | M4 | ✅ | `fermi-lab`: 46 researched estimation tasks in 5 topics (international framing, sources per factor); first guess, optional model as a product of factors with a unit algebra (guided or free), scoring by powers of ten, comparison with the reference model and a sensitivity (tornado) chart; locale-aware number entry (all digit systems, scientific forms); per-locale content (ADR 0011) (design `docs/design/fermi-lab.md`) |
+| Reasoning | Probability Detective (de: **Wahrscheinlichkeits-Detektiv**) | M4 | ✅ | `probability-detective`: cases with base rates and clues; update a belief step by step; modes clue by clue, choose the checks (value of information, exact best plan), thinking traps (12 classic fallacies in own wording) and mixed; exact BigInt maths, truth drawn from the exact posterior; counting board, evidence chain, expandable formulas; device-only calibration notebook (design `docs/design/probability-detective.md`) |
+| Spatial | **Atlas Explorer** (de: **Atlas-Entdecker**) | M4 | ✅ | `atlas-explorer` (skills: spatial reasoning, learning, deduction): a calm world atlas with questions on an equal-area map built from **Natural Earth** 5.1.2 (public domain; pinned, hash-checked data script, ≤ 150 KB); modes find on the map (distance and direction feedback), compare places (north/south, distance, size, people, daylight, sun time, time zones; answers with margins), mystery country (clues one at a time, checked by an independent filter; fuzzy features and lines need clear margins) and overland routes (fewest land borders, all shortest routes accepted); disputed areas follow "mark, don't decide": they are hatched, belong to no country and are never asked about, checked against 32 Natural Earth worldviews; only UN members are asked (design `docs/design/atlas-explorer.md`) |
+| Learning | **Sense of Time** (de: **Zeitgefühl**) | M4 | ✅ | `timeline` (skills: learning, deduction): 178 sourced events from the formation of the Earth to the first image of a black hole on one zoomable timeline (squeezed log view and even view, always past-left, also in RTL); modes when was it (place on the axis or type the year; scale-aware scoring by age ratio, a date inside the accepted range always counts), put in order, which came first (with a gap question when fair), same time (window ±τ shown) and mixed; every compared pair separated relative to the span's width (checked by an independent oracle); dates with ranges, notes and sources; BCE/CE (de v. u. Z. / u. Z.), no year 0; no living people, war and politics ≤ 10 % of events; per-locale content (ADR 0011) (design `docs/design/timeline.md`, content `docs/design/timeline-content.md`) |
+| Systems | **Pond & Meadow** (de: **Teich & Wiese**) | M4 | ✅ | `ecosystem` (skills: systems, hypothesis): a small pond and a small meadow as an exact integer stock-and-flow model (16 species; nutrient-limited growth, Holling II feeding, predator–prey coupling with maturation delays, nutrient recycling through dead matter, light shading, nitrogen fixation; flux limiter keeps stocks non-negative with exact nutrient and water balance); modes predict (16 challenges: a change happens, predict direction, shape or sketch the curve, then see the run and the causal loop diagram that explains it), goals (4 goals with unlimited rewind and "Does it hold?") and explore (sandbox with "without my last change" and a food web); every answer and goal plan checked against the model by slow tests (design `docs/design/ecosystem.md`) |
+| Learning | **Tones & Chords** (de: **Töne & Akkorde**) | M4 | ✅ | `harmony` (skills: attention, learning; **sound optional**): listening to music in the 12-tone equal-tempered Western system — intervals, chords & scales, stable or tense (fixed consonance classes only, disputed comparisons never asked; cadences), melody contour and "which note changed?", rhythm patterns on an eighth-note grid, build-it tasks on a playable piano and a free keyboard that names what you hold (ratio, cents, wave picture, pure-ratio toggle); every question also by eye (staff, keyboard, ratio and wave pictures, rhythm notation, all drawn by code — no music font); sound synthesised with Web Audio only after a gesture, never when muted, level capped arithmetically at −6 dBFS (default ≈ −18 dBFS) plus a limiter; respects the iPhone silent switch; note names per locale (German H/B in de and pl, fixed do in Romance/Slavic/Turkish/Arabic locales; switchable) (design `docs/design/harmony.md`) |
+| Learning | **Weight & Balance** (de: **Gewicht & Gleichgewicht**) | M4 | ✅ | `balance-lab` (skills: spatial, hypothesis): three benches decided by one exact rule — a lever on an axle with weights on hooks, mobiles (bars hanging from bars) and blocks stacked over a table edge; predict tasks ("which way will it go?", with trap items that defeat the naive "more kilograms goes down" rule and exact balances) and build tasks (hang a weight, hang all weights, move the axle, hang a mobile, reach past the edge — the best overhang of 2–4 blocks —, counterweight a plank); exact integer statics, the reason drawn (turning-effect bars, centres of mass) and written; a short tipping pose computed from the verdict (instant with reduced motion); a free bench (design `docs/design/balance-lab.md`) |
+| Spatial | Circuit Puzzle → shown as **Circuit** | M4 | ✅ | rotate tiles into one spanning-tree circuit; any valid solution accepted (checked against oracle) |
+| Spatial | Stack Duel — stacking duel (Tower-Battle-style): players alternately rotate and drop irregular original shapes onto a shared tower; whoever makes it collapse loses (also solo: reach a height with N pieces) | M4 | ✅ | original name/shapes (the commercial "Animal Tower Battle" is only a design reference); needs a deterministic 2D physics step (own engine or license-reviewed MIT engine such as planck.js); save only settled states between turns |
+| Spatial | Laser Circuit → shown as **Laser Paths** | M4 | ✅ | 24 original levels, each with exactly one solution (oracle-verified); generic `traceBeams` for later reuse |
+| Memory | Faces & Names | M5 | ✅ | `faces-names`: procedurally drawn synthetic faces (no photos or datasets; every feature ≥ 3:1 contrast on all skin tones; spoken descriptions for screen readers); study with optional "what stands out" and own association (never graded); test face→name, name→face, face→job; 4/6/8 people |
+| Memory | Sequence Memory | M5 | ✅ | user-paced (Auto/Step), adaptive span, 12-round session |
+| Memory | Spatial Memory → shown as **Pattern Memory** | M5 | ✅ | adaptive pattern size, standard and rotated variants |
+| Memory | Prospective Memory → shown as **Keep in Mind** | M5 | ✅ | self-paced shape sorting with event-based intentions (★ / subtle dot) and an item-count check-in on hard; no clocks; neutral summary with everyday strategies |
+| Memory | Association / Mnemonic → shown as **Vivid Links** | M5 | ✅ | link picture pairs in a vivid imagined scene (optional own notes, kept on the device), untimed counting break on medium/hard, recall by choice; neutral summary explaining imagery/elaboration |
+| Memory | N-back | M5 | ✅ | N = 1–3; position, shape or dual stream; self-paced by default (calm 3 s pace opt-in); seeded blocks with controlled match rate and look-alikes; neutral summary with d′ |
+| Attention | Signal Watch | M5 | ✅ | 2/4/6-minute sessions, seeded stream, calm factual summary; pauses safely |
+| Attention | Deep Read | M5 | ✅ | `deep-read`: 6 original texts (2 per level), questions on main idea, details, structure, contradiction and evidence with explanations and the supporting paragraph; looking back is allowed and only noted; optional one-sentence summary, self-checked (ADR 0010); more texts welcome |
+| Attention | Distractor Control → shown as **Stay on Task** | M5 | ✅ | self-paced sorting task with mild, explained distractors; no timers, neutral summary |
+| Attention | Visual search | M5 | ✅ | feature → conjunction → similar-distractor search; shape/fill/orientation (never colour-only); self-paced, target-absent boards; neutral summary with median time per set size |
+| Language | Letter Logic — word-guessing game (Wordle-style): guess a hidden word in a few tries with per-letter feedback; unlimited free play, no daily-puzzle streak | M6 | ✅ | original name and design ("Wordle" is a trademark); word lists per content language need a license review (prefer CC0/public-domain or self-built lists); feedback by symbol + colour; content language independent of UI language |
+| Communication | Audience Switch | M6 | ✅ | `audience-switch`: 6 original scenarios × 3 audiences; tick the facts an audience needs (needed / optional / leave out), choose the opening, pick the fitting message; own version self-checked, never graded (ADR 0010); more scenarios welcome |
+| Communication | Compression Challenge | M6 | ✅ | `compression-challenge`: 6 original pieces; tick the core sentences, pick the best 3 bullets and the faithful one-sentence summary, then expand a one-liner (needed details, best version); own sentence with word count, self-checked (ADR 0010) |
+| Communication | Briefing Game | M6 | ✅ | `briefing-game`: 8 original situations; sort statement cards into context, facts, uncertainty, risks, decision, next action or leave out (gold sections with reasons), then choose the decision and the next action; own notes self-checked (ADR 0010) |
+| Communication | Ambiguity Detector | M6 | ✅ | `ambiguity-detector`: 24 original messages (8 per level), tick the missing dimensions (set comparison with gold answers), pick the reply you would send; optional own question, never graded (ADR 0010); per-dimension summary |
+| Strategy | Orbit Links — node conquest (space theme, inspired by "tower battle"-type games): own/enemy/neutral nodes connected by lanes; nodes level 1–30 with 1/2/3 active outgoing paths; units stream along paths (level up own nodes, convert neutral/enemy nodes, head-on fights mid-lane); several opponents without alliances; node types (standard, shipyard for heavy units, defence station with level-based range); real-time but pausable at any moment, deterministic tick simulation | M7 | ✅ | original theme (space or abstract rings/dots); separate from the stacking duel; v2: difficulty = opponent intelligence (beginner/advanced/strong/master, same rules, bot-tournament calibrated), 1–3 opponents as a separate setting, bastion nodes (half damage), confirm before switching map, pinch-zoom/pan, post-game review, introduction map |
+| Strategy | Shared strategy/TD engine | M7 | 🚧 | `packages/strategy-engine`: core simulation done (I1); design `docs/design/strategy.md`, API ADR 0009 |
 | Strategy | Tower Defense (Gun, Artillery, Laser, Support, Specialist + branches) | M7 | ⏳ | |
-| Strategy | Original turn-based strategy (plan→lock→resolve, command network, EW) | M7 | ⏳ | not a C&C clone |
+| Strategy | Original turn-based strategy (plan→lock→resolve, command network, EW) | M7 | 🚧 | **Relay Command** (`relay-command`): playable (I2); command network with relays and order slots (I3a); doctrines and standing orders (I3b); information model with fog and ghosts (I3c); electronic warfare: jammer, tracer, burn-through (I4); opponent levels easy/normal/hard with one-turn lookahead (I5); legend, unit stat cards, open end, second map Ridge Valley, return on lost contact (UX round); economy with Supply, deposits, Extractors, yards and production, spending and siege opponent (I6a); research, map generator and balancing (I6b–d) next; not a C&C clone |
 | Strategy | Hybrid: External Small / External Large / VS Small / VS Large | M7 | ⏳ | |
 | Adventure | Adventure engine (scenes, hotspots, inventory, dialogue, flags) | M8 | ⏳ | |
 | Adventure | Adventure A — original dark-fantasy exploration | M8 | ⏳ | design reference only |
 | Adventure | Adventure B — original temporal sci-fi (pause/slow/fast-forward/rewind/travel) | M8 | ⏳ | design reference only |
 | AI | Local AI pack (WebLLM), AI interface, golden eval set | M9 | ⏳ | never required |
 
+### Owner feedback on the small games (2026-10-14)
+
+Catalogue order (done): the large games first (Relay Command; then strategy/tower hybrid, Tower Defense and the adventures as they ship), then Nonogram, Orbit Links, Chess, Mine Logic, Letter Logic, Stack Duel, Skyscrapers, Lights Out, Crate Pusher, Laser Paths, Circuit, Memory, then the rest (`apps/web/test/catalogue.test.ts`).
+
+| Game | Feedback | Status |
+|---|---|---|
+| Black Box | allow stating the rule as a formula instead of only predicting example outputs | ✅ prove by formula (checked on the whole domain; own parser, no eval) or by predictions; 12 of 15 families (list rules: predictions only) |
+| Nonogram | a harder level, e.g. 15×15 | ✅ Expert 15×15: line-solvable, unique, at least 7 solver rounds (hard: ~3); "larger cells" option on phones |
+| Crate Pusher | more levels | ✅ 62 original levels (was 24) incl. a new Expert set (4–6 crates, 36–61 pushes); every push count proven optimal by an independent A* solver |
+| Laser Paths | far too easy even on hard: more optical elements, many more pieces to place | ✅ one-way gates and portal pairs; 4 new hard levels (5–6 pieces) and an Expert set (8 levels, 7×9, 7–8 pieces), each unique by an exact solver |
+| Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | ✅ Flags, Capitals and AI basics always in the UI language (Review, Memory, deck pages); only First words uses the learning language |
+| Four in a Row | far too hard even on easy | ✅ easy overlooks some threats and plays casual moves; each level beats the one below by a measured margin |
+| Orbit Links | already good, but frequent stalemates | ✅ AI concentrates on one target after a quiet spell; platforms fire every 9 ticks (was 6); calm standoff note. Stalls vs AI 18% → 2% (human-like script). Map 4 may stay (owner, 2026-10-15) |
+| Orbit Links | owner: build more maps; lanes may cross | ✅ 6 new maps (13 per set: Bridges, Ring road, Gates, Pinwheel, Lattice, Spine), hostile streams fight where lanes cross, own streams fly past (owner: no bridges in space); old maps pinned. Open (pre-existing): node tap circles are 42.5 px at 360 px (< 44 px) |
+| Laser Paths | owner: a forbidden sensor lit at the start of a level is fine (fixed in play) | ✅ |
+| Laser Paths | owner: hard was too easy; drop easy and move everything up; call it an optical diode; let players place other optics | ✅ difficulties shifted (old easy kept for saves as `intro`), optical diode, new Expert: polarisers (Malus, 45° steps), ND filters, colour filters, chromatic blockers; targets may require intensity/polarisation |
+| Catalogue | preview graphics on the overview page | ✅ hand-drawn inline SVG per game (decorative, light/dark/forced colours, RTL-aware), ~6 KB gzip; a test requires one for every new game |
+| Speech | `pt` → `pt-BR` for `lang` and voice choice | ✅ `bcp47Tag` in game-core used by the app and all games; voices pt-BR first (pt-PT last resort), zh-Hans prefers zh-CN |
+| Visual search | too easy | ✅ Expert level: T among rotated L shapes (spatial-configuration search, 12/30 items, half without target); further option: mirrored L's |
+| Circuit | **backlog:** a variant with electronic components (capacitors, inductors, …) where e.g. oscillators with the right frequency and other circuits must be built | ⏳ |
+| Four in a Row | variants (owner chose 2 of the researched options) | ✅ boards 7×6/8×7/9×7, goal four or five, optional pull-out rule; 3D (gravity 4×4×4) stays backlog |
+| Tic-Tac-Toe | variants (owner chose 2 of the researched options) | ✅ Board in board (nine small boards), Order & Chaos (6×6); 4×4×4 stays backlog |
+| Card games | Poker and Skat (owner request) | ✅ shared `@wp/cards` (ADR 0016); Poker (Texas Hold'em, chips only at one table), Skat (ISkO; to confirm: lost Hand games count double, Null overbid reading) |
+| Catalogue (all games) | ✅ (see below) small preview images or representative graphics on the overview page so people can picture each game (own SVG drawn in code, no third-party art; light/dark, RTL-neutral, decorative `aria-hidden` with the title as text) | ⏳ |
+
+Decisions on the large games (strategy, Tower Defense, adventures) are made by the owner in their own contexts, not via the orchestrator.
+
+### Owner notes for the next orchestrator session (2026-10-15, pause)
+
+1. ✅ **Skat – lost Hand games:** checked against the ISkO text (5.3.4 and Skatgericht 5.3.4 Fall 1): all lost games, Hand included, count double — already implemented.
+2. ✅ **Skat – overbid Null games:** ISkO 3.4.4 makes a Null below the bid an invalid declaration; it can no longer be declared (old saves: lost as the cheapest suit/Grand at the bid).
+3. ✅ **Start flow (all games):** one host start screen (ADR 0017): Continue → settings incl. difficulty → Start; during play only "New game"; after a natural end "Another round" / "Change settings". All small games migrated (game-changing options moved out of the games, intros skip on Start, old saves keep their settings via `settingsOf`, old in-game preferences become start-screen defaults). Lootlings moved its setup into the start screen (#51; coach tips are an in-game switch); Relay Command keeps its own setup and chooses the difficulty there (owner decision, ADR 0017 amendment, #49).
+
 ## Next steps (suggested agent assignments)
 
 1. **M2 kickoff (orchestrator)**: design `packages/puzzle-core` (grid model, generator/solver interfaces, difficulty metrics) via ADR; then one feature agent per puzzle in parallel.
-2. **M1 (learning agent)**: deck registry + import UI, Memory variants, spaced repetition (no streaks).
+2. **M1 (learning agent)**: L1 (deck library, import, Memory variants) and L2 ("Items worth reviewing", *Review* game) done; *Capitals* and *AI basics* decks done; next: more decks (business vocabulary, maps/neighbours), audio packs, optional export of learning records, Memory → "seen" records (skipped in L2).
 3. **M3 (board-games agent)**: Connect Four first (alpha-beta, reuses Tic-Tac-Toe patterns), then chess in its own context.

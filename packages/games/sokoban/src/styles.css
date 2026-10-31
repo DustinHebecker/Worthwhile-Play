@@ -1,0 +1,149 @@
+/* Crate Pusher — all rules scoped under .wp-sokoban. Uses shared --wp-* tokens. */
+.wp-sokoban {
+  --sk-floor: var(--wp-surface);
+  --sk-wall: #6b6558;
+  --sk-wall-line: #59544a;
+  --sk-crate: #c98b3a;
+  --sk-crate-edge: #6e4512;
+  --sk-done: #4f8f5b;
+  --sk-done-edge: #1f4a29;
+  --sk-goal: var(--wp-accent);
+  --sk-check: #ffffff;
+  --sk-player: var(--wp-p1);
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-sokoban {
+    --sk-wall: #4a4740;
+    --sk-wall-line: #3b3933;
+    --sk-crate: #d39a4c;
+    --sk-crate-edge: #3d2507;
+    --sk-done: #6fb47c;
+    --sk-done-edge: #143019;
+    --sk-check: #0d1f10;
+  }
+}
+.wp-sokoban p { margin: 0; }
+.wp-sokoban [hidden] { display: none; }
+
+.wp-sokoban .sk-level { font-weight: 600; }
+.wp-sokoban .sk-chooser { justify-content: center; }
+.wp-sokoban .sk-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.wp-sokoban .sk-status { text-align: center; }
+.wp-sokoban .sk-status[data-state='stuck'] { border-inline-start: 4px solid var(--wp-focus); padding-inline-start: 0.5rem; font-weight: 500; }
+
+/* Board: at most 7 columns of at least 44 px = 308 px, which fits a 360 px phone. */
+.wp-sokoban .sk-board {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(var(--sk-cols, 7), minmax(var(--wp-touch, 44px), 1fr));
+  width: min(100%, calc(var(--sk-cols, 7) * 3.5rem));
+  border-radius: var(--wp-radius, 10px);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.wp-sokoban .sk-board:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 4px; }
+.wp-sokoban .sk-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  min-width: var(--wp-touch, 44px);
+  min-height: var(--wp-touch, 44px);
+  background: var(--sk-floor);
+  box-shadow: inset 0 0 0 0.5px var(--wp-border);
+  cursor: pointer;
+}
+.wp-sokoban .sk-tile[data-kind='outside'] { background: transparent; box-shadow: none; cursor: default; }
+.wp-sokoban .sk-tile[data-kind='wall'] {
+  cursor: default;
+  background:
+    linear-gradient(var(--sk-wall-line), var(--sk-wall-line)) 0 50% / 100% 2px no-repeat,
+    linear-gradient(var(--sk-wall-line), var(--sk-wall-line)) 50% 0 / 2px 50% no-repeat,
+    var(--sk-wall);
+  box-shadow: none;
+}
+.wp-sokoban[data-solved='true'] .sk-tile { cursor: default; }
+
+.wp-sokoban .sk-glyph { width: 86%; height: 86%; overflow: visible; }
+.wp-sokoban .sk-goal-ring { fill: none; stroke: var(--sk-goal); stroke-width: 2.2; stroke-dasharray: 3.2 2.2; }
+.wp-sokoban .sk-crate { fill: var(--sk-crate); stroke: var(--sk-crate-edge); stroke-width: 1.6; }
+.wp-sokoban .sk-crate-lines { fill: none; stroke: var(--sk-crate-edge); stroke-width: 1.6; stroke-linecap: round; }
+.wp-sokoban [data-kind='box-on-goal'] .sk-crate { fill: var(--sk-done); stroke: var(--sk-done-edge); }
+.wp-sokoban .sk-check { fill: none; stroke: var(--sk-check); stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.wp-sokoban .sk-player { fill: var(--sk-player); }
+
+/* Stuck crate: a "!" badge and a dashed outline, never colour alone. */
+.wp-sokoban .sk-tile[data-stuck='true']::after {
+  content: '!';
+  position: absolute;
+  inset-block-start: 1px;
+  inset-inline-end: 1px;
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--wp-focus);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+.wp-sokoban .sk-tile[data-stuck='true'] .sk-crate { stroke-dasharray: 3 2; }
+
+.wp-sokoban .sk-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+}
+.wp-sokoban .sk-dpad {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(3, 3rem);
+  grid-template-rows: repeat(3, 3rem);
+  grid-template-areas: '. up .' 'left . right' '. down .';
+  gap: 0.25rem;
+}
+.wp-sokoban .sk-dpad button { padding: 0; min-width: 0; width: 100%; height: 100%; font-size: 1.1rem; }
+.wp-sokoban .sk-dpad .sk-dpad-up { grid-area: up; }
+.wp-sokoban .sk-dpad .sk-dpad-left { grid-area: left; }
+.wp-sokoban .sk-dpad .sk-dpad-right { grid-area: right; }
+.wp-sokoban .sk-dpad .sk-dpad-down { grid-area: down; }
+.wp-sokoban .sk-actions { display: grid; gap: 0.5rem; }
+
+.wp-sokoban .sk-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 1.25rem; font-size: 0.9rem; }
+.wp-sokoban .sk-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+.wp-sokoban .sk-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 4px;
+  background: var(--sk-floor);
+  border: 1px solid var(--wp-border);
+}
+.wp-sokoban .sk-help { display: grid; gap: 0.25rem; font-size: 0.85rem; text-align: center; }
+
+@media (forced-colors: active) {
+  .wp-sokoban .sk-tile[data-kind='wall'] { background: CanvasText; }
+  .wp-sokoban .sk-crate, .wp-sokoban [data-kind='box-on-goal'] .sk-crate { fill: Canvas; stroke: CanvasText; }
+  .wp-sokoban .sk-crate-lines, .wp-sokoban .sk-check, .wp-sokoban .sk-goal-ring { stroke: CanvasText; }
+  .wp-sokoban .sk-player { fill: Highlight; }
+}

@@ -1,0 +1,513 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTestContext, type TestContext } from '@wp/testing';
+import type { GameInstance, GameModule } from '@wp/game-core';
+import game from '../src/index';
+import { createSave, interpretSave } from '@wp/persistence';
+import { BOARD, createGame, INTRO_MAP, mapOf, MAPS_PER_SET, MAX_LEVEL, type NcState } from '../src/rules';
+import { crossings, FACTION_COUNTS, getMap, LAYOUTS, LEGACY_MAPS, type GameMap } from '../src/maps';
+import { nodeConquestSettings } from '../src/settings';
+import { battlements, crossingMark, MAX_ZOOM, PICK_R, pickNode, shapePath } from '../src/view';
+
+let ctx: TestContext;
+let instance: GameInstance<NcState>;
+
+const $ = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
+const click = (id: string) => $(id).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+const key = (target: EventTarget, k: string) => target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+
+function setup(seed = 1, difficulty = 'beginner', locale: 'en' | 'ar' = 'en', settings?: Record<string, string | number>) {
+  ctx = createTestContext(game as GameModule<unknown>, locale);
+  instance = game.create(ctx.context);
+  instance.newGame({ seed, difficulty, ...(settings ? { settings } : {}) });
+}
+
+const start = () => instance.serialize().owner.indexOf(0);
+const neighbours = (v: number) => mapOf(instance.serialize()).adjacent[v]!;
+
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => {
+  instance?.dispose();
+  vi.useRealTimers();
+});
+
+describe('Orbit Links view', () => {
+  it('renders nodes and lanes with test hooks and starts paused', () => {
+    setup(1);
+    const s = instance.serialize();
+    const map = mapOf(s);
+    expect(ctx.context.root.querySelectorAll('[data-testid^="node-"]')).toHaveLength(map.nodes.length);
+    expect(ctx.context.root.querySelectorAll('[data-testid^="lane-"]')).toHaveLength(map.lanes.length);
+    const v = start();
+    expect($(`node-${v}`).dataset).toMatchObject({ owner: '0', level: '10', type: 'standard' });
+    expect($(`node-${v}`).getAttribute('aria-label')).toContain('You');
+    expect($('nc-pause').textContent).toBe('Start');
+    expect($('nc-status').textContent).toContain('Ready');
+    expect($('nc-speed').textContent).toBe('Speed 1×');
+    // Map and opponents are chosen on the host's start screen (ADR 0017).
+    expect(ctx.context.root.querySelector('select')).toBeNull();
+    expect($('nc-list').children).toHaveLength(map.nodes.length);
+    expect(ctx.missingKeys).toEqual([]);
+  });
+
+  it('draws crossing lanes simply crossing, with a neutral ring-and-cross marker at each crossing point (no bridges)', () => {
+    for (const [seed, locale] of [[7, 'en'], [11, 'ar']] as const) {
+      setup(seed, 'beginner', locale);
+      const map = mapOf(instance.serialize());
+      expect(map.index).toBe(seed);
+      const cross = crossings(map);
+      expect(cross.length).toBeGreaterThan(0);
+      const groups = [...ctx.context.root.querySelectorAll<SVGGElement>('.nc-lanes > .nc-lane')];
+      // Lanes in map order, each just a line plus its two streams: no gaps, no rails, no layering.
+      expect(groups.map((g) => g.dataset.testid)).toEqual(map.lanes.map(([a, b]) => `lane-${a}-${b}`));
+      for (const g of groups) expect([...g.children].map((c) => c.getAttribute('class'))).toEqual(['nc-lane-line', 'nc-flow nc-fwd', 'nc-flow nc-bwd']);
+      expect(ctx.context.root.querySelectorAll('[class*="bridge"], [data-testid^="bridge-"], [data-testid^="gap-"]')).toHaveLength(0);
+      const marks = ctx.context.root.querySelectorAll('.nc-crossings > .nc-crossing');
+      expect(marks).toHaveLength(cross.length);
+      for (const [i, j, x, y] of cross) {
+        const [a, b] = map.lanes[i]!;
+        const [c, e] = map.lanes[j]!;
+        const mark = $(`crossing-${a}-${b}-${c}-${e}`);
+        expect(mark.getAttribute('d')).toBe(crossingMark(x, y));
+      }
+      // Markers lie above the lanes and below units and nodes; they are decoration (explained in the help).
+      const layer = ctx.context.root.querySelector('.nc-crossings')!;
+      expect(layer.getAttribute('aria-hidden')).toBe('true');
+      expect(layer.previousElementSibling!.getAttribute('class')).toBe('nc-lanes');
+      expect(layer.nextElementSibling!.getAttribute('class')).toBe('nc-units');
+      expect(ctx.missingKeys).toEqual([]);
+      instance.dispose();
+    }
+  });
+
+  it('crossing marker: a ring with a cross inside, centred on the point; generated maps have none; the help explains crossings', () => {
+    expect(crossingMark(100, 50)).toBe('M91.0 50.0A9 9 0 1 0 109.0 50.0A9 9 0 1 0 91.0 50.0ZM96.0 46.0L104.0 54.0M96.0 54.0L104.0 46.0');
+    setup(13);
+    expect(instance.serialize().map).toBe(0);
+    expect(ctx.context.root.querySelectorAll('.nc-crossing')).toHaveLength(0);
+    const help = ctx.context.root.querySelector('.nc-help')!.textContent!;
+    expect(help).toContain('Where two lanes cross (small ring with ✕), hostile streams meet and fight just as on a shared lane; your own streams fly past each other.');
+    expect(help).not.toMatch(/bridge/i);
+  });
+
+  it('names a long standoff calmly, without changing anything else', () => {
+    setup(4);
+    expect($('nc-standoff').hidden).toBe(true);
+    const s = instance.serialize();
+    s.tick = 3600;
+    s.hist = { start: 0, every: 50, rows: [s.hist.rows[0]!] };
+    s.moved = 601;
+    instance.restore(s);
+    expect($('nc-standoff').hidden).toBe(true);
+    s.moved = 600;
+    instance.restore(s);
+    expect($('nc-standoff').hidden).toBe(false);
+    expect($('nc-standoff').textContent).toBe(
+      'Standoff: no node has changed hands for 5:00. Several streams aimed at one single node break through more easily. You can also start a new match whenever you like.'
+    );
+    expect(instance.serialize()).toEqual(s);
+    expect(ctx.missingKeys).toEqual([]);
+  });
+
+  it('activates and stops a path by tapping, with direction on the lane', () => {
+    setup(2);
+    const v = start();
+    const w = neighbours(v)[0]!;
+    click(`node-${v}`);
+    expect($(`node-${v}`).getAttribute('aria-pressed')).toBe('true');
+    click(`node-${w}`);
+    const lane = $(`lane-${Math.min(v, w)}-${Math.max(v, w)}`);
+    expect(lane.dataset.active).toBe(`${v}-${w}`);
+    expect(instance.serialize().out[v]).toEqual([w]);
+    expect($('nc-message').textContent).toContain('started');
+    const saves = ctx.saveRequests();
+    click(`node-${v}`);
+    click(`node-${w}`);
+    expect(lane.dataset.active).toBe('');
+    expect(ctx.saveRequests()).toBeGreaterThan(saves);
+  });
+
+  it('explains refusals', () => {
+    setup(2);
+    const v = start();
+    const other = instance.serialize().owner.findIndex((o, i) => o === -1 && !neighbours(v).includes(i));
+    click(`node-${other}`);
+    expect($('nc-message').textContent).toContain('First choose one of your own nodes');
+    click(`node-${v}`);
+    click(`node-${other}`);
+    expect($('nc-message').textContent).toBe('These nodes are not connected by a lane.');
+    const [a, b] = neighbours(v);
+    click(`node-${v}`);
+    click(`node-${a}`);
+    click(`node-${v}`);
+    click(`node-${b}`);
+    expect($('nc-message').textContent).toContain('started');
+    click(`node-${v}`);
+    const c = neighbours(v).find((x) => x !== a && x !== b);
+    if (c !== undefined) {
+      click(`node-${c}`);
+      expect($('nc-message').textContent).toContain('Path limit reached for level 10 (maximum 2)');
+    }
+    // The source stays selected after a refusal; tapping it again clears the selection.
+    click(`node-${v}`);
+    expect($('nc-message').textContent).toBe('Selection cleared.');
+  });
+
+  it('supports the keyboard: arrows move, Enter picks source and target, Escape cancels', () => {
+    setup(3);
+    const v = start();
+    const node = $(`node-${v}`);
+    expect(node.getAttribute('tabindex')).toBe('0');
+    node.focus();
+    key(node, 'Enter');
+    expect(node.getAttribute('aria-pressed')).toBe('true');
+    key(node, 'Escape');
+    expect(node.getAttribute('aria-pressed')).toBe('false');
+    // The player starts at the bottom: ArrowUp reaches another node.
+    key(node, 'ArrowUp');
+    const focused = document.activeElement as HTMLElement;
+    expect(focused).not.toBe(node);
+    expect(focused.getAttribute('tabindex')).toBe('0');
+    expect(node.getAttribute('tabindex')).toBe('-1');
+    key(focused, 'Home');
+    expect(document.activeElement).toBe($('node-0'));
+    key(document.activeElement!, 'End');
+    expect((document.activeElement as HTMLElement).dataset.testid).toBe(`node-${mapOf(instance.serialize()).nodes.length - 1}`);
+    // Enter on source then on a neighbour activates.
+    const w = neighbours(v)[0]!;
+    key(node, 'Enter');
+    key($(`node-${w}`), 'Enter');
+    expect(instance.serialize().out[v]).toEqual([w]);
+  });
+
+  it('runs the deterministic simulation in real time and pauses with button, P and Space', () => {
+    setup(4);
+    const v = start();
+    click(`node-${v}`);
+    click(`node-${neighbours(v)[0]}`);
+    $('nc-pause').click();
+    expect($('nc-pause').textContent).toBe('Pause');
+    vi.advanceTimersByTime(1000);
+    const t1 = instance.serialize().tick;
+    expect(t1).toBeGreaterThanOrEqual(8);
+    expect(t1).toBeLessThanOrEqual(11);
+    key(document.body, 'p');
+    expect($('nc-pause').textContent).toBe('Resume');
+    const paused = instance.serialize();
+    vi.advanceTimersByTime(2000);
+    expect(instance.serialize()).toEqual(paused);
+    expect($('nc-status').textContent).toContain('Paused');
+    key(document.body, ' ');
+    expect($('nc-pause').textContent).toBe('Pause');
+    $('nc-speed').click();
+    expect($('nc-speed').textContent).toBe('Speed 2×');
+    vi.advanceTimersByTime(1000);
+    expect(instance.serialize().tick - paused.tick).toBeGreaterThanOrEqual(17);
+    // The same commands at the same ticks reproduce the same state.
+    const replay = createGame(4);
+    expect(instance.serialize().units.length).toBeGreaterThan(0);
+    expect(replay.tick).toBe(0);
+  });
+
+  it('host pause stops time and saves; host resume keeps it paused until the player continues', () => {
+    setup(5);
+    $('nc-pause').click();
+    vi.advanceTimersByTime(500);
+    const saves = ctx.saveRequests();
+    instance.pause();
+    expect(ctx.saveRequests()).toBe(saves + 1);
+    const at = instance.serialize();
+    instance.resume();
+    vi.advanceTimersByTime(1500);
+    expect(instance.serialize()).toEqual(at);
+    expect($('nc-pause').textContent).toBe('Resume');
+  });
+
+  it('autosaves periodically while running', () => {
+    setup(6);
+    $('nc-pause').click();
+    const saves = ctx.saveRequests();
+    vi.advanceTimersByTime(3200);
+    expect(ctx.saveRequests()).toBeGreaterThan(saves);
+  });
+
+  it('reports a win exactly once, and not again after restoring the finished game', () => {
+    setup(7);
+    const s = instance.serialize();
+    const map = mapOf(s);
+    const v = start();
+    const rival = s.owner.findIndex((o) => o === 1);
+    // Prepare a position one hit from victory: the player owns a neighbour of the last opponent node.
+    const w = map.adjacent[rival]![0]!;
+    s.owner[w] = 0;
+    s.level[w] = 10;
+    s.level[rival] = 1;
+    s.half[rival] = 0;
+    s.out[w] = [rival];
+    // A unit about to arrive: the capture happens on the first tick, before any opponent decision.
+    s.units = [{ f: 0, k: 0, a: w, b: rival, d: map.lanes[map.laneOf[w]![rival]!]![2] - 1, hp: 1, h: 0 }];
+    s.stats.produced = 1;
+    s.tick = 50;
+    s.hist = { start: 0, every: 50, rows: [[1, 1], [1, 1]] };
+    instance.restore(s);
+    expect($('nc-pause').textContent).toBe('Resume');
+    $('nc-pause').click();
+    vi.advanceTimersByTime(8000);
+    const end = instance.serialize();
+    expect(end.result).toBe('won');
+    expect(ctx.results).toEqual([{ outcome: 'won', stats: { seconds: Math.floor(end.tick / 10), nodesCaptured: 1 } }]);
+    expect($('nc-retry').hidden).toBe(false);
+    expect($('nc-retry').textContent).toBe('Play this map again');
+    expect($('nc-pause').hidden).toBe(true);
+    expect($('nc-status').textContent).toContain('You won');
+    instance.restore(end);
+    vi.advanceTimersByTime(1000);
+    expect(ctx.results).toHaveLength(1);
+    click(`node-${v}`);
+    expect($('nc-message').textContent).toBe('This match is over.');
+    $('nc-retry').click();
+    expect(instance.serialize()).toEqual(createGame(7));
+  });
+
+  it('reports a loss calmly with Try again', () => {
+    setup(8);
+    const s = instance.serialize();
+    const v = start();
+    const map = mapOf(s);
+    // The only player node is about to fall to a level-30 neighbour stream.
+    const w = map.adjacent[v]![0]!;
+    s.owner[w] = 1;
+    s.level[w] = MAX_LEVEL;
+    s.out[w] = [v];
+    s.level[v] = 1;
+    s.charge[w] = 9;
+    instance.restore(s);
+    $('nc-pause').click();
+    vi.advanceTimersByTime(8000);
+    expect(instance.serialize().result).toBe('lost');
+    expect(ctx.results[0]?.outcome).toBe('lost');
+    expect($('nc-retry').textContent).toBe('Try again');
+  });
+
+  it('starts the map chosen on the start screen; "any map" follows the game number', () => {
+    setup(9, 'advanced', 'en', { map: '3', opponents: 2 });
+    expect(instance.serialize()).toEqual(createGame(9, { difficulty: 'advanced', map: 2, opponents: 2 }));
+    instance.reset();
+    expect(instance.serialize()).toEqual(createGame(9, { difficulty: 'advanced', map: 2, opponents: 2 }));
+    instance.newGame({ seed: 9, difficulty: 'advanced', settings: { map: 'random', opponents: 1 } });
+    expect(instance.serialize().map).toBe(9 % MAPS_PER_SET);
+    // Without settings (old deep links), or with invalid ones: any map, one opponent.
+    instance.newGame({ seed: 10, difficulty: 'advanced' });
+    expect(instance.serialize()).toEqual(createGame(10, { difficulty: 'advanced', opponents: 1 }));
+    for (const map of ['0', String(MAPS_PER_SET + 1), 'x', 2.5]) {
+      instance.newGame({ seed: 10, settings: { map, opponents: 4 } });
+      expect(instance.serialize()).toMatchObject({ map: 10 % MAPS_PER_SET, opponents: 1 });
+    }
+  });
+
+  it('declares a map choice with every map and the introduction, and the opponent count except for the introduction', () => {
+    const [map, opponents] = nodeConquestSettings() as readonly { id: string; values?: readonly unknown[]; when?: Record<string, readonly unknown[]> }[];
+    expect(map!.values).toEqual(['random', 'intro', ...Array.from({ length: MAPS_PER_SET }, (_, i) => String(i + 1))]);
+    expect(opponents!.values).toEqual([1, 2, 3]);
+    expect(opponents!.when!.map).not.toContain('intro');
+    expect(opponents!.when!.map).toHaveLength(MAPS_PER_SET + 1);
+  });
+
+  it('renders in RTL locales without mirroring the board', () => {
+    setup(10, 'master', 'ar', { opponents: 3 });
+    expect(ctx.context.root.querySelector('.wp-nc')?.getAttribute('dir')).toBe('rtl');
+    expect(ctx.missingKeys).toEqual([]);
+    expect(ctx.context.root.querySelectorAll('.nc-legend li[data-faction]')).toHaveLength(4);
+    expect(ctx.context.root.querySelector('.nc-board')?.getAttribute('style') ?? '').not.toContain('rtl');
+  });
+
+  it('draws one distinct shape per faction', () => {
+    const shapes = [0, 1, 2, 3].map((f) => shapePath(f, 6));
+    expect(new Set(shapes).size).toBe(4);
+  });
+
+  it('starts with the chosen opponent count; a restored save keeps its own', () => {
+    setup(11, 'beginner', 'en', { opponents: 2 });
+    expect(instance.serialize()).toEqual(createGame(11, { opponents: 2 }));
+    expect(ctx.context.root.querySelectorAll('.nc-legend li[data-faction]')).toHaveLength(3);
+    instance.newGame({ seed: 12, difficulty: 'strong', settings: { opponents: 3 } });
+    expect(instance.serialize()).toEqual(createGame(12, { opponents: 3, difficulty: 'strong' }));
+    // The introduction always has one opponent.
+    instance.newGame({ seed: 12, settings: { map: 'intro', opponents: 3 } });
+    expect(instance.serialize()).toMatchObject({ map: INTRO_MAP, opponents: 1 });
+    const saved = createGame(5, { opponents: 2 });
+    instance.restore(saved);
+    expect(instance.serialize()).toEqual(saved);
+    // The host is the source of the difficulty; nothing is written to the device preferences.
+    expect(ctx.difficulties).toEqual([]);
+    expect(ctx.preferences.size).toBe(0);
+  });
+
+  it('guides through the introduction map step by step', () => {
+    setup(14, 'beginner', 'en', { map: 'intro' });
+    expect($('nc-hint').hidden).toBe(false);
+    expect($('nc-hint').textContent).toMatch(/^Step 1/);
+    click('node-0');
+    expect($('nc-hint').textContent).toMatch(/^Step 2/);
+    click('node-1');
+    expect($('nc-hint').textContent).toMatch(/^Step 3/);
+    $('nc-pause').click();
+    vi.advanceTimersByTime(9000);
+    expect(instance.serialize().owner[1]).toBe(0);
+    expect($('nc-hint').textContent).toMatch(/^Well done/);
+    const s = instance.serialize();
+    s.stats.captured = 3;
+    instance.restore(s);
+    expect($('nc-hint').textContent).toMatch(/^Last step/);
+    s.map = 0;
+    instance.newGame({ seed: 3 });
+    expect($('nc-hint').hidden).toBe(true);
+    expect(ctx.missingKeys).toEqual([]);
+  });
+
+  it('shows a post-game review with a patterned chart, a text summary and key moments', () => {
+    setup(15);
+    const s = instance.serialize();
+    const map = mapOf(s);
+    s.tick = 300;
+    s.hist = { start: 0, every: 50, rows: [[1, 1], [2, 1], [4, 2], [4, 3], [3, 4], [6, 2], [3, 0]] };
+    s.owner = map.nodes.map((n) => (n.owner === 1 ? 0 : n.owner));
+    s.owner[s.owner.indexOf(-1)] = 0;
+    s.result = 'won';
+    instance.restore(s);
+    expect($('nc-review').hidden).toBe(false);
+    const lines = ctx.context.root.querySelectorAll('.nc-series');
+    expect(lines).toHaveLength(2);
+    expect(new Set([...lines].map((l) => l.getAttribute('stroke-dasharray'))).size).toBe(2);
+    expect(ctx.context.root.querySelectorAll('.nc-series-mark')).toHaveLength(2);
+    expect($('nc-chart').getAttribute('role')).toBe('img');
+    expect($('nc-review-summary').textContent).toBe('Match length 0:30. Your nodes at the end: 3. Your highest count: 6 (at 0:25).');
+    const moments = [...$('nc-moments').children].map((li) => li.textContent);
+    expect(moments).toEqual(['0:25: your biggest gain, nodes +3.', '0:25: you took the lead in nodes.']);
+    expect(ctx.missingKeys).toEqual([]);
+    // Not shown while playing.
+    instance.newGame({ seed: 1 });
+    expect($('nc-review').hidden).toBe(true);
+  });
+
+  it('zooms with buttons and ctrl + wheel without touching the saved state', () => {
+    setup(16);
+    const before = instance.serialize();
+    const board = $('nc-board');
+    expect(board.getAttribute('viewBox')).toBe(`0.0 0.0 ${BOARD}.0 ${BOARD}.0`);
+    $('nc-zoom-in').click();
+    expect(Number(board.dataset.zoom)).toBeCloseTo(1.5);
+    expect(board.getAttribute('viewBox')).toBe('106.7 106.7 426.7 426.7');
+    for (let i = 0; i < 5; i++) $('nc-zoom-in').click();
+    expect(Number(board.dataset.zoom)).toBe(MAX_ZOOM);
+    $('nc-zoom-out').click();
+    expect(Number(board.dataset.zoom)).toBeCloseTo(2);
+    const plain = new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true });
+    board.dispatchEvent(plain);
+    expect(plain.defaultPrevented).toBe(false);
+    const pinch = new WheelEvent('wheel', { deltaY: 100, ctrlKey: true, bubbles: true, cancelable: true });
+    board.dispatchEvent(pinch);
+    expect(pinch.defaultPrevented).toBe(true);
+    expect(Number(board.dataset.zoom)).toBeLessThan(2);
+    $('nc-zoom-fit').click();
+    expect(board.dataset.zoom).toBe('1.00');
+    expect($('nc-zoom-in').getAttribute('aria-label')).toBe('Zoom in');
+    expect(instance.serialize()).toEqual(before);
+  });
+
+  it('marks bastions with their own outline and legend entry', () => {
+    setup(17);
+    const map = mapOf(instance.serialize());
+    const v = map.nodes.findIndex((n) => n.type === 'bastion');
+    expect(v).toBeGreaterThanOrEqual(0);
+    expect($(`node-${v}`).dataset.type).toBe('bastion');
+    expect($(`node-${v}`).querySelector('.nc-deco-wall')).not.toBeNull();
+    expect($(`node-${v}`).getAttribute('aria-label')).toContain('Bastion');
+    expect(ctx.context.root.querySelector('.nc-legend li[data-type="bastion"]')?.textContent).toBe('Bastion');
+    expect(battlements(0, 0, 9)).not.toBe(battlements(0, 0, 12));
+  });
+
+  it('restores a save from state version 1 as an equivalent match', () => {
+    const v1 = createGame(18, { opponents: 2, layout: 1, map: 4 });
+    const { opponents: _o, layout: _l, half: _h, hist: _hi, centre: _c, ...rest } = JSON.parse(JSON.stringify(v1)) as NcState;
+    const raw = { ...createSave(game, 18, { ...rest, difficulty: 'medium' } as unknown as NcState, 'medium'), stateVersion: 1 };
+    const loaded = interpretSave(raw, game);
+    expect(loaded.status).toBe('ok');
+    if (loaded.status !== 'ok') return;
+    expect(loaded.migrated).toBe(true);
+    setup(1);
+    instance.restore(loaded.save.state);
+    const restored = instance.serialize();
+    expect(restored).toMatchObject({ difficulty: 'advanced', opponents: 2, layout: 1, map: 4 });
+    expect(restored.owner).toEqual(v1.owner);
+    expect(ctx.context.root.querySelectorAll('[data-type="bastion"].nc-node')).toHaveLength(0);
+    expect(ctx.context.root.querySelectorAll('.nc-legend li[data-faction]')).toHaveLength(3);
+  });
+});
+
+/* Touch targets: the board is 328 px wide at a 360 px viewport (16 px gutters), so 1 unit = 0.5125 px. */
+describe('Orbit Links touch targets', () => {
+  const PX = 328 / BOARD;
+  const TOUCH = 44;
+  const allMaps = (): GameMap[] => {
+    const maps: GameMap[] = [getMap(2, INTRO_MAP)];
+    for (const f of FACTION_COUNTS)
+      for (let m = 0; m < MAPS_PER_SET; m++) for (const layout of m < LEGACY_MAPS ? LAYOUTS : ([2] as const)) maps.push(getMap(f, m, layout));
+    return maps;
+  };
+  const minDistance = (map: GameMap) => {
+    let min = Infinity;
+    map.nodes.forEach((a, i) => map.nodes.forEach((b, j) => i < j && (min = Math.min(min, Math.hypot(a.x - b.x, a.y - b.y)))));
+    return min;
+  };
+
+  it('every node has a hit circle ≥ 44 px wide at 360 px, and a tap within half the closest spacing is never ambiguous', () => {
+    expect(2 * PICK_R * PX).toBeGreaterThanOrEqual(TOUCH);
+    const maps = allMaps();
+    expect(maps).toHaveLength(1 + 3 * (MAPS_PER_SET + LEGACY_MAPS));
+    for (const map of maps) {
+      const min = minDistance(map);
+      // The region that can only ever pick this node (half the closest spacing) is itself ≥ 44 px wide.
+      expect(2 * Math.min(PICK_R, min / 2) * PX, `${map.factions}:${map.index}`).toBeGreaterThanOrEqual(TOUCH);
+    }
+  });
+
+  it('a tap picks the nearest node centre within reach, deterministically (lower index on a tie)', () => {
+    for (const map of allMaps()) {
+      const reach = Math.min(PICK_R, minDistance(map) / 2) - 0.01;
+      map.nodes.forEach((node, v) => {
+        expect(pickNode(map, node.x, node.y)).toBe(v);
+        // Towards every neighbour and in the eight compass directions, the near half stays with this node.
+        const dirs: [number, number][] = map.adjacent[v]!.map((w) => {
+          const o = map.nodes[w]!;
+          const len = Math.hypot(o.x - node.x, o.y - node.y);
+          return [(o.x - node.x) / len, (o.y - node.y) / len];
+        });
+        for (let k = 0; k < 8; k++) dirs.push([Math.cos((k * Math.PI) / 4), Math.sin((k * Math.PI) / 4)]);
+        for (const [dx, dy] of dirs) expect(pickNode(map, node.x + dx * reach, node.y + dy * reach)).toBe(v);
+      });
+      // Every point within PICK_R of some node goes to its nearest centre.
+      for (let x = 0; x <= BOARD; x += 16)
+        for (let y = 0; y <= BOARD; y += 16) {
+          const d = map.nodes.map((n) => Math.hypot(n.x - x, n.y - y));
+          const best = Math.min(...d);
+          expect(pickNode(map, x, y)).toBe(best <= PICK_R ? d.indexOf(best) : null);
+        }
+    }
+    const tie: GameMap = { ...getMap(2, 0), nodes: [{ ...getMap(2, 0).nodes[0]!, x: 100, y: 100 }, { ...getMap(2, 0).nodes[0]!, x: 180, y: 100 }] };
+    expect(pickNode(tie, 140, 100)).toBe(0);
+    expect(pickNode(tie, 100 + PICK_R + 0.5, 300)).toBeNull();
+  });
+
+  it('draws an invisible hit circle of radius PICK_R on every node', () => {
+    setup(1);
+    const map = mapOf(instance.serialize());
+    const hits = ctx.context.root.querySelectorAll<SVGCircleElement>('.nc-node .nc-hit');
+    expect(hits).toHaveLength(map.nodes.length);
+    hits.forEach((hit, v) => {
+      expect(Number(hit.getAttribute('r'))).toBe(PICK_R);
+      expect(Number(hit.getAttribute('cx'))).toBe(map.nodes[v]!.x);
+      expect(Number(hit.getAttribute('cy'))).toBe(map.nodes[v]!.y);
+    });
+  });
+});

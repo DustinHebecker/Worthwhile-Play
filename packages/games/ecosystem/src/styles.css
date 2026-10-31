@@ -1,0 +1,213 @@
+/* Pond & Meadow. All rules are scoped under .wp-ecosystem and use logical properties (RTL-safe). The scene, charts,
+   sketch and loop diagram are never mirrored (time runs left to right); the panels follow the reading direction.
+   Species are told apart by glyph shape and name, lines by dash pattern, marks by symbols and words: never colour alone. */
+.wp-ecosystem {
+  --eco-water: #cfe3ea; --eco-sky: #eef5f7; --eco-mud: #8a7a62; --eco-soil: #7b6248; --eco-hill: #cfdcae;
+  --eco-algae: #3f8a3a; --eco-plant: #2f6b33; --eco-animal: #5a4a3a; --eco-line: #2a2824; --eco-ghost: #6d675c;
+  --eco-tint: #6aa83a; --eco-band: #2d5d9b;
+  display: grid; gap: 0.75rem; max-width: 84rem; margin-inline: auto; min-width: 0; overflow-wrap: anywhere;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-ecosystem {
+    --eco-water: #1d3540; --eco-sky: #1c2328; --eco-mud: #5b4e3d; --eco-soil: #4d3d2c; --eco-hill: #34452a;
+    --eco-algae: #8fd087; --eco-plant: #9ed39a; --eco-animal: #e3d4c0; --eco-line: #ece6da; --eco-ghost: #b6ae9f;
+    --eco-tint: #6aa83a; --eco-band: #8db7f0;
+  }
+}
+.wp-ecosystem p { margin: 0; }
+.wp-ecosystem h2 { margin: 0; font-size: 1.2rem; line-height: 1.35; }
+.wp-ecosystem h3, .wp-ecosystem h4 { margin: 0; font-size: 1.02rem; }
+.wp-ecosystem .eco-heading:focus { outline-offset: 4px; }
+.wp-ecosystem button, .wp-ecosystem select { min-height: var(--wp-touch); min-width: var(--wp-touch); font: inherit; }
+.wp-ecosystem select { max-inline-size: 100%; }
+.wp-ecosystem .eco-primary { font-weight: 700; }
+.wp-ecosystem [aria-disabled='true'] { opacity: 0.6; }
+.wp-ecosystem .eco-muted, .wp-ecosystem .eco-progress, .wp-ecosystem .eco-foot { color: var(--wp-muted); font-size: 0.93rem; }
+.wp-ecosystem .eco-foot { font-size: 0.85rem; }
+.wp-ecosystem bdi { unicode-bidi: isolate; }
+.wp-ecosystem details > summary { min-block-size: var(--wp-touch); display: flex; align-items: center; cursor: pointer; }
+.wp-ecosystem .eco-link { background: none; border: none; color: var(--wp-accent); text-decoration: underline; padding-inline: 0.25rem; cursor: pointer; }
+
+/* Layout: scene + charts (inline start, about 3/5) and the notebook panel (inline end, sticky) from 48rem. */
+.wp-ecosystem .eco-layout { display: grid; gap: 0.8rem; min-width: 0; }
+@media (min-width: 48rem) {
+  .wp-ecosystem .eco-layout { grid-template-columns: minmax(0, 3fr) minmax(18rem, 2fr); align-items: start; }
+}
+.wp-ecosystem .eco-aside { display: grid; gap: 0.6rem; align-content: start; min-width: 0; }
+.wp-ecosystem .eco-main, .wp-ecosystem .eco-panel {
+  display: grid; gap: 0.6rem; align-content: start; padding: 0.8rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface); min-width: 0;
+}
+.wp-ecosystem .eco-status { font-weight: 700; }
+:root:has(.wp-ecosystem.eco-has-bar) { scroll-padding-block-end: 7.5rem; }
+.wp-ecosystem .eco-sticky:empty { display: none; }
+@media (max-width: 47.99rem) {
+  .wp-ecosystem .eco-sticky, .wp-ecosystem .eco-runbar {
+    position: sticky; inset-block-end: 0; z-index: 2; padding-block: 0.5rem;
+    background: var(--wp-surface); border-block-start: 1px solid var(--wp-border);
+  }
+  :root:has(.wp-ecosystem[data-mode='goal'], .wp-ecosystem[data-mode='explore']) { scroll-padding-block-end: 7.5rem; }
+}
+.wp-ecosystem .eco-bar, .wp-ecosystem .eco-runbar, .wp-ecosystem .eco-row-buttons, .wp-ecosystem .eco-tools {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+}
+.wp-ecosystem .eco-under-row { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; }
+.wp-ecosystem .eco-check { display: inline-flex; align-items: center; gap: 0.4rem; min-block-size: var(--wp-touch); cursor: pointer; }
+.wp-ecosystem .eco-check input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0; }
+.wp-ecosystem .eco-pick { display: inline-flex; align-items: center; gap: 0.3rem; }
+
+/* Scene. */
+.wp-ecosystem .eco-scene { margin: 0; }
+.wp-ecosystem .eco-scene-svg { display: block; inline-size: 100%; block-size: auto; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); }
+.wp-ecosystem .eco-sky { fill: var(--eco-sky); }
+.wp-ecosystem .eco-water { fill: var(--eco-water); }
+.wp-ecosystem .eco-tint { fill: var(--eco-tint); }
+.wp-ecosystem .eco-ripple { fill: none; stroke: var(--eco-line); stroke-width: 1; opacity: 0.5; }
+.wp-ecosystem .eco-mud { fill: var(--eco-mud); }
+.wp-ecosystem .eco-hill { fill: var(--eco-hill); }
+.wp-ecosystem .eco-soil { fill: var(--eco-soil); }
+.wp-ecosystem .eco-moist circle { fill: var(--eco-water); }
+.wp-ecosystem .eco-tag { font: 700 8px var(--wp-font); fill: var(--wp-text); paint-order: stroke; stroke: var(--wp-surface); stroke-width: 2px; }
+.wp-ecosystem .eco-glyph .f { fill: var(--eco-animal); }
+.wp-ecosystem .eco-glyph .s { stroke: var(--eco-line); stroke-width: 0.8; }
+.wp-ecosystem .eco-glyph .l { fill: none; stroke: var(--eco-line); stroke-width: 1.2; stroke-linecap: round; }
+.wp-ecosystem .eco-glyph .k { fill: var(--eco-line); }
+.wp-ecosystem .eco-glyph .w { stroke-width: 2.2; }
+.wp-ecosystem :is(.eco-g-algae, .eco-g-bluegreen, .eco-g-duckweed) .f { fill: var(--eco-algae); }
+.wp-ecosystem :is(.eco-g-pondweed, .eco-g-grass, .eco-g-clover) .l { stroke: var(--eco-plant); }
+.wp-ecosystem :is(.eco-g-clover, .eco-g-flowers) .f { fill: var(--eco-plant); }
+.wp-ecosystem .eco-g-flowers .f { fill: #e7c65a; }
+.wp-ecosystem .eco-g-ladybirds .f { fill: #c8473a; }
+.wp-ecosystem .eco-g-foxes .f { fill: #c76f2a; }
+.wp-ecosystem .eco-g-worms .l { stroke: #c98b8b; }
+.wp-ecosystem .eco-sp { transition: opacity 0.3s; }
+
+/* Charts (LTR). */
+.wp-ecosystem .eco-focus { display: grid; gap: 0.25rem; border-radius: var(--wp-radius); }
+.wp-ecosystem .eco-focus:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-ecosystem .eco-chart { position: relative; }
+.wp-ecosystem .eco-chart-svg { display: block; inline-size: 100%; block-size: auto; touch-action: none; }
+.wp-ecosystem .eco-chart-tall { max-inline-size: 34rem; }
+.wp-ecosystem .eco-axis { fill: none; stroke: var(--wp-text); stroke-width: 1; }
+.wp-ecosystem .eco-grid { fill: none; stroke: var(--wp-border); stroke-width: 1; stroke-dasharray: 2 4; }
+.wp-ecosystem .eco-axis-text { font: 12px var(--wp-font); fill: var(--wp-muted); }
+.wp-ecosystem .eco-mid { text-anchor: middle; }
+.wp-ecosystem .eco-end { text-anchor: end; }
+.wp-ecosystem .eco-history { fill: var(--wp-surface-2); }
+.wp-ecosystem .eco-line { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.wp-ecosystem .eco-line-model { stroke: var(--eco-line); stroke-width: 2.5; }
+.wp-ecosystem .eco-line-ghost { stroke: var(--eco-ghost); stroke-width: 2; stroke-dasharray: 7 5; }
+.wp-ecosystem .eco-line-nothing { stroke: var(--eco-ghost); stroke-width: 2; stroke-dasharray: 2 4; }
+.wp-ecosystem .eco-line-way { stroke: var(--eco-band); stroke-width: 2.5; stroke-dasharray: 10 4 2 4; }
+.wp-ecosystem .eco-line-sketch { stroke: var(--eco-band); stroke-width: 2.5; stroke-dasharray: 6 4; }
+.wp-ecosystem .eco-line-pool { stroke: var(--wp-muted); stroke-width: 1.5; }
+.wp-ecosystem .eco-line-shared { stroke: var(--eco-line); stroke-width: 1.8; }
+.wp-ecosystem .eco-goal-line { stroke: var(--wp-text); stroke-width: 1.5; stroke-dasharray: 8 4; }
+.wp-ecosystem .eco-goal-text { fill: var(--wp-text); font-weight: 700; }
+.wp-ecosystem .eco-mark { stroke: var(--wp-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.wp-ecosystem .eco-cursor { stroke: var(--wp-focus); stroke-width: 2; }
+.wp-ecosystem .eco-marker { fill: var(--wp-text); }
+.wp-ecosystem .eco-band { fill: var(--eco-band); fill-opacity: 0.25; stroke: var(--eco-band); stroke-width: 2; stroke-dasharray: 4 3; }
+.wp-ecosystem .eco-cursor-live { font-size: 0.9rem; min-block-size: 1.3em; color: var(--wp-muted); }
+.wp-ecosystem .eco-reveal .eco-line-model { animation: eco-draw 0.6s ease-out; }
+@media (max-width: 47.99rem) {
+  .wp-ecosystem .eco-axis-text { font-size: 20px; }
+}
+@keyframes eco-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .wp-ecosystem .eco-reveal .eco-line-model { animation: none; }
+  .wp-ecosystem .eco-sp { transition: none; }
+}
+
+/* Sketch handles: 44 px circles (role="slider") over the chart. */
+.wp-ecosystem .eco-handles { position: absolute; inset: 0; pointer-events: none; }
+.wp-ecosystem .eco-handle {
+  position: absolute; inline-size: 44px; block-size: 44px; margin-inline-start: -22px; margin-block-start: -22px;
+  border-radius: 50%; pointer-events: auto; touch-action: none; cursor: ns-resize; box-sizing: border-box;
+  background: radial-gradient(circle, var(--eco-band) 0 7px, transparent 8px); border: 2px solid var(--eco-band);
+}
+.wp-ecosystem .eco-handle[aria-readonly='true'] { cursor: default; border-style: dashed; }
+.wp-ecosystem .eco-handle:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 1px; }
+
+/* Small multiples and the table. */
+.wp-ecosystem .eco-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
+.wp-ecosystem .eco-row { display: grid; grid-template-columns: 1.6rem minmax(5rem, 9rem) minmax(0, 1fr) 3.2rem; align-items: center; gap: 0.4rem; }
+.wp-ecosystem .eco-row-pool { color: var(--wp-muted); font-size: 0.9rem; }
+.wp-ecosystem .eco-icon { inline-size: 1.5rem; block-size: 1.5rem; }
+.wp-ecosystem .eco-pool-nutrients .f, .wp-ecosystem .eco-pool-dead .f, .wp-ecosystem .eco-pool-water .f { fill: none; stroke: var(--wp-muted); }
+.wp-ecosystem .eco-row-spark { display: block; min-width: 0; }
+.wp-ecosystem .eco-spark { display: block; inline-size: 100%; block-size: 1.6rem; }
+.wp-ecosystem .eco-row-value { text-align: end; font-variant-numeric: tabular-nums; }
+.wp-ecosystem .eco-table-wrap { overflow-x: auto; max-inline-size: 100%; }
+.wp-ecosystem .eco-table { border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.wp-ecosystem .eco-table caption { text-align: start; color: var(--wp-muted); }
+.wp-ecosystem .eco-table :is(th, td) { padding: 0.15rem 0.4rem; border-block-end: 1px solid var(--wp-border); text-align: end; }
+.wp-ecosystem .eco-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; font-size: 0.9rem; }
+.wp-ecosystem .eco-legend li { display: inline-flex; align-items: center; gap: 0.25rem; }
+.wp-ecosystem .eco-legend-line { inline-size: 1.9rem; block-size: 0.5rem; }
+.wp-ecosystem .eco-compare { font-size: 0.95rem; }
+
+/* Panel: questions, options, review. */
+.wp-ecosystem .eco-question { display: grid; gap: 0.4rem; margin: 0; padding: 0.4rem 0.6rem 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+.wp-ecosystem .eco-question legend { font-weight: 600; }
+.wp-ecosystem .eco-options { display: grid; gap: 0.3rem; }
+.wp-ecosystem .eco-option { display: flex; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch); cursor: pointer; border-radius: var(--wp-radius); padding-inline: 0.3rem; }
+.wp-ecosystem .eco-option input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0; flex: none; }
+.wp-ecosystem .eco-option.eco-checked { background: var(--wp-surface-2); font-weight: 600; }
+.wp-ecosystem .eco-opt-spark { inline-size: 2.6rem; block-size: 1.3rem; flex: none; }
+.wp-ecosystem .eco-verdict { font-size: 1.08rem; font-weight: 700; }
+.wp-ecosystem .eco-review { display: grid; gap: 0.5rem; }
+.wp-ecosystem .eco-surprise, .wp-ecosystem .eco-tip { padding: 0.5rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); }
+.wp-ecosystem .eco-refined { margin-block: 0 0.75rem; padding: 0.5rem; border-inline-start: 4px solid var(--wp-border); background: var(--wp-surface-2); }
+.wp-ecosystem .eco-refused { margin-block: 0.5rem; padding: 0.5rem; border-inline-start: 4px solid var(--wp-border); background: var(--wp-surface-2); }
+.wp-ecosystem .eco-real { font-style: italic; color: var(--wp-muted); }
+.wp-ecosystem .eco-status-box { display: grid; gap: 0.15rem; padding: 0.5rem; border-radius: var(--wp-radius); background: var(--wp-surface-2); }
+.wp-ecosystem .eco-outcome { font-weight: 700; }
+.wp-ecosystem .eco-failed::before { content: '⚠ '; }
+.wp-ecosystem .eco-reached::before { content: '✓ '; }
+.wp-ecosystem .eco-tool { text-align: start; }
+.wp-ecosystem .eco-log { margin: 0; padding-inline-start: 1.2rem; display: grid; gap: 0.15rem; }
+.wp-ecosystem .eco-log-script { color: var(--wp-muted); }
+.wp-ecosystem .eco-summary-list { margin: 0; padding-inline-start: 1.2rem; }
+.wp-ecosystem .eco-tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; border-block-end: 1px solid var(--wp-border); }
+.wp-ecosystem .eco-tabs [role='tab'] { border: 1px solid var(--wp-border); border-block-end: none; border-start-start-radius: var(--wp-radius); border-start-end-radius: var(--wp-radius); background: var(--wp-surface-2); }
+.wp-ecosystem .eco-tabs [aria-selected='true'] { background: var(--wp-surface); font-weight: 700; }
+.wp-ecosystem .eco-tabpanel { display: grid; gap: 0.5rem; }
+.wp-ecosystem .eco-cond { display: grid; grid-template-columns: minmax(6rem, 1fr) minmax(0, 1.4fr); align-items: center; gap: 0.5rem; }
+
+/* Causal loop diagram and food web (LTR diagrams). */
+.wp-ecosystem .eco-cld { margin: 0; display: grid; gap: 0.3rem; }
+.wp-ecosystem .eco-cld-svg, .wp-ecosystem .eco-web-svg { display: block; inline-size: 100%; block-size: auto; max-inline-size: 28rem; }
+.wp-ecosystem .eco-node-box { fill: var(--wp-surface-2); stroke: var(--wp-text); stroke-width: 1.2; }
+.wp-ecosystem .eco-node-text { font: 600 11px var(--wp-font); fill: var(--wp-text); text-anchor: middle; }
+.wp-ecosystem .eco-node-text.eco-small { font-size: 9px; }
+.wp-ecosystem .eco-edge { fill: none; stroke: var(--wp-muted); stroke-width: 1.4; }
+.wp-ecosystem .eco-edge-on { stroke: var(--wp-text); stroke-width: 3; stroke-dasharray: 8 3; }
+.wp-ecosystem .eco-arrowhead { fill: var(--wp-text); }
+.wp-ecosystem .eco-delay { stroke: var(--wp-text); stroke-width: 2; }
+.wp-ecosystem .eco-sign-disc { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1; }
+.wp-ecosystem .eco-sign { font: 700 12px var(--wp-font); fill: var(--wp-text); text-anchor: middle; }
+.wp-ecosystem .eco-loop-disc { fill: var(--wp-surface); stroke: var(--wp-muted); stroke-width: 1; }
+.wp-ecosystem .eco-loop-on { stroke: var(--wp-text); stroke-width: 2.5; }
+.wp-ecosystem .eco-loop-arrow { fill: none; stroke: var(--wp-muted); stroke-width: 1; }
+.wp-ecosystem .eco-loop-id { font: 700 10px var(--wp-font); fill: var(--wp-text); text-anchor: middle; }
+.wp-ecosystem .eco-cld-list { margin: 0; padding-inline-start: 1.2rem; display: grid; gap: 0.2rem; font-size: 0.95rem; }
+.wp-ecosystem .eco-cld-list .eco-on { font-weight: 700; }
+.wp-ecosystem .eco-web-edge { stroke: var(--wp-muted); }
+.wp-ecosystem .eco-w1 { stroke-width: 1; } .wp-ecosystem .eco-w2 { stroke-width: 2; } .wp-ecosystem .eco-w3 { stroke-width: 3.2; }
+.wp-ecosystem .eco-web-cycle { stroke: var(--wp-muted); stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; }
+.wp-ecosystem .eco-web-head { fill: var(--wp-muted); }
+.wp-ecosystem .eco-web-pool { fill: var(--wp-surface-2); stroke: var(--wp-muted); }
+.wp-ecosystem .eco-web-text { font: 10px var(--wp-font); fill: var(--wp-text); text-anchor: middle; }
+.wp-ecosystem .eco-web-disc { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.2; }
+.wp-ecosystem .eco-absent .eco-web-disc { stroke-dasharray: 3 2; fill: none; }
+.wp-ecosystem .eco-absent .eco-glyph { opacity: 0.45; }
+.wp-ecosystem .eco-web-list { margin: 0; padding-inline-start: 1.2rem; font-size: 0.93rem; }
+.wp-ecosystem li.eco-absent { color: var(--wp-muted); }
+
+@media (forced-colors: active) {
+  .wp-ecosystem .eco-glyph :is(.f, .s, .l, .k), .wp-ecosystem :is(.eco-line, .eco-axis, .eco-edge, .eco-goal-line, .eco-band, .eco-node-box, .eco-web-disc) { stroke: CanvasText; }
+  .wp-ecosystem .eco-glyph .f, .wp-ecosystem :is(.eco-tint, .eco-history, .eco-band, .eco-water, .eco-sky, .eco-mud, .eco-hill, .eco-soil) { fill: none; }
+  .wp-ecosystem :is(.eco-axis-text, .eco-sign, .eco-node-text, .eco-loop-id, .eco-web-text, .eco-tag, .eco-marker, .eco-arrowhead) { fill: CanvasText; }
+  .wp-ecosystem .eco-handle { border-color: CanvasText; background: none; }
+}

@@ -78,50 +78,85 @@ export function countSolutionsExhaustive(clues: PuzzleClues, limit = 2): number 
   return count;
 }
 
-/** Whether a column prefix (top rows only) can still be extended to match `clue` within `size` rows. */
-function prefixFeasible(prefix: readonly number[], clue: readonly number[], size: number): boolean {
-  const runs = runsOf(prefix);
-  const open = prefix.length > 0 && prefix[prefix.length - 1] === 1;
-  const closed = open ? runs.slice(0, -1) : runs;
-  if (closed.length > clue.length) return false;
-  for (let i = 0; i < closed.length; i++) if (closed[i] !== clue[i]) return false;
-  let remainingBlocks: number[];
-  let rowsLeft = size - prefix.length;
-  if (open) {
-    const current = runs[runs.length - 1] as number;
-    const target = clue[closed.length];
-    if (target === undefined || current > target) return false;
-    rowsLeft -= target - current;
-    if (rowsLeft < 0) return false;
-    remainingBlocks = clue.slice(closed.length + 1);
-    if (remainingBlocks.length > 0) rowsLeft -= 1; // gap after the open run
-  } else {
-    remainingBlocks = clue.slice(closed.length);
-  }
-  const needed = remainingBlocks.reduce((sum, b) => sum + b, 0) + Math.max(0, remainingBlocks.length - 1);
-  return needed <= rowsLeft;
+/**
+ * All 0/1 lines of length n whose runs equal `clue`, built constructively (choose the gap
+ * before each block). Same result as `allLinesFor` without enumerating all 2^n patterns, so
+ * 15-cell lines stay cheap; the self-check tests compare both.
+ */
+export function placementsFor(clue: readonly number[], n: number): number[][] {
+  const result: number[][] = [];
+  const build = (prefix: number[], block: number): void => {
+    if (block === clue.length) {
+      result.push([...prefix, ...new Array<number>(n - prefix.length).fill(0)]);
+      return;
+    }
+    const len = clue[block] as number;
+    const rest = clue.slice(block + 1).reduce((sum, b) => sum + b + 1, 0);
+    const minGap = block === 0 ? 0 : 1;
+    for (let gap = minGap; prefix.length + gap + len + rest <= n; gap++) {
+      build([...prefix, ...new Array<number>(gap).fill(0), ...new Array<number>(len).fill(1)], block + 1);
+    }
+  };
+  build([], 0);
+  return result;
 }
 
-/** Backtracking count (capped at `limit`) with column-prefix pruning; fine for 10×10. */
+/**
+ * Backtracking count (capped at `limit`) over row placements with incremental column checks:
+ * each column tracks how many of its blocks are finished and the length of the open run, and a
+ * branch is cut as soon as a column overshoots a block or cannot fit its remaining blocks in the
+ * rows left. Fast enough for 15×15.
+ */
 export function countSolutionsBacktracking(clues: PuzzleClues, limit = 2): number {
   const size = clues.rows.length;
-  const options = clues.rows.map((clue) => allLinesFor(clue, size));
+  const options = clues.rows.map((clue) => placementsFor(clue, size));
+  // Per column: index of the current block and length of the open run (0 = no open run).
+  const blockAt = new Array<number>(size).fill(0);
+  const runLen = new Array<number>(size).fill(0);
+  /** Rows a column still needs from its current state (blocks plus separating gaps). */
+  const needed = (clue: readonly number[], b: number, run: number): number => {
+    let total = 0;
+    for (let i = b; i < clue.length; i++) total += (clue[i] as number) + (i > b ? 1 : 0);
+    // An open run already covers part of block b; any later block also needs the gap after it.
+    return total - run;
+  };
   let count = 0;
-  const chosen: number[][] = [];
   const visit = (r: number): void => {
     if (count >= limit) return;
     if (r === size) {
-      count++;
+      // Every column must have closed all its blocks (an open run must be exactly the last block).
+      const complete = clues.cols.every((clue, c) => {
+        const b = blockAt[c] as number;
+        const run = runLen[c] as number;
+        return run === 0 ? b === clue.length : b === clue.length - 1 && run === clue[b];
+      });
+      if (complete) count++;
       return;
     }
+    const rowsLeft = size - r - 1;
     for (const row of options[r] ?? []) {
-      chosen.push(row);
-      const ok = clues.cols.every((clue, c) => {
-        const prefix = chosen.map((line) => line[c] as number);
-        return r === size - 1 ? same(runsOf(prefix), clue) : prefixFeasible(prefix, clue, size);
-      });
+      const savedBlock = [...blockAt];
+      const savedRun = [...runLen];
+      let ok = true;
+      for (let c = 0; c < size && ok; c++) {
+        const clue = clues.cols[c] as readonly number[];
+        let b = blockAt[c] as number;
+        let run = runLen[c] as number;
+        if (row[c] === 1) {
+          run++;
+          if (b >= clue.length || run > (clue[b] as number)) ok = false;
+        } else if (run > 0) {
+          if (run !== clue[b]) ok = false;
+          b++;
+          run = 0;
+        }
+        if (ok && needed(clue, b, run) > rowsLeft) ok = false;
+        blockAt[c] = b;
+        runLen[c] = run;
+      }
       if (ok) visit(r + 1);
-      chosen.pop();
+      blockAt.splice(0, size, ...savedBlock);
+      runLen.splice(0, size, ...savedRun);
     }
   };
   visit(0);

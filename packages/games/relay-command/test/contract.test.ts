@@ -1,0 +1,32 @@
+// @vitest-environment jsdom
+import { describe, expect, it } from 'vitest';
+import type { GameInstance } from '@wp/game-core';
+import { runGameContract } from '@wp/testing';
+import game from '../src/index';
+import { newGame, type RcState } from '../src/rules';
+
+const click = (root: HTMLElement, id: string) => {
+  const el = root.querySelector<HTMLElement>(`[data-testid="${id}"]`);
+  if (!el) throw new Error(`missing ${id}`);
+  el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+};
+
+/** Selects the player's first mobile unit, orders it to regroup and locks the turn. */
+function playOneTurn(root: HTMLElement, instance: GameInstance<RcState>) {
+  const state = instance.serialize();
+  const unit = state.world.entities.find((e) => e.side === 0 && e.kind !== 'command-post')!;
+  click(root, `rc-unit-${unit.id}`);
+  click(root, 'rc-regroup');
+  if (instance.serialize().draft.length !== 1) throw new Error('order was not planned');
+  click(root, 'rc-lock');
+}
+
+runGameContract(game, { interact: playOneTurn });
+
+describe('settingsOf (ADR 0017)', () => {
+  it('reports the difficulty a save was started with, and nothing for an unknown one', () => {
+    expect(game.settingsOf!(newGame(1, undefined, 'hard'))).toEqual({ difficulty: 'hard' });
+    expect(game.settingsOf!({ ...newGame(1), difficulty: 'nonsense' as never })).toEqual({});
+    for (const junk of [null, undefined, 7, 'hard', []]) expect(game.settingsOf!(junk as never)).toEqual({}); // never throws
+  });
+});
