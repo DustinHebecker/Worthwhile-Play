@@ -227,6 +227,9 @@ importers:
       '@wp/game-timeline':
         specifier: workspace:*
         version: link:../../packages/games/timeline
+      '@wp/game-tower-defense':
+        specifier: workspace:*
+        version: link:../../packages/games/tower-defense
       '@wp/game-visual-search':
         specifier: workspace:*
         version: link:../../packages/games/visual-search
@@ -1304,6 +1307,28 @@ importers:
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/tower-defense:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/strategy-engine':
+        specifier: workspace:*
+        version: link:../../strategy-engine
       '@wp/ui':
         specifier: workspace:*
         version: link:../../ui

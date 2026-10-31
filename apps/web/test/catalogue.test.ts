@@ -30,10 +30,12 @@ describe('game registry', () => {
 
   it("lists the games in the owner's order: the large games first, then the favourite small games", () => {
     const ids = GAMES.map((g) => g.metadata.id);
-    expect(ids.slice(0, 14)).toEqual([
+    // Owner (2026-10-31): Tower Defense at place 4 (the strategy/TD hybrid will take place 7).
+    expect(ids.slice(0, 15)).toEqual([
       'relay-command',
       'card-quest',
       'nonogram',
+      'tower-defense',
       'node-conquest',
       'pixel-peel',
       'chess',

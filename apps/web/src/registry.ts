@@ -31,6 +31,8 @@ export const GAMES: readonly GameEntry[] = [
   entry('relay-command', () => import('@wp/game-relay-command')),
   entry('card-quest', () => import('@wp/game-card-quest')),
   entry('nonogram', () => import('@wp/game-nonogram')),
+  // Owner (2026-10-31): Tower Defense at place 4, the strategy/TD hybrid at place 7 of the overall list.
+  entry('tower-defense', () => import('@wp/game-tower-defense')),
   entry('node-conquest', () => import('@wp/game-node-conquest')),
   entry('pixel-peel', () => import('@wp/game-pixel-peel')),
   entry('chess', () => import('@wp/game-chess')),
