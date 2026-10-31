@@ -66,3 +66,11 @@ test('tower-defense: an undefended game is lost, can be retried, and ends calmly
   await root(page).getByTestId('give-up').click();
   await expect(page.getByTestId('finished')).toBeVisible();
 });
+
+test('tower-defense: the map is chosen on the start screen and kept in the save', async ({ page }) => {
+  await startGame(page, 'tower-defense', { settings: { map: 'twin' } });
+  await expect(root(page).getByTestId('wave')).toContainText('12');
+  // Two road entries on the twin map: both corner cells are road.
+  await expect(root(page).getByTestId('cell-0-0')).toHaveAttribute('aria-label', /road/);
+  await expect(root(page).getByTestId('cell-6-0')).toHaveAttribute('aria-label', /road/);
+});

@@ -26,6 +26,7 @@ import {
   type TdState,
   type TowerPriority
 } from './rules';
+import { DEFAULT_MAP, mapById } from './maps';
 import './styles.css';
 
 /** Ticks between autosaves while a wave runs (5 simulated seconds). */
@@ -542,7 +543,9 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
 
   return {
     newGame(options: NewGameOptions) {
-      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty));
+      const wanted = options.settings?.map;
+      const mapId = typeof wanted === 'string' && mapById(wanted) ? wanted : DEFAULT_MAP;
+      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), mapId);
       show(initial);
     },
     restore(saved: TdState) {

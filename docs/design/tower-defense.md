@@ -531,7 +531,32 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
 - Title (owner, 2026-10-31): **"Tower Defense"** (genre name; transliterated or translated in non-Latin scripts). **"Hold the Line"** is the candidate name for the hybrid game.
 - Translations of all 16 locales are AI-assisted; the subagents' notes on wording to check (gendered announcements, target phrases, invented unit names) are kept for a native-speaker review.
 
-### 15.7 Increments
+### 15.7 Maps, pace and the first balance pass (2026-10-31)
+
+- **Maps:** Training ground (7 × 13, 6 waves), Fork (two lanes around a rocky middle), Long bend (one long serpentine, 30 % more units), Twin approach (two entries, two air routes, 50 more start credits). Every 12-wave map uses the same wave plan; its second variant per wave sends each group to the other lane, so the seed changes where the pressure comes from, never how much. The map is chosen on the start screen (ADR 0017 setting `map`).
+- **Pace:** road cost 16, so a Walker moves one cell per second at 1× (8 ticks per second) and slowed units half that. The first numbers (3 cells per second) gave towers too little time.
+- **Economy:** start 300 credits (Twin 350), wave income 65–120, bounties, **10 % interest** on credits unspent at wave start (D6).
+- **Balance harness** (`test/balance.long.test.ts`, CI long job, about 2½ minutes). A planner bot looks one wave ahead: before each wave it tries every family on the best pads and every upgrade, and keeps the action that saves the most threat per credit. It grades leaks by threat × health kept, so wearing a Colossus down counts. Asserted:
+  - the mixed planner wins every map on Relaxed and Standard with at least half the core left;
+  - random building loses every 12-wave map on Standard;
+  - every single-family defence ends Standard at least 8 core points worse than the mix, or loses.
+- **Measured** (seed 7):
+
+  | Bot | Result |
+  |---|---|
+  | Mixed planner, Standard | wins Fork, Long bend and Twin with 20/20 core |
+  | Gun only | wins with 10/20 |
+  | Laser only | wins with 3–9, or loses Twin |
+  | Artillery, Support or Specialist only | loses by wave 2–7 |
+  | Mixed planner, Hard | loses Fork in wave 12, wins Long bend with 1 core left |
+
+  The planner is greedy, so Hard is meant for players who plan ahead of the next wave.
+- **Changed during tuning:**
+  - Laser beams fire every second tick and ramp up to 3 stacks. Before, a Laser was worth about three Guns per credit.
+  - Gatling and Cannon damage is lower, and the base Gun deals 50 % against air.
+  - Hard: core 12, credits ×0.9, units ×1.2.
+
+### 15.8 Increments
 
 1. **TD core:** ruleset, the training map (6 waves), the build/wave phase machine on the engine, upgrades and branches, economy, leaks, victory and defeat, the checkpoint retry; unit and property tests (determinism, chunking invariance, save/restore at any tick, conservation, termination).
 2. **TD view:** canvas map, HUD, keyboard/touch, 16 locales, contract and e2e tests; three 12-wave maps; balance harness; catalogue place 4.

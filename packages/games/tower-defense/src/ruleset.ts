@@ -4,15 +4,16 @@ import type { Archetype, ArmorClass, Ruleset, StatusEffectSpec, TerrainSpec, Wea
  * Tower Defense ruleset on the shared strategy engine (docs/design/tower-defense.md § 15).
  * Numbers are first balancing guesses; the balance tests keep the intended trade-offs true.
  *
- * Time: 8 ticks per second at 1× playback. Road cost 8 → speed 2 moves one cell per 4 ticks.
+ * Time: 8 ticks per second at 1× playback. Road cost 16 → speed 2 moves one cell per 8 ticks (one cell
+ * per second); slowed units move at half speed (engine: speed halved, at least 1).
  */
 
 export const TICKS_PER_SECOND = 8;
 
 /** Terrain: `=` road, `b` build pad (passable but never worth a step), `^` rock, `~` water. */
 export const TD_TERRAIN: Readonly<Record<string, TerrainSpec>> = {
-  '=': { cost: 8, cover: 0, rangeBonus: 0 },
-  b: { cost: 400, cover: 0, rangeBonus: 0 },
+  '=': { cost: 16, cover: 0, rangeBonus: 0 },
+  b: { cost: 1600, cover: 0, rangeBonus: 0 },
   '^': { cost: null, cover: 0, rangeBonus: 0 },
   '~': { cost: null, cover: 0, rangeBonus: 0 }
 };
@@ -103,11 +104,11 @@ const enemy = (id: string, hp: number, armor: ArmorClass, speed: number, w: Weap
 /** Weapons of the tower kinds. Branch A is listed first in every family. */
 const TOWER_WEAPONS: Readonly<Record<string, WeaponSpec>> = {
   // Gun: cheap all-rounder. Gatling = many small hits (weak vs heavy); Cannon = big hits, no air.
-  gun: weapon({ damage: 6, range: 3, cooldown: 4, vs: vs(100, 100, 40, 80) }),
-  gatling: weapon({ damage: 3, range: 3, cooldown: 1, vs: vs(100, 100, 25, 100) }),
-  'gatling-2': weapon({ damage: 5, range: 4, cooldown: 1, vs: vs(100, 100, 25, 100) }),
-  cannon: weapon({ damage: 30, range: 3, cooldown: 8, vs: vs(70, 100, 130, 0) }),
-  'cannon-2': weapon({ damage: 60, range: 4, cooldown: 9, vs: vs(70, 100, 130, 0) }),
+  gun: weapon({ damage: 6, range: 3, cooldown: 4, vs: vs(100, 100, 40, 50) }),
+  gatling: weapon({ damage: 2, range: 3, cooldown: 1, vs: vs(100, 100, 25, 100) }),
+  'gatling-2': weapon({ damage: 3, range: 4, cooldown: 1, vs: vs(100, 100, 25, 100) }),
+  cannon: weapon({ damage: 24, range: 3, cooldown: 10, vs: vs(70, 100, 130, 0) }),
+  'cannon-2': weapon({ damage: 48, range: 4, cooldown: 10, vs: vs(70, 100, 130, 0) }),
   // Artillery: shells fly to a cell (moving targets can leave it), dead zone, ground only.
   artillery: weapon({ damage: 18, range: 5, minRange: 2, cooldown: 12, delivery: 'ballistic', flight: 4, splash: 1, vs: vs(100, 90, 60, 0) }),
   howitzer: weapon({ damage: 26, range: 8, minRange: 3, cooldown: 14, delivery: 'ballistic', flight: 6, splash: 1, vs: vs(100, 90, 70, 0) }),
@@ -115,9 +116,9 @@ const TOWER_WEAPONS: Readonly<Record<string, WeaponSpec>> = {
   mortar: weapon({ damage: 14, range: 4, minRange: 1, cooldown: 10, delivery: 'ballistic', flight: 3, splash: 2, vs: vs(100, 90, 50, 0), effect: slow(8) }),
   'mortar-2': weapon({ damage: 22, range: 4, minRange: 1, cooldown: 10, delivery: 'ballistic', flight: 3, splash: 2, vs: vs(100, 90, 50, 0), effect: slow(16) }),
   // Laser: beam that heats up on one target. Focus = long ramp (boss killer); Pulse = quick shots.
-  laser: weapon({ damage: 1, range: 3, delivery: 'beam', beamRamp: 1, beamMaxStacks: 4, vs: vs(100, 100, 100, 100) }),
-  focus: weapon({ damage: 1, range: 3, delivery: 'beam', beamRamp: 1, beamMaxStacks: 10, vs: vs(100, 100, 110, 100) }),
-  'focus-2': weapon({ damage: 1, range: 4, delivery: 'beam', beamRamp: 2, beamMaxStacks: 10, vs: vs(100, 100, 110, 100) }),
+  laser: weapon({ damage: 1, range: 3, cooldown: 2, delivery: 'beam', beamRamp: 1, beamMaxStacks: 3, vs: vs(100, 100, 100, 100) }),
+  focus: weapon({ damage: 1, range: 3, cooldown: 2, delivery: 'beam', beamRamp: 1, beamMaxStacks: 8, vs: vs(100, 100, 110, 100) }),
+  'focus-2': weapon({ damage: 1, range: 4, cooldown: 2, delivery: 'beam', beamRamp: 2, beamMaxStacks: 8, vs: vs(100, 100, 110, 100) }),
   pulse: weapon({ damage: 5, range: 4, cooldown: 2, vs: vs(100, 100, 50, 130) }),
   'pulse-2': weapon({ damage: 8, range: 5, cooldown: 2, vs: vs(100, 100, 50, 130) }),
   // Support: no real damage; slows. Stasis = wide short pulses; Snare = one target, long slow, far.
@@ -180,13 +181,13 @@ export const ENEMY_KINDS = ['walker', 'runner', 'swarm', 'brute', 'glider', 'rai
 export type EnemyKind = (typeof ENEMY_KINDS)[number];
 
 const ENEMY_ARCHETYPES: readonly Archetype[] = [
-  enemy('walker', 40, 'infantry', 3),
-  enemy('runner', 24, 'light', 5),
-  enemy('swarm', 10, 'infantry', 4),
+  enemy('walker', 40, 'infantry', 2),
+  enemy('runner', 24, 'light', 4),
+  enemy('swarm', 10, 'infantry', 3),
   enemy('brute', 220, 'heavy', 2),
   enemy('glider', 30, 'air', 1),
   // Armed: fires at towers within reach while it walks past.
-  enemy('raider', 70, 'light', 3, weapon({ damage: 4, range: 2, cooldown: 4, vs: vs(0, 0, 0, 0, 100) })),
+  enemy('raider', 70, 'light', 2, weapon({ damage: 4, range: 2, cooldown: 4, vs: vs(0, 0, 0, 0, 100) })),
   enemy('colossus', 1500, 'heavy', 2, weapon({ damage: 12, range: 2, cooldown: 6, vs: vs(0, 0, 0, 0, 100) }))
 ];
 

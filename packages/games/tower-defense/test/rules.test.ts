@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRng } from '@wp/game-core';
 import { worldHash } from '@wp/strategy-engine';
-import { TRAINING } from '../src/maps';
+import { MAPS, TRAINING } from '../src/maps';
 import { BASE_TOWERS, TOWERS } from '../src/ruleset';
 import {
   applyCommand,
@@ -75,10 +75,36 @@ describe('new game', () => {
     expect(newGame(7).variants).toEqual(newGame(7).variants);
   });
 
-  it('every route of the map runs from its spawn to the goal over passable cells', () => {
-    for (const route of TRAINING.routes) {
-      for (const [x, y] of route.points) expect(x >= 0 && y >= 0 && x < TRAINING.w && y < TRAINING.h).toBe(true);
-      if (route.layer === 'ground') for (const [x, y] of route.points) expect(TRAINING.rows[y]![x]).toBe('=');
+  it.each(MAPS.map((m) => m.id))('map %s: valid size, routes on the road, waves of known routes', (id) => {
+    const map = MAPS.find((m) => m.id === id)!;
+    // 7 columns keep 44 px cells on a 360 px phone.
+    expect(map.w).toBe(7);
+    expect(map.rows).toHaveLength(map.h);
+    for (const row of map.rows) expect(row).toMatch(/^[=b^~]{7}$/);
+    for (const route of map.routes) {
+      for (const [x, y] of route.points) expect(x >= 0 && y >= 0 && x < map.w && y < map.h).toBe(true);
+      if (route.layer === 'ground') for (const [x, y] of route.points) expect(map.rows[y]![x], `${id} ${x},${y}`).toBe('=');
+      // Every route ends at the same core.
+      expect(route.points.at(-1)).toEqual(map.routes[0]!.points.at(-1));
+    }
+    expect(map.income).toHaveLength(map.waves.length - 1);
+    for (const slot of map.waves) for (const wave of slot) for (const group of wave.groups) expect(map.routes[group.route]).toBeDefined();
+  });
+
+  it.each(MAPS.map((m) => m.id))('map %s: every unit of an undefended wave reaches the core in time', (id) => {
+    const map = MAPS.find((m) => m.id === id)!;
+    for (let wave = 0; wave < map.waves.length; wave += 4) {
+      const s = { ...newGame(1, 'standard', id), wave, core: 1000 };
+      const run = startWave(s);
+      const total = waveSchedule(run, wave).length;
+      let ticks = 0;
+      let end = run;
+      while (end.phase === 'wave') {
+        end = stepWave(end, 100).state;
+        ticks += 100;
+      }
+      expect(end.stats.leaked, `${id} wave ${wave + 1}`).toBe(total);
+      expect(ticks, `${id} wave ${wave + 1}`).toBeLessThan(MAX_WAVE_TICKS / 2);
     }
   });
 });

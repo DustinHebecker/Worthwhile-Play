@@ -119,9 +119,9 @@ export type BuildCommand =
 
 export type Refusal = 'phase' | 'unknown-kind' | 'not-a-pad' | 'occupied' | 'credits' | 'no-tower' | 'not-an-upgrade' | 'priority';
 
-const CORE: Record<Difficulty, number> = { relaxed: 30, standard: 20, hard: 10 };
-const CREDIT_PERCENT: Record<Difficulty, number> = { relaxed: 125, standard: 100, hard: 85 };
-const COUNT_PERCENT: Record<Difficulty, number> = { relaxed: 80, standard: 100, hard: 125 };
+const CORE: Record<Difficulty, number> = { relaxed: 30, standard: 20, hard: 12 };
+const CREDIT_PERCENT: Record<Difficulty, number> = { relaxed: 125, standard: 100, hard: 90 };
+const COUNT_PERCENT: Record<Difficulty, number> = { relaxed: 80, standard: 100, hard: 120 };
 
 const scaled = (value: number, percent: number): number => Math.max(1, Math.floor((value * percent) / 100));
 
@@ -270,20 +270,34 @@ export function startWave(state: TdState): TdState {
 const chebyshev = (ax: number, ay: number, bx: number, by: number): number => Math.max(Math.abs(ax - bx), Math.abs(ay - by));
 
 /** Advance the running wave by `ticks` ticks (or until it ends). */
-export function stepWave(state: TdState, ticks = 1): { state: TdState; events: SimEvent[] } {
-  if (state.phase !== 'wave' || !state.run) return { state, events: [] };
+/** A unit that got through: its kind and the health it still had (for summaries and grading). */
+export interface Leak {
+  id: number;
+  kind: EnemyKind;
+  hp: number;
+}
+
+export interface WaveStep {
+  state: TdState;
+  events: SimEvent[];
+  leaks: Leak[];
+}
+
+export function stepWave(state: TdState, ticks = 1): WaveStep {
+  if (state.phase !== 'wave' || !state.run) return { state, events: [], leaks: [] };
   let s = structuredClone(state);
   const events: SimEvent[] = [];
-  for (let i = 0; i < ticks && s.phase === 'wave'; i++) s = tickWave(s, events);
-  return { state: s, events };
+  const leaks: Leak[] = [];
+  for (let i = 0; i < ticks && s.phase === 'wave'; i++) s = tickWave(s, events, leaks);
+  return { state: s, events, leaks };
 }
 
 /** Run the current wave to its end. */
-export function resolveWave(state: TdState): { state: TdState; events: SimEvent[] } {
+export function resolveWave(state: TdState): WaveStep {
   return stepWave(state, MAX_WAVE_TICKS + 1);
 }
 
-function tickWave(s: TdState, events: SimEvent[]): TdState {
+function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
   const map = mapOf(s);
   const run = s.run!;
   let w = s.world;
@@ -318,7 +332,7 @@ function tickWave(s: TdState, events: SimEvent[]): TdState {
     }
     if (unit.order.type !== 'move' || unit.order.x !== gx || unit.order.y !== gy) commands.push({ side: 1, unit: unit.id, order: { type: 'move', x: gx, y: gy } });
   }
-  if (leaked.size > 0) leak(s, w, leaked);
+  if (leaked.size > 0) leak(s, w, leaked, leaks);
   // 3. One engine tick.
   const result = runTicks(w, TD_RULESET, commands, 1);
   w = result.world;
@@ -338,8 +352,11 @@ function tickWave(s: TdState, events: SimEvent[]): TdState {
   run.tick++;
   // 4. Safety bound, then the end of the wave.
   if (run.tick >= MAX_WAVE_TICKS) {
-    leak(s, w, new Set(run.walkers.map((x) => x.id)));
-    for (const p of run.pending) s.core -= ENEMIES[p.kind].threat;
+    leak(s, w, new Set(run.walkers.map((x) => x.id)), leaks);
+    for (const p of run.pending) {
+      s.core -= ENEMIES[p.kind].threat;
+      leaks.push({ id: 0, kind: p.kind, hp: archetypeOf(TD_RULESET, p.kind)?.hp ?? 1 });
+    }
     s.stats.leaked += run.pending.length;
     run.pending = [];
   }
@@ -352,9 +369,10 @@ function tickWave(s: TdState, events: SimEvent[]): TdState {
   return s;
 }
 
-function leak(s: TdState, w: World, ids: ReadonlySet<number>): void {
+function leak(s: TdState, w: World, ids: ReadonlySet<number>, out: Leak[]): void {
   for (const e of w.entities) {
     if (!ids.has(e.id) || !isEnemyKind(e.kind)) continue;
+    out.push({ id: e.id, kind: e.kind, hp: e.hp });
     s.core -= ENEMIES[e.kind].threat;
     s.stats.leaked++;
   }
