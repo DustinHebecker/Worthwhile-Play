@@ -1,7 +1,7 @@
 import { bcp47Tag, normalizeSeed, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { archetypeOf, type SimEvent } from '@wp/strategy-engine';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
-import { drawFrame, readPalette, type Palette } from './draw';
+import { drawFrame, drawTerrain, readPalette, type Palette } from './draw';
 import { BASE_TOWERS, TICKS_PER_SECOND, TD_RULESET, TOWERS, type EnemyKind } from './ruleset';
 import {
   applyCommand,
@@ -318,7 +318,27 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     const map = mapOf(state);
     const entries = map.routes.filter((r) => r.layer === 'ground').map((r) => r.points[0]!);
     const goal = map.routes[0]!.points.at(-1)!;
-    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goal, hpMax, splashOf });
+    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goal, hpMax, splashOf }, terrainLayer(width, dpr, palette));
+  };
+
+  /** The terrain drawn once per map, size and theme (the strategy terrain renderer is detailed). */
+  let terrainKey = '';
+  let terrainCanvas: HTMLCanvasElement | null = null;
+  const terrainLayer = (width: number, dpr: number, p: Palette): HTMLCanvasElement | null => {
+    const { map } = state.world;
+    const key = `${state.mapId}|${Math.round(width * dpr)}|${p.terrain.key}`;
+    if (key === terrainKey && terrainCanvas) return terrainCanvas;
+    const layer = document.createElement('canvas');
+    const cell = width / map.w;
+    layer.width = Math.round(width * dpr);
+    layer.height = Math.round(cell * map.h * dpr);
+    const lg = layer.getContext?.('2d');
+    if (!lg) return null;
+    lg.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawTerrain(lg, state.world, cell, p);
+    terrainKey = key;
+    terrainCanvas = layer;
+    return layer;
   };
 
   const render = (): void => {

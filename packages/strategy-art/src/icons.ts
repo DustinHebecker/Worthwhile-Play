@@ -223,6 +223,17 @@ export const PROFILE: Readonly<Record<string, Drawing>> = {
       ['l', 'M12.2,27 H31.8']
     ],
     base: true
+  },
+  // Support (Tower Defense): a dish on the pedestal sending slowing rings, no barrel.
+  'tower-support': {
+    parts: [
+      ['b', pedestal],
+      ['o', 'M22,20 V15.5', 2.4],
+      ['b', 'M12.5,15.5 Q22,20.5 31.5,15.5 L29.5,12.5 Q22,15.5 14.5,12.5 Z'],
+      ['o', 'M15,8.5 Q22,5 29,8.5 M11,5 Q22,-0.5 33,5', 1.5],
+      ['l', 'M12.2,27 H31.8']
+    ],
+    base: true
   }
 };
 
@@ -274,7 +285,8 @@ export const TOP: Readonly<Record<string, Drawing>> = {
   'tower-gun': { parts: [...towerTop, ['b', rect(26, 20.6, 17, 2.8, 0.6)], ['b', circ(22, 22, 6.5)]] },
   'tower-artillery': { parts: [...towerTop, ['b', rect(24, 20.3, 20, 3.4, 0.6)], ['b', rect(16, 16, 12, 12, 2)]] },
   'tower-laser': { parts: [...towerTop, ['b', rect(15, 17.5, 15, 9, 2)], ['b', circ(32, 22, 3)], ['f', circ(32, 22, 1.3)], ['d', 'M36,22 H44', 1.6]] },
-  'tower-emp': { parts: [...towerTop, ['b', circ(22, 22, 6)], ['f', circ(22, 22, 2.2)], ['o', circ(22, 22, 9.5), 1.4]] }
+  'tower-emp': { parts: [...towerTop, ['b', circ(22, 22, 6)], ['f', circ(22, 22, 2.2)], ['o', circ(22, 22, 9.5), 1.4]] },
+  'tower-support': { parts: [...towerTop, ['b', circ(22, 22, 7)], ['f', circ(22, 22, 4.2)], ['d', circ(22, 22, 10.5), 1.4]] }
 };
 
 /** Mixes two #rrggbb colours (t = share of b); anything else comes back unchanged. */

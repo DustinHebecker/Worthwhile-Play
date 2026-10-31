@@ -1,16 +1,21 @@
 .wp-tower-defense {
-  --td-road: #cdbf9c;
-  --td-pad: #f6f4ef;
-  --td-rock: #8d8a80;
+  /* Ground colours as in the strategy game (Relay Command). */
+  --td-plain: #e7e3d4;
+  --td-road: #cfc8b4;
+  --td-ridge: #c4bfb3;
+  --td-water: #a9c7dd;
+  --td-grid: rgba(29, 29, 27, 0.14);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 @media (prefers-color-scheme: dark) {
   .wp-tower-defense {
-    --td-road: #4a473f;
-    --td-pad: #2b2c27;
-    --td-rock: #121210;
+    --td-plain: #3a3a32;
+    --td-road: #4a473d;
+    --td-ridge: #5a5650;
+    --td-water: #2a4356;
+    --td-grid: rgba(236, 235, 228, 0.14);
   }
 }
 .td-hud {

@@ -1,55 +1,97 @@
 import type { Entity, World } from '@wp/strategy-engine';
+import { drawIcon, drawTerrainMap, type TerrainColours } from '@wp/strategy-art';
 import { TOWERS, type Family } from './ruleset';
 
 /**
- * Canvas painting of the map (view only, floats allowed). Every tower family and every enemy kind
- * has its own silhouette, and states (slowed, stopped, damaged, level) are drawn as shapes and
- * marks, so nothing depends on colour alone.
+ * Canvas painting of the map (view only, floats allowed), in the look of the strategy game
+ * (owner, 2026-10-31): its terrain renderer and its unit and structure pictures from
+ * @wp/strategy-art. Own towers are filled in the player colour and face right; wave units are a
+ * pale tint with an outline in the opponent colour and face the other way. Level and branch are
+ * drawn as pips, status effects as rings and crosses: nothing depends on colour alone.
  */
 
 export interface Palette {
   surface: string;
-  road: string;
-  pad: string;
-  rock: string;
   ink: string;
   muted: string;
-  tower: string;
+  own: string;
   enemy: string;
-  accent: string;
   focus: string;
+  grid: string;
+  terrain: TerrainColours & { key: string };
 }
 
-const FALLBACK: Palette = {
-  surface: '#ffffff',
-  road: '#cdbf9c',
-  pad: '#f6f4ef',
-  rock: '#8d8a80',
-  ink: '#1d1d1b',
-  muted: '#5c5b55',
-  tower: '#2f5d50',
-  enemy: '#a1271b',
-  accent: '#2f5d50',
-  focus: '#b4530a'
-};
+const TERRAIN_FALLBACK: Readonly<Record<string, string>> = { plain: '#e7e3d4', road: '#cfc8b4', ridge: '#c4bfb3', water: '#a9c7dd' };
+const TERRAIN_FALLBACK_DARK: Readonly<Record<string, string>> = { plain: '#3a3a32', road: '#4a473d', ridge: '#5a5650', water: '#2a4356' };
 
 export function readPalette(el: Element): Palette {
-  if (typeof getComputedStyle !== 'function') return FALLBACK;
-  const css = getComputedStyle(el);
-  const v = (name: string, fallback: string): string => css.getPropertyValue(name).trim() || fallback;
+  const css = typeof getComputedStyle === 'function' ? getComputedStyle(el) : undefined;
+  const v = (name: string, fallback: string): string => css?.getPropertyValue(name).trim() || fallback;
+  const surface = v('--wp-surface', '#ffffff');
+  const dark = isDark(surface);
+  const fallback = dark ? TERRAIN_FALLBACK_DARK : TERRAIN_FALLBACK;
+  const ground = Object.fromEntries(Object.keys(TERRAIN_FALLBACK).map((n) => [n, v(`--td-${n}`, fallback[n]!)]));
   return {
-    surface: v('--wp-surface', FALLBACK.surface),
-    road: v('--td-road', FALLBACK.road),
-    pad: v('--td-pad', FALLBACK.pad),
-    rock: v('--td-rock', FALLBACK.rock),
-    ink: v('--wp-text', FALLBACK.ink),
-    muted: v('--wp-muted', FALLBACK.muted),
-    tower: v('--wp-accent', FALLBACK.tower),
-    enemy: v('--wp-danger', FALLBACK.enemy),
-    accent: v('--wp-accent', FALLBACK.accent),
-    focus: v('--wp-focus', FALLBACK.focus)
+    surface,
+    ink: v('--wp-text', '#1d1d1b'),
+    muted: v('--wp-muted', '#5c5b55'),
+    own: v('--wp-p1', '#24508f'),
+    enemy: v('--wp-p2', '#9a3412'),
+    focus: v('--wp-focus', '#b4530a'),
+    grid: v('--td-grid', dark ? 'rgba(236, 235, 228, 0.14)' : 'rgba(29, 29, 27, 0.14)'),
+    terrain: { base: (n) => ground[n] ?? ground.plain!, dark, key: Object.values(ground).join() }
   };
 }
+
+function isDark(colour: string): boolean {
+  const m = /^#([0-9a-f]{6})$/i.exec(colour);
+  if (!m) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(m[1]!.slice(i, i + 2), 16));
+  return r! + g! + b! < 3 * 110;
+}
+
+/** TD terrain codes → the strategy terrain they look like (a build pad is open ground). */
+const LOOKS: Readonly<Record<string, string>> = { b: '.', '=': '=', '^': '^', '~': '~' };
+
+/** The terrain of a map drawn once into `g` (the view caches it per size and theme). */
+export function drawTerrain(g: CanvasRenderingContext2D, world: World, cell: number, palette: Palette): void {
+  const { map } = world;
+  const terrain = [...map.terrain].map((c) => LOOKS[c] ?? '.').join('');
+  drawTerrainMap(g, { w: map.w, h: map.h, terrain }, cell, palette.terrain, 'profile', 'fine');
+  // Cell grid, so every build pad reads as a cell.
+  g.strokeStyle = palette.grid;
+  g.lineWidth = 1;
+  g.beginPath();
+  for (let x = 1; x < map.w; x++) {
+    g.moveTo(x * cell + 0.5, 0);
+    g.lineTo(x * cell + 0.5, map.h * cell);
+  }
+  for (let y = 1; y < map.h; y++) {
+    g.moveTo(0, y * cell + 0.5);
+    g.lineTo(map.w * cell, y * cell + 0.5);
+  }
+  g.stroke();
+}
+
+/** Strategy pictures for the tower families. */
+export const TOWER_ICON: Readonly<Record<Family, string>> = {
+  gun: 'tower-gun',
+  artillery: 'tower-artillery',
+  laser: 'tower-laser',
+  support: 'tower-support',
+  specialist: 'tower-emp'
+};
+
+/** Strategy pictures for the wave units, and their size (one cell = 1). */
+export const ENEMY_ICON: Readonly<Record<string, readonly [string, number]>> = {
+  walker: ['rifles', 0.85],
+  runner: ['outrider', 0.8],
+  swarm: ['rifles', 0.55],
+  brute: ['warden', 0.95],
+  glider: ['kite', 0.8],
+  raider: ['lancer', 0.85],
+  colossus: ['warden', 1.35]
+};
 
 export interface Frame {
   world: World;
@@ -59,7 +101,7 @@ export interface Frame {
   alpha: number;
   /** Beams fired in the last tick: shooter → target cells. */
   beams: readonly (readonly [number, number, number, number])[];
-  /** Shells that landed in the last tick, with splash radius in cells. */
+  /** Shells that landed in the last tick. */
   blasts: readonly (readonly [number, number, number])[];
   selected: { x: number; y: number } | null;
   /** Road entries (spawn cells) and the end of the road (the core). */
@@ -70,112 +112,19 @@ export interface Frame {
 }
 
 const TAU = Math.PI * 2;
-
-function towerShape(g: CanvasRenderingContext2D, family: Family, cx: number, cy: number, r: number): void {
-  g.beginPath();
-  switch (family) {
-    case 'gun':
-      g.rect(cx - r, cy - r, 2 * r, 2 * r);
-      break;
-    case 'artillery':
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * TAU + TAU / 16;
-        g[i === 0 ? 'moveTo' : 'lineTo'](cx + r * Math.cos(a), cy + r * Math.sin(a));
-      }
-      g.closePath();
-      break;
-    case 'laser':
-      g.moveTo(cx, cy - r);
-      g.lineTo(cx + r, cy);
-      g.lineTo(cx, cy + r);
-      g.lineTo(cx - r, cy);
-      g.closePath();
-      break;
-    case 'support':
-      g.arc(cx, cy, r, 0, TAU);
-      break;
-    case 'specialist':
-      g.moveTo(cx, cy - r);
-      g.lineTo(cx + r, cy + r * 0.8);
-      g.lineTo(cx - r, cy + r * 0.8);
-      g.closePath();
-      break;
-  }
-}
-
-function enemyShape(g: CanvasRenderingContext2D, kind: string, cx: number, cy: number, cell: number): void {
-  const r = cell * 0.22;
-  g.beginPath();
-  switch (kind) {
-    case 'runner':
-      g.moveTo(cx, cy - r * 1.2);
-      g.lineTo(cx + r * 0.8, cy + r);
-      g.lineTo(cx - r * 0.8, cy + r);
-      g.closePath();
-      break;
-    case 'swarm':
-      g.arc(cx, cy, r * 0.55, 0, TAU);
-      break;
-    case 'brute':
-      g.rect(cx - r * 1.3, cy - r * 1.3, r * 2.6, r * 2.6);
-      break;
-    case 'glider':
-      g.moveTo(cx - r * 1.4, cy - r * 0.6);
-      g.lineTo(cx, cy + r * 0.8);
-      g.lineTo(cx + r * 1.4, cy - r * 0.6);
-      g.lineTo(cx, cy);
-      g.closePath();
-      break;
-    case 'raider':
-      g.arc(cx, cy, r * 1.1, 0, TAU);
-      break;
-    case 'colossus':
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * TAU;
-        g[i === 0 ? 'moveTo' : 'lineTo'](cx + r * 1.9 * Math.cos(a), cy + r * 1.9 * Math.sin(a));
-      }
-      g.closePath();
-      break;
-    default:
-      g.arc(cx, cy, r, 0, TAU);
-  }
-}
-
 const has = (e: Entity, kind: 'slowed' | 'disabled'): boolean => e.status.some((s) => s.kind === kind && s.ticks > 0);
 
-export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: Palette, f: Frame): void {
+/** Draws one frame; `terrain` is the cached terrain layer (or null to draw plain cells). */
+export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: Palette, f: Frame, terrain: CanvasImageSource | null): void {
   const { map } = f.world;
   const cell = width / map.w;
   g.clearRect(0, 0, width, cell * map.h);
-  // Terrain: road plain, pads with a dotted centre, rock hatched.
-  for (let y = 0; y < map.h; y++) {
-    for (let x = 0; x < map.w; x++) {
-      const code = map.terrain[y * map.w + x];
-      const px = x * cell;
-      const py = y * cell;
-      g.fillStyle = code === '=' ? palette.road : code === 'b' ? palette.pad : palette.rock;
-      g.fillRect(px, py, cell, cell);
-      g.strokeStyle = palette.muted;
-      g.globalAlpha = 0.25;
-      g.lineWidth = 1;
-      g.strokeRect(px + 0.5, py + 0.5, cell - 1, cell - 1);
-      if (code === 'b') {
-        g.fillStyle = palette.muted;
-        g.beginPath();
-        g.arc(px + cell / 2, py + cell / 2, Math.max(1, cell * 0.04), 0, TAU);
-        g.fill();
-      } else if (code !== '=') {
-        g.beginPath();
-        for (let k = -cell; k < cell; k += cell / 4) {
-          g.moveTo(px + Math.max(0, k), py + Math.max(0, -k));
-          g.lineTo(px + Math.min(cell, cell + k), py + Math.min(cell, cell - k));
-        }
-        g.stroke();
-      }
-      g.globalAlpha = 1;
-    }
-  }
-  // Entry: a chevron pointing into the road. Core: a double ring.
+  if (terrain) g.drawImage(terrain, 0, 0, width, cell * map.h);
+  const k = cell / 44;
+  const own = { own: true, colour: palette.own, surface: palette.surface, view: 'profile' as const };
+  const foe = { own: false, colour: palette.enemy, surface: palette.surface, view: 'profile' as const };
+
+  // Entry: a chevron into the road. The core: the player's Command Post.
   g.strokeStyle = palette.ink;
   g.lineWidth = Math.max(2, cell * 0.05);
   for (const [x, y] of f.entries) {
@@ -187,56 +136,52 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     g.lineTo(cx + cell * 0.22, cy - cell * 0.12);
     g.stroke();
   }
-  {
-    const cx = (f.goal[0] + 0.5) * cell;
-    const cy = (f.goal[1] + 0.5) * cell;
+  if (!drawIcon(g, 'command-post', f.goal[0] * cell, f.goal[1] * cell, k, own)) {
     for (const r of [0.36, 0.22]) {
       g.beginPath();
-      g.arc(cx, cy, cell * r, 0, TAU);
+      g.arc((f.goal[0] + 0.5) * cell, (f.goal[1] + 0.5) * cell, cell * r, 0, TAU);
       g.stroke();
     }
   }
+
   const pos = (e: Entity): [number, number] => {
     const p = f.prev.get(e.id);
     const [px, py] = p ?? [e.x, e.y];
     return [(px + (e.x - px) * f.alpha + 0.5) * cell, (py + (e.y - py) * f.alpha + 0.5) * cell];
   };
-  // Incoming shells: a shrinking ring on the landing cell.
+
+  // Incoming shells: a dashed ring on the landing cell, as large as the blast.
+  g.strokeStyle = palette.ink;
+  g.lineWidth = 1.5;
+  g.setLineDash([3, 3]);
   for (const p of f.world.projectiles) {
-    g.strokeStyle = palette.ink;
-    g.setLineDash([3, 3]);
-    g.lineWidth = 1.5;
     g.beginPath();
-    g.arc((p.x + 0.5) * cell, (p.y + 0.5) * cell, Math.max(2, cell * (0.15 + 0.35 * f.splashOf(p.kind))), 0, TAU);
+    g.arc((p.x + 0.5) * cell, (p.y + 0.5) * cell, Math.max(3, cell * (0.2 + f.splashOf(p.kind))), 0, TAU);
     g.stroke();
-    g.setLineDash([]);
   }
+  g.setLineDash([]);
+
   // Towers.
   for (const e of f.world.entities) {
     if (e.side !== 0) continue;
     const def = TOWERS[e.kind];
     if (!def) continue;
     const [cx, cy] = pos(e);
-    const r = cell * 0.3;
-    towerShape(g, def.family, cx, cy, r);
-    g.fillStyle = palette.surface;
-    g.fill();
-    g.lineWidth = Math.max(2, cell * 0.06);
-    g.strokeStyle = palette.tower;
-    g.stroke();
-    // Level pips under the shape; branch B pips hollow, A filled.
+    if (!drawIcon(g, TOWER_ICON[def.family], cx - cell / 2, cy - cell / 2, k, own)) fallbackShape(g, cx, cy, cell * 0.3, palette.own, palette.surface);
+    // Level pips along the bottom edge: filled for branch A, hollow for branch B.
+    g.fillStyle = palette.own;
+    g.strokeStyle = palette.own;
+    g.lineWidth = 1.5;
     for (let i = 0; i < def.level; i++) {
       g.beginPath();
-      g.arc(cx - cell * 0.16 + i * cell * 0.16, cy + cell * 0.42, cell * 0.05, 0, TAU);
-      g.fillStyle = palette.tower;
-      if (def.branch === 'b') {
-        g.lineWidth = 1.5;
-        g.stroke();
-      } else g.fill();
+      g.arc(cx - cell * 0.18 + i * cell * 0.18, cy + cell * 0.4, cell * 0.06, 0, TAU);
+      if (def.branch === 'b') g.stroke();
+      else g.fill();
     }
     const max = f.hpMax(e.kind);
-    if (e.hp < max) bar(g, cx, cy - cell * 0.44, cell * 0.6, e.hp / max, palette.tower, palette.muted);
+    if (e.hp < max) bar(g, cx, cy - cell * 0.44, cell * 0.6, e.hp / max, palette.own, palette.muted);
   }
+
   // Beams.
   g.lineWidth = Math.max(2, cell * 0.05);
   g.strokeStyle = palette.focus;
@@ -246,29 +191,32 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     g.lineTo((tx + 0.5) * cell, (ty + 0.5) * cell);
     g.stroke();
   }
-  // Enemies.
+
+  // Wave units.
   for (const e of f.world.entities) {
     if (e.side !== 1) continue;
     const [cx, cy] = pos(e);
-    enemyShape(g, e.kind, cx, cy, cell);
-    g.fillStyle = palette.enemy;
-    g.fill();
-    g.lineWidth = 1.5;
-    g.strokeStyle = palette.surface;
-    g.stroke();
-    if (e.kind === 'raider' || e.kind === 'colossus') {
+    const [icon, size] = ENEMY_ICON[e.kind] ?? ['rifles', 0.8];
+    const s = cell * size;
+    if (!drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, foe)) {
       g.beginPath();
-      g.moveTo(cx - cell * 0.1, cy);
-      g.lineTo(cx + cell * 0.1, cy);
-      g.moveTo(cx, cy - cell * 0.1);
-      g.lineTo(cx, cy + cell * 0.1);
+      g.arc(cx, cy, s * 0.3, 0, TAU);
+      g.fillStyle = palette.enemy;
+      g.fill();
+    }
+    if (e.kind === 'colossus') {
+      g.strokeStyle = palette.enemy;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.arc(cx, cy, s * 0.55, 0, TAU);
       g.stroke();
     }
     if (has(e, 'slowed')) {
       g.setLineDash([2, 3]);
       g.strokeStyle = palette.ink;
+      g.lineWidth = 1.5;
       g.beginPath();
-      g.arc(cx, cy, cell * 0.38, 0, TAU);
+      g.arc(cx, cy, cell * 0.42, 0, TAU);
       g.stroke();
       g.setLineDash([]);
     }
@@ -283,14 +231,15 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.stroke();
     }
     const max = f.hpMax(e.kind);
-    if (e.hp < max) bar(g, cx, cy - cell * 0.4, cell * 0.5, e.hp / max, palette.enemy, palette.muted);
+    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, palette.enemy, palette.muted);
   }
+
   // Blasts.
   g.strokeStyle = palette.ink;
   g.lineWidth = 2;
-  for (const [x, y, splash] of f.blasts) {
+  for (const [x, y] of f.blasts) {
     g.beginPath();
-    g.arc((x + 0.5) * cell, (y + 0.5) * cell, Math.max(cell * 0.3, (splash + 0.5) * cell), 0, TAU);
+    g.arc((x + 0.5) * cell, (y + 0.5) * cell, cell * 0.35, 0, TAU);
     g.stroke();
   }
   if (f.selected) {
@@ -298,6 +247,15 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     g.lineWidth = 3;
     g.strokeRect(f.selected.x * cell + 2, f.selected.y * cell + 2, cell - 4, cell - 4);
   }
+}
+
+function fallbackShape(g: CanvasRenderingContext2D, cx: number, cy: number, r: number, fill: string, edge: string): void {
+  g.beginPath();
+  g.rect(cx - r, cy - r, 2 * r, 2 * r);
+  g.fillStyle = fill;
+  g.fill();
+  g.strokeStyle = edge;
+  g.stroke();
 }
 
 function bar(g: CanvasRenderingContext2D, cx: number, y: number, w: number, share: number, fill: string, frame: string): void {
