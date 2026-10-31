@@ -12,7 +12,9 @@ import {
   interestOf,
   isPad,
   isValidState,
+  mapOf,
   MAX_WAVE_TICKS,
+  STUN_BUDGET,
   newGame,
   refundOf,
   replay,
@@ -68,6 +70,11 @@ describe('new game', () => {
     expect(newGame(1, 'relaxed').credits).toBeGreaterThan(s.credits);
     expect(newGame(1, 'hard').core).toBeLessThan(s.core);
     expect(isValidState(s)).toBe(true);
+  });
+
+  it.each(MAPS.filter((m) => m.waves.length === 12).map((m) => m.id))('map %s: the seed varies most waves', (id) => {
+    const map = MAPS.find((m) => m.id === id)!;
+    expect(map.waves.filter((slot) => slot.length > 1).length).toBeGreaterThanOrEqual(8);
   });
 
   it('picks wave variants from the seed only', () => {
@@ -354,6 +361,146 @@ describe('properties', () => {
       }),
       { numRuns: 8 }
     );
+  });
+
+  it('a unit can be stopped for at most STUN_BUDGET ticks per wave, so stop-only builds cannot stall a wave', () => {
+    // Only EMP towers around the first road cells: they deal 1 damage, so everything walks through eventually.
+    let s = { ...newGame(1, 'relaxed'), credits: 5000 };
+    for (const [x, y] of [[2, 0], [4, 0], [2, 1], [4, 1], [2, 2], [4, 2]] as const) s = applyCommand(s, { t: 'place', kind: 'specialist', x, y });
+    for (const tower of s.world.entities) s = applyCommand(s, { t: 'upgrade', id: tower.id, kind: 'blackout' });
+    let run = startWave(s);
+    let ticks = 0;
+    while (run.phase === 'wave') {
+      run = stepWave(run, 10).state;
+      ticks += 10;
+      for (const w of run.run?.walkers ?? []) expect(w.stun ?? 0).toBeLessThanOrEqual(STUN_BUDGET);
+    }
+    expect(ticks).toBeLessThan(MAX_WAVE_TICKS / 4);
+  });
+
+  describe('stop budget, tick by tick', () => {
+    /** A running wave with one walker on the road, no towers. */
+    const running = (): TdState => {
+      let s = startWave(newGame(1));
+      while ((s.run?.walkers.length ?? 0) === 0) s = stepWave(s, 1).state;
+      return clone(s);
+    };
+    const stop = (s: TdState, stun: number | undefined, ticks = 10): TdState => {
+      const t = clone(s);
+      const walker = t.run!.walkers[0]!;
+      if (stun === undefined) delete walker.stun;
+      else walker.stun = stun;
+      t.world.entities.find((e) => e.id === walker.id)!.status = [{ kind: 'disabled', ticks }];
+      return t;
+    };
+    const after = (s: TdState) => {
+      const next = stepWave(s, 1).state;
+      const walker = next.run!.walkers.find((w) => w.id === s.run!.walkers[0]!.id)!;
+      const unit = next.world.entities.find((e) => e.id === walker.id)!;
+      return { stun: walker.stun, stopped: unit.status.some((st) => st.kind === 'disabled') };
+    };
+
+    it('counts every stopped tick from the first one', () => {
+      expect(after(stop(running(), undefined))).toEqual({ stun: 1, stopped: true });
+      expect(after(stop(running(), 5))).toEqual({ stun: 6, stopped: true });
+    });
+
+    it('a unit that is not stopped spends nothing of its budget', () => {
+      const s = running();
+      expect(after(s)).toEqual({ stun: undefined, stopped: false });
+      const t = clone(s);
+      t.run!.walkers[0]!.stun = 7;
+      expect(after(t)).toEqual({ stun: 7, stopped: false });
+    });
+
+    it('the last tick of the budget still stops; after it every stop is shaken off', () => {
+      expect(after(stop(running(), STUN_BUDGET - 1))).toEqual({ stun: STUN_BUDGET, stopped: true });
+      expect(after(stop(running(), STUN_BUDGET))).toEqual({ stun: STUN_BUDGET, stopped: false });
+    });
+
+    it('shaking off a stop keeps a slow, and a slow alone spends nothing of the budget', () => {
+      const t = stop(running(), STUN_BUDGET);
+      const unit = t.world.entities.find((e) => e.id === t.run!.walkers[0]!.id)!;
+      unit.status = [{ kind: 'slowed', ticks: 10 }, { kind: 'disabled', ticks: 10 }];
+      const next = stepWave(t, 1).state;
+      const status = next.world.entities.find((e) => e.id === unit.id)!.status.map((st) => st.kind);
+      expect(status).toEqual(['slowed']);
+      const slowOnly = clone(running());
+      slowOnly.world.entities.find((e) => e.id === slowOnly.run!.walkers[0]!.id)!.status = [{ kind: 'slowed', ticks: 10 }];
+      expect(stepWave(slowOnly, 1).state.run!.walkers[0]!.stun).toBeUndefined();
+    });
+
+    it('only the stopped unit spends its budget when several are on the road', () => {
+      let s = startWave(newGame(1));
+      while ((s.run?.walkers.length ?? 0) < 2) s = stepWave(s, 1).state;
+      const t = clone(s);
+      const second = t.run!.walkers[1]!;
+      t.world.entities.find((e) => e.id === second.id)!.status = [{ kind: 'disabled', ticks: 10 }];
+      const next = stepWave(t, 1).state;
+      expect(next.run!.walkers.find((w) => w.id === second.id)!.stun).toBe(1);
+      expect(next.run!.walkers.find((w) => w.id === t.run!.walkers[0]!.id)!.stun).toBeUndefined();
+    });
+
+    it('a spent stop (no ticks left) costs nothing', () => {
+      expect(after(stop(running(), undefined, 0)).stun).toBeUndefined();
+    });
+
+    it('the budget is six seconds of stopping', () => {
+      expect(STUN_BUDGET).toBe(6 * 8);
+    });
+
+    it('saves accept a budget between 1 and STUN_BUDGET only', () => {
+      const s = running();
+      const withStun = (v: unknown): boolean => {
+        const t = clone(s) as unknown as { run: { walkers: Record<string, unknown>[] } };
+        t.run.walkers[0]!.stun = v;
+        return isValidState(t);
+      };
+      expect(isValidState(s)).toBe(true);
+      expect(withStun(1)).toBe(true);
+      expect(withStun(STUN_BUDGET)).toBe(true);
+      for (const bad of [0, -1, STUN_BUDGET + 1, 1.5, '3', null]) expect(withStun(bad), String(bad)).toBe(false);
+    });
+  });
+
+  it('rejects every malformed part of a running wave', () => {
+    let base = startWave(newGame(1, 'standard', 'fork'));
+    while ((base.run?.walkers.length ?? 0) < 2) base = stepWave(base, 1).state;
+    base = clone(base);
+    expect(isValidState(base)).toBe(true);
+    type Run = { tick: unknown; pending: Record<string, unknown>[]; walkers: Record<string, unknown>[] };
+    const tampered = (change: (run: Run, t: TdState) => void): boolean => {
+      const t = clone(base);
+      change(t.run as unknown as Run, t);
+      return isValidState(t);
+    };
+    const routes = mapOf(base).routes;
+    const firstLegs = routes[base.run!.walkers[0]!.route]!.points.length;
+    // Valid edge values stay valid.
+    expect(tampered((r) => (r.walkers[0]!.leg = firstLegs - 1))).toBe(true);
+    expect(tampered((r) => (r.pending[0]!.route = routes.length - 1))).toBe(true);
+    const bad: [string, (run: Run, t: TdState) => void][] = [
+      ['run missing', (_r, t) => ((t as { run: unknown }).run = null)],
+      ['run not an object', (_r, t) => ((t as { run: unknown }).run = 5)],
+      ['tick negative', (r) => (r.tick = -1)],
+      ['tick beyond the bound', (r) => (r.tick = MAX_WAVE_TICKS + 1)],
+      ['pending entry not an object', (r) => (r.pending[0] = 7 as never)],
+      ['pending time negative', (r) => (r.pending[0]!.at = -1)],
+      ['pending kind not a string', (r) => (r.pending[0]!.kind = 3)],
+      ['pending kind unknown', (r) => (r.pending[0]!.kind = 'gun')],
+      ['pending route negative', (r) => (r.pending[0]!.route = -1)],
+      ['pending route beyond the map', (r) => (r.pending[0]!.route = routes.length)],
+      ['walker not an object', (r) => (r.walkers[0] = 'x' as never)],
+      ['walker id zero', (r) => (r.walkers[0]!.id = 0)],
+      ['walker route beyond the map', (r) => (r.walkers[0]!.route = routes.length)],
+      ['walker route negative', (r) => (r.walkers[0]!.route = -1)],
+      ['walker leg zero', (r) => (r.walkers[0]!.leg = 0)],
+      ['walker leg past the goal', (r) => (r.walkers[0]!.leg = firstLegs)],
+      ['a unit without its walker', (r) => r.walkers.pop()],
+      ['a walker for another unit', (r) => (r.walkers[0]!.id = 9999)],
+      ['two walkers for one unit', (r) => (r.walkers[1]!.id = r.walkers[0]!.id)]
+    ];
+    for (const [name, change] of bad) expect(tampered(change), name).toBe(false);
   });
 
   it('a crafted running wave with more units than its schedule is rejected', () => {

@@ -81,4 +81,10 @@ test('tower-defense: the map is chosen on the start screen and kept in the save'
   // Two road entries on the twin map: both corner cells are road.
   await expect(root(page).getByTestId('cell-0-0')).toHaveAttribute('aria-label', /road/);
   await expect(root(page).getByTestId('cell-6-0')).toHaveAttribute('aria-label', /road/);
+  // The choice is part of the saved game and survives a reload.
+  await expect.poll(async () => ((await readSave(page, 'tower-defense')) as { state?: { mapId?: string } } | undefined)?.state?.mapId).toBe('twin');
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(root(page).getByTestId('cell-6-0')).toHaveAttribute('aria-label', /road/);
+  await expect(root(page).getByTestId('wave')).toContainText('12');
 });

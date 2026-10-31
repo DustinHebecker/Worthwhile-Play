@@ -199,7 +199,7 @@ Later (hybrid / strategy): Support doubles as **command relay** for the command 
 | Corroder | ○ | ○ | ○ | ●● | ● | ○ | ○ |
 
 ●● strong · ● fine · ○ weak · ✕ cannot / near-useless.
-Hard requirement checked in CI (§ 11.3): every branch is the best credit-efficiency choice against at least one archetype and among the worst against at least one.
+Design intent, **not yet a CI check** (§ 15.7 has what the harness asserts today): every branch is the best credit-efficiency choice against at least one archetype and among the worst against at least one. A per-branch credit-efficiency matrix test is planned.
 
 ---
 
@@ -244,7 +244,7 @@ interface TowerDefenseState {
 
 ## 8. Victory, difficulty, results
 
-- Difficulties: **Relaxed** (more credits, core 30), **Standard** (core 20), **Hard** (fewer credits, +HP, core 10). No dynamic difficulty adjustment (it hides information and undermines planning).
+- Difficulties: **Relaxed** (more credits, core 30), **Standard** (core 20), **Hard** (credits ×0.9, units ×1.2, core 12; § 15.7). No dynamic difficulty adjustment (it hides information and undermines planning).
 - Victory: survive the last wave. Defeat: core integrity 0. Both call `finished()` exactly once.
 - Results are descriptive only.
 
@@ -548,9 +548,12 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
   | Gun only | wins with 10/20 |
   | Laser only | wins with 3–9, or loses Twin |
   | Artillery, Support or Specialist only | loses by wave 2–7 |
-  | Mixed planner, Hard | loses Fork in wave 12, wins Long bend with 1 core left |
+  | Mixed planner, Hard | loses Fork and Twin approach in wave 12, wins Long bend with 1 core left |
 
-  The planner is greedy, so Hard is meant for players who plan ahead of the next wave.
+  The planner is greedy, so Hard is meant for players who plan ahead of the next wave. Hard is **not** asserted by the harness; whether it must be winnable by the bot is an open owner question.
+- **Stop budget:** a unit can be stopped (EMP) for at most 48 ticks (6 s at 1×) per wave; afterwards it shakes off further stops. Stop-only builds could otherwise stall a wave up to the safety bound (review of PR #97).
+- **Seed on one-lane maps:** Long bend's second variant per wave reverses the order in which the groups start, so the seed matters there too.
+- **Known limit:** 7 cells of 44 px need a viewport of about 340 px (page margins included); below that (e.g. 320 px phones) cells shrink to about 41 px.
 - **Changed during tuning:**
   - Laser beams fire every second tick and ramp up to 3 stacks. Before, a Laser was worth about three Guns per credit.
   - Gatling and Cannon damage is lower, and the base Gun deals 50 % against air.

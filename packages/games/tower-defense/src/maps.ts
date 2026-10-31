@@ -96,8 +96,9 @@ export const TRAINING: TdMap = {
 /**
  * The twelve waves of the full maps. Every slot names its groups as [kind, count, every, at]; `lanes`
  * are the ground routes and `air` the air routes the groups are spread over (round robin in
- * authoring order). The second variant of a slot sends every group to the next lane instead, so the
- * seed changes where the pressure comes from, never how much there is. Waves 4, 8 and 12 mix
+ * authoring order). The second variant of a slot sends every group to the next lane instead (one-lane
+ * maps: the groups start in reverse order), so the seed changes where or when the pressure comes,
+ * never how much there is. Waves 4, 8 and 12 mix
  * archetypes that need different answers; wave 12 brings the Siege crawler.
  */
 type G = readonly [EnemyKind, number, number, number];
@@ -129,9 +130,18 @@ function twelve(lanes: readonly number[], air: readonly number[], percent = 100)
       };
     });
   const a = assign(0);
-  const b = assign(1);
-  // A second variant only where it differs (single lane and single air route: one variant).
-  return a.map((wave, i) => (JSON.stringify(wave) === JSON.stringify(b[i]) ? [wave] : [wave, b[i]!]));
+  // With several lanes the second variant swaps them; with one lane it reverses the order in
+  // which the groups start (same units, different timing), so the seed matters on every map.
+  const swapped = assign(1);
+  const reordered = a.map((wave) => {
+    const starts = wave.groups.map((grp) => grp.at).reverse();
+    return { groups: wave.groups.map((grp, i) => ({ ...grp, at: starts[i]! })) };
+  });
+  return a.map((wave, i) => {
+    const key = JSON.stringify(wave);
+    const other = [swapped[i]!, reordered[i]!].find((v) => JSON.stringify(v) !== key);
+    return other ? [wave, other] : [wave];
+  });
 }
 
 /** Fork: the road splits into two lanes around a rocky middle and joins again before the core. */
