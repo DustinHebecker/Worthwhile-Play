@@ -83,9 +83,14 @@ test('atlas-explorer: tapping the target on the map is "On target"; the review e
   const item = await current<FindItem>(page);
   const [lon, lat] = targetPoint(item);
   await page.getByTestId('ae-map').scrollIntoViewIfNeeded();
-  const p = await clientPoint(page, lon, lat);
-  await page.mouse.click(p.x, p.y);
-  await savedWhere(page, (s) => (s.items[s.index] as FindItem).draft !== null);
+  // Under load the page can still settle (layout, scroll) between measuring and clicking: measure again
+  // and click again until the marker is placed and saved.
+  let p = await clientPoint(page, lon, lat);
+  await expect(async () => {
+    p = await clientPoint(page, lon, lat);
+    await page.mouse.click(p.x, p.y);
+    await expect.poll(async () => ((await saved(page))!.items[(await saved(page))!.index] as FindItem).draft !== null, { timeout: 3000 }).toBe(true);
+  }).toPass({ timeout: 20_000 });
   await page.getByTestId('ae-check').click();
   await expect(page.getByTestId('ae-root')).toHaveAttribute('data-phase', 'find-review');
   const done = await current<FindItem>(page);
