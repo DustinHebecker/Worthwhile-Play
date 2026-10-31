@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drawTerrainMap, type TerrainMap } from '../src/terrain';
+import { drawTerrainMap, type TerrainMap } from '@wp/strategy-art';
 import { TERRAIN_NAMES } from '../src/draw';
 import { recorder, withPath2D } from './canvas';
 

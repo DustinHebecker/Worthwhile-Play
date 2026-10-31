@@ -1,6 +1,5 @@
 /** Drawing shared by the game map and the map editor (one cell = CELL px, marks never colour alone). */
-import type { View } from './icons';
-import { drawTerrainMap, type TerrainDetail, type TerrainMap } from './terrain';
+import { drawTerrainMap, type TerrainDetail, type TerrainMap, type View } from '@wp/strategy-art';
 
 /** Size of one map cell in canvas pixels (44 px: the touch target). */
 export const CELL = 44;
