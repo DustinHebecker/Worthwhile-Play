@@ -22,6 +22,8 @@ export const ru: Record<MessageKey, string> = {
   'hud.credits': 'Кредиты: {n}',
   'hud.core': 'Целостность ядра: {n}',
   'hud.wave': 'Волна {n} из {total}',
+  'hud.interest': 'Проценты после этой волны: {n} (10 % от сохранённых кредитов)',
+  'status.income': 'Доход: {income}. Проценты: {interest}.',
   'hud.build': 'Строительство',
   'hud.running': 'Идёт волна',
   'hud.paused': 'Волна на паузе',

@@ -206,7 +206,7 @@ Hard requirement checked in CI (§ 11.3): every branch is the best credit-effici
 ## 6. Economy
 
 - Start credits per map/difficulty; fixed **wave income** at the start of each build phase; small **kill bounty** per enemy.
-- **No interest** on unspent credits in v1 ([D6](#14-open-decisions)): interest rewards hoarding and snowballing and makes early waves a gamble; a flat income keeps the decision "what is the best use of this budget for the known next wave".
+- **Interest** (owner, 2026-10-31, [D6](#14-open-decisions)): credits left unspent when a wave starts earn **10 %** at its end (not after the last wave), on top of the flat wave income and bounties. Kept low so that saving is a modest reward and hoarding does not become the strategy; the balance harness checks that a hoarding bot does not beat a spending one.
 - Spending decisions are fully reversible within a build phase (full-refund undo). After a wave, selling refunds 70 %.
 - Credits are always integers; property: credits never negative, every credit change is attributable to a logged command or event.
 
@@ -441,16 +441,16 @@ Recommendation first. These need the owner's decision before implementation.
 | D3 | Paths | fixed path graph · mazing (towers block) | **fixed path graph** with splits |
 | D4 | Wave information | full preview · kinds only · none | **full preview** (incl. routing) |
 | D5 | After defeat | full restart only · retry from start of failed wave | **retry from wave checkpoint**, shown factually |
-| D6 | Economy | flat income + bounty · + interest | **no interest**; full-refund undo in build phase, 70 % later |
+| D6 | Economy | flat income + bounty · + interest | **Decided (owner 2026-10-31):** flat income + bounty + **10 % interest** on credits unspent at wave start; full-refund undo in build phase, 70 % later |
 | D7 | Content v1 | training + 3 maps · 1 map only · 6+ maps | **training + 3 maps**, 3 difficulties |
 | D8 | Seed role | authored wave variants · procedural waves · procedural maps | **authored variants per wave slot** |
-| D9 | Setting & style | abstract geometric constructs · sci-fi military · fantasy | **abstract geometric** (no assets, non-violent, IP-safe) |
+| D9 | Setting & style | abstract geometric constructs · sci-fi military · fantasy | **Decided (owner 2026-10-31):** modelled on the strategy game Relay Command (its map look, unit/structure icon style and palette roles), without copying its code (games never import games) |
 | D10 | Display names | e.g. TD: "Holdline", "Waypoint", "Bastion Grid"; hybrid: "Crossfire", "Two Fronts" | **Decided (owner 2026-10-31):** "Tower Defense"; "Hold the Line" for the hybrid. Ids stay `tower-defense`, `strategy-td-hybrid` |
 | D11 | Prism mechanic | mirror pylons on sockets (Laser Circuit reuse) · simple chain lightning | **mirror pylons** |
 | D12 | Power grid | none in TD v1 · Support provides power to Lasers | **none in v1**; relay/power only in hybrid/strategy if wanted |
 | D13 | Shared ruleset data location | engine package `rulesets/` · separate data package · duplicated per game (forbidden-ish) | **separate data package, orchestrator-owned**, this context authors content |
 | D14 | External Small coupling | shared threat escalation · spill-over · adaptive split | **shared threat escalation** |
-| D15 | Opponents in hybrid | AI only · + local hot-seat (hidden planning via hand-over screen) | **AI only in v1** |
+| D15 | Opponents in hybrid | AI only · + local hot-seat (hidden planning via hand-over screen) | **Decided (owner 2026-10-31):** AI only in v1; **hot-seat goes to the backlog** |
 | D16 | VS Small resolution | both waves simultaneously · sequentially (yours, then theirs) | **simultaneously** (one resolve per round, shorter sessions) |
 | D17 | Work while the engine API is not ready | (a) content data, pure formulas, balance model, engine-interface tests only · (b) TD sim prototype inside the game package, later upstreamed · (c) this context contributes TD modules to the engine via the engine context | **(a)**; switch to (c) by agreement if the engine is blocked — never (b) |
 

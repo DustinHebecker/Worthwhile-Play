@@ -22,6 +22,8 @@ export const nl: Record<MessageKey, string> = {
   'hud.credits': 'Credits: {n}',
   'hud.core': 'Kernintegriteit: {n}',
   'hud.wave': 'Golf {n} van {total}',
+  'hud.interest': 'Rente na deze golf: {n} (10 % van de credits die je bewaart)',
+  'status.income': 'Inkomen: {income}. Rente: {interest}.',
   'hud.build': 'Bouwfase',
   'hud.running': 'Golf loopt',
   'hud.paused': 'Golf gepauzeerd',

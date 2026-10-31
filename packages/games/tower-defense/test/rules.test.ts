@@ -7,6 +7,8 @@ import { BASE_TOWERS, TOWERS } from '../src/ruleset';
 import {
   applyCommand,
   checkCommand,
+  incomeAfter,
+  interestOf,
   isPad,
   isValidState,
   MAX_WAVE_TICKS,
@@ -174,6 +176,21 @@ describe('waves', () => {
     s = resolveWave(startWave(s)).state;
     expect(s.stats.killed).toBeGreaterThan(0);
     expect(s.credits).toBeGreaterThan(before + TRAINING.income[0]! - 1);
+  });
+
+  it('pays 10 % interest on the credits left unspent at the start of a wave', () => {
+    const s0 = newGame(1);
+    const income = incomeAfter(s0, 0);
+    // Undefended: no bounties, so the gain is exactly income + interest on all start credits.
+    const s1 = resolveWave(startWave(s0)).state;
+    expect(s1.credits - s0.credits).toBe(income + interestOf(s0.credits));
+    expect(interestOf(s0.credits)).toBe(Math.floor(s0.credits / 10));
+    // Spending everything earns no interest.
+    const spent = applyCommand(applyCommand(s0, { t: 'place', kind: 'gun', x: 2, y: 2 }), { t: 'place', kind: 'gun', x: 2, y: 4 });
+    const s2 = resolveWave(startWave(spent)).state;
+    expect(interestOf(spent.credits)).toBe(10);
+    expect(s2.credits - spent.credits).toBeGreaterThanOrEqual(income + 10);
+    expect(interestOf(-5)).toBe(0);
   });
 
   it('a lost wave can be retried from its locked build', () => {

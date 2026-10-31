@@ -22,6 +22,8 @@ export const tr: Record<MessageKey, string> = {
   'hud.credits': 'Kredi: {n}',
   'hud.core': 'Çekirdek bütünlüğü: {n}',
   'hud.wave': 'Dalga {n} / {total}',
+  'hud.interest': 'Bu dalgadan sonra faiz: {n} (elinde tuttuğun kredilerin %10\'u)',
+  'status.income': 'Gelir: {income}. Faiz: {interest}.',
   'hud.build': 'İnşa aşaması',
   'hud.running': 'Dalga sürüyor',
   'hud.paused': 'Dalga duraklatıldı',

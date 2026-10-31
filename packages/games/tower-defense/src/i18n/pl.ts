@@ -22,6 +22,8 @@ export const pl: Record<MessageKey, string> = {
   'hud.credits': 'Kredyty: {n}',
   'hud.core': 'Integralność rdzenia: {n}',
   'hud.wave': 'Fala {n} z {total}',
+  'hud.interest': 'Odsetki po tej fali: {n} (10 % zachowanych kredytów)',
+  'status.income': 'Dochód: {income}. Odsetki: {interest}.',
   'hud.build': 'Faza budowy',
   'hud.running': 'Fala trwa',
   'hud.paused': 'Fala wstrzymana',

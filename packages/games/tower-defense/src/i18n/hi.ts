@@ -22,6 +22,8 @@ export const hi: Record<MessageKey, string> = {
   'hud.credits': 'क्रेडिट: {n}',
   'hud.core': 'कोर की मज़बूती: {n}',
   'hud.wave': 'लहर {total} में से {n}',
+  'hud.interest': 'इस लहर के बाद ब्याज: {n} (बचाए गए क्रेडिट का 10 %)',
+  'status.income': 'आय: {income}। ब्याज: {interest}।',
   'hud.build': 'निर्माण चरण',
   'hud.running': 'लहर जारी है',
   'hud.paused': 'लहर रुकी हुई है',

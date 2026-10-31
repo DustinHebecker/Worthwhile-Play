@@ -25,6 +25,8 @@ export const en = {
   'hud.credits': 'Credits: {n}',
   'hud.core': 'Core integrity: {n}',
   'hud.wave': 'Wave {n} of {total}',
+  'hud.interest': 'Interest after this wave: {n} (10 % of the credits you keep)',
+  'status.income': 'Income: {income}. Interest: {interest}.',
   'hud.build': 'Build phase',
   'hud.running': 'Wave running',
   'hud.paused': 'Wave paused',

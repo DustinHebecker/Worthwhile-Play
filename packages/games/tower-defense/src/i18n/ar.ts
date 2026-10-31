@@ -22,6 +22,8 @@ export const ar: Record<MessageKey, string> = {
   'hud.credits': 'الرصيد: {n}',
   'hud.core': 'سلامة النواة: {n}',
   'hud.wave': 'الموجة {n} من {total}',
+  'hud.interest': 'الفائدة بعد هذه الموجة: {n} (10 % من الرصيد الذي تحتفظ به)',
+  'status.income': 'الدخل: {income}. الفائدة: {interest}.',
   'hud.build': 'مرحلة البناء',
   'hud.running': 'الموجة جارية',
   'hud.paused': 'الموجة متوقفة مؤقتًا',

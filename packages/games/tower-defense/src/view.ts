@@ -8,6 +8,8 @@ import {
   checkCommand,
   DEFAULT_DIFFICULTY,
   DIFFICULTIES,
+  incomeAfter,
+  interestOf,
   mapOf,
   newGame,
   refundOf,
@@ -69,9 +71,10 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   // --- DOM -------------------------------------------------------------------------------------
   const credits = h('span', { 'data-testid': 'credits' });
   const core = h('span', { 'data-testid': 'core' });
+  const interest = h('span', { 'data-testid': 'interest' });
   const wave = h('span', { 'data-testid': 'wave' });
   const phase = h('span', { 'data-testid': 'phase' });
-  const hud = h('p', { class: 'td-hud' }, wave, phase, credits, core);
+  const hud = h('p', { class: 'td-hud' }, wave, phase, credits, core, interest);
   const status = h('p', { class: 'wp-status td-status', 'data-testid': 'status', hidden: true });
   const canvas = h('canvas', { class: 'td-canvas', 'aria-hidden': 'true' });
   const cells = h('div', { class: 'td-cells', role: 'group', 'aria-label': t('board'), 'data-testid': 'board' });
@@ -173,6 +176,10 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     credits.dataset.value = String(state.credits);
     core.textContent = t('hud.core', { n: state.core });
     core.dataset.value = String(state.core);
+    // Interest is paid after every wave but the last, on what is left when the wave starts.
+    const paysInterest = state.phase === 'build' && state.wave < waveCount(state) - 1;
+    interest.hidden = !paysInterest;
+    interest.textContent = paysInterest ? t('hud.interest', { n: interestOf(state.credits) }) : '';
     container.dataset.phase = state.phase;
     container.dataset.tick = String(state.run?.tick ?? 0);
     container.dataset.waveIndex = String(state.wave);
@@ -368,7 +375,9 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     const killed = state.stats.killed - before.stats.killed;
     const leaked = state.stats.leaked - before.stats.leaked;
     if (state.phase === 'build') {
-      status.textContent = t('status.waveDone', { n: state.wave, killed, leaked });
+      const income = incomeAfter(before, before.wave);
+      const paid = interestOf(before.checkpoint?.credits ?? 0);
+      status.textContent = `${t('status.waveDone', { n: state.wave, killed, leaked })} ${t('status.income', { income, interest: paid })}`;
       announce(live, status.textContent);
     } else if (state.phase === 'won') {
       announce(live, t('status.won', { total: waveCount(state), core: state.core }));

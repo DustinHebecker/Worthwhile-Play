@@ -22,6 +22,8 @@ export const ja: Record<MessageKey, string> = {
   'hud.credits': 'クレジット：{n}',
   'hud.core': 'コア耐久：{n}',
   'hud.wave': 'ウェーブ {n}/{total}',
+  'hud.interest': 'このウェーブ後の利息：{n}（残したクレジットの10 %）',
+  'status.income': '収入：{income}。利息：{interest}。',
   'hud.build': '建設フェーズ',
   'hud.running': 'ウェーブ進行中',
   'hud.paused': 'ウェーブ一時停止中',

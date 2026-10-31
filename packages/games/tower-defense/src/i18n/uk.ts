@@ -22,6 +22,8 @@ export const uk: Record<MessageKey, string> = {
   'hud.credits': 'Кредити: {n}',
   'hud.core': 'Цілісність ядра: {n}',
   'hud.wave': 'Хвиля {n} з {total}',
+  'hud.interest': 'Відсотки після цієї хвилі: {n} (10 % від збережених кредитів)',
+  'status.income': 'Дохід: {income}. Відсотки: {interest}.',
   'hud.build': 'Етап будівництва',
   'hud.running': 'Хвиля триває',
   'hud.paused': 'Хвилю призупинено',

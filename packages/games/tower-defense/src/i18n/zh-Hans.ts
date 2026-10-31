@@ -22,6 +22,8 @@ export const zhHans: Record<MessageKey, string> = {
   'hud.credits': '资金：{n}',
   'hud.core': '核心完整度：{n}',
   'hud.wave': '第 {n} 波，共 {total} 波',
+  'hud.interest': '本波结束后的利息：{n}（保留积分的 10 %）',
+  'status.income': '收入：{income}。利息：{interest}。',
   'hud.build': '建造阶段',
   'hud.running': '波次进行中',
   'hud.paused': '波次已暂停',

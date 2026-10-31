@@ -22,6 +22,8 @@ export const ko: Record<MessageKey, string> = {
   'hud.credits': '크레딧: {n}',
   'hud.core': '코어 내구도: {n}',
   'hud.wave': '웨이브 {n}/{total}',
+  'hud.interest': '이번 웨이브 후 이자: {n} (남겨 둔 크레딧의 10 %)',
+  'status.income': '수입: {income}. 이자: {interest}.',
   'hud.build': '건설 단계',
   'hud.running': '웨이브 진행 중',
   'hud.paused': '웨이브 일시 정지',

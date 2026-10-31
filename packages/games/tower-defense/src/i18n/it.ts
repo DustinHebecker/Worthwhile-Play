@@ -22,6 +22,8 @@ export const it: Record<MessageKey, string> = {
   'hud.credits': 'Crediti: {n}',
   'hud.core': 'Integrità del nucleo: {n}',
   'hud.wave': 'Ondata {n} di {total}',
+  'hud.interest': 'Interessi dopo questa ondata: {n} (10 % dei crediti che conservi)',
+  'status.income': 'Entrate: {income}. Interessi: {interest}.',
   'hud.build': 'Fase di costruzione',
   'hud.running': 'Ondata in corso',
   'hud.paused': 'Ondata in pausa',

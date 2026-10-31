@@ -34,6 +34,18 @@ export type TowerPriority = (typeof TOWER_PRIORITIES)[number];
 
 /** Refund share of credits invested before the current build phase. */
 export const SELL_PERCENT = 70;
+/**
+ * Interest (owner, 2026-10-31): credits left unspent when a wave starts earn this share at its end,
+ * a modest reward for not needing everything; kept low so hoarding does not become the strategy.
+ */
+export const INTEREST_PERCENT = 10;
+export const interestOf = (unspent: number): number => Math.floor((Math.max(0, unspent) * INTEREST_PERCENT) / 100);
+/** Wave income after surviving wave `wave` (difficulty applied). */
+export const incomeAfter = (state: Pick<TdCore, 'mapId' | 'difficulty'>, wave: number): number => {
+  const raw = mapOf(state).income[wave];
+  return raw === undefined ? 0 : scaled(raw, CREDIT_PERCENT[state.difficulty]);
+};
+
 /** Safety bound: a wave never runs longer (whatever is left then counts as leaked). */
 export const MAX_WAVE_TICKS = 6000;
 
@@ -363,7 +375,8 @@ function endWave(s: TdState): void {
     s.phase = 'won';
     return;
   }
-  s.credits += scaled(map.income[s.wave] ?? 0, CREDIT_PERCENT[s.difficulty]);
+  // Income plus interest on what was left unspent when the wave started (the checkpoint is that moment).
+  s.credits += incomeAfter(s, s.wave) + interestOf(s.checkpoint?.credits ?? 0);
   s.wave++;
   s.phase = 'build';
   s.log.push([]);
