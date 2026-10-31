@@ -13,6 +13,7 @@ import {
   isPad,
   isValidState,
   MAX_WAVE_TICKS,
+  STUN_BUDGET,
   newGame,
   refundOf,
   replay,
@@ -68,6 +69,11 @@ describe('new game', () => {
     expect(newGame(1, 'relaxed').credits).toBeGreaterThan(s.credits);
     expect(newGame(1, 'hard').core).toBeLessThan(s.core);
     expect(isValidState(s)).toBe(true);
+  });
+
+  it.each(MAPS.filter((m) => m.waves.length === 12).map((m) => m.id))('map %s: the seed varies most waves', (id) => {
+    const map = MAPS.find((m) => m.id === id)!;
+    expect(map.waves.filter((slot) => slot.length > 1).length).toBeGreaterThanOrEqual(8);
   });
 
   it('picks wave variants from the seed only', () => {
@@ -354,6 +360,21 @@ describe('properties', () => {
       }),
       { numRuns: 8 }
     );
+  });
+
+  it('a unit can be stopped for at most STUN_BUDGET ticks per wave, so stop-only builds cannot stall a wave', () => {
+    // Only EMP towers around the first road cells: they deal 1 damage, so everything walks through eventually.
+    let s = { ...newGame(1, 'relaxed'), credits: 5000 };
+    for (const [x, y] of [[2, 0], [4, 0], [2, 1], [4, 1], [2, 2], [4, 2]] as const) s = applyCommand(s, { t: 'place', kind: 'specialist', x, y });
+    for (const tower of s.world.entities) s = applyCommand(s, { t: 'upgrade', id: tower.id, kind: 'blackout' });
+    let run = startWave(s);
+    let ticks = 0;
+    while (run.phase === 'wave') {
+      run = stepWave(run, 10).state;
+      ticks += 10;
+      for (const w of run.run?.walkers ?? []) expect(w.stun ?? 0).toBeLessThanOrEqual(STUN_BUDGET);
+    }
+    expect(ticks).toBeLessThan(MAX_WAVE_TICKS / 4);
   });
 
   it('a crafted running wave with more units than its schedule is rejected', () => {

@@ -68,7 +68,15 @@ export interface Walker {
   id: number;
   route: number;
   leg: number;
+  /** Ticks this unit has spent stopped (EMP) in this wave; absent = 0. */
+  stun?: number;
 }
+
+/**
+ * Most ticks a unit can be stopped per wave (6 s at 1×). Without it, several EMP towers could hold
+ * a unit for good and stall the wave until the safety bound.
+ */
+export const STUN_BUDGET = 48;
 
 export interface WaveRun {
   tick: number;
@@ -350,6 +358,14 @@ function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
   }
   const alive = new Set(w.entities.map((e) => e.id));
   run.walkers = run.walkers.filter((x) => alive.has(x.id));
+  // Stop budget: a unit that has been stopped long enough shakes every further stop off.
+  for (const walker of run.walkers) {
+    const unit = w.entities.find((e) => e.id === walker.id);
+    if (!unit?.status.some((st) => st.kind === 'disabled' && st.ticks > 0)) continue;
+    const stun = (walker.stun ?? 0) + 1;
+    if (stun > STUN_BUDGET) unit.status = unit.status.filter((st) => st.kind !== 'disabled');
+    else walker.stun = stun;
+  }
   run.tick++;
   // 4. Safety bound, then the end of the wave.
   if (run.tick >= MAX_WAVE_TICKS) {
@@ -477,7 +493,7 @@ function isValidCore(v: unknown): v is TdCore {
     const run = v.run;
     if (!isRecord(run) || !isInt(run.tick, 0, MAX_WAVE_TICKS)) return false;
     if (!isArrayOf(run.pending, (p): p is PendingSpawn => isRecord(p) && isInt(p.at, 0) && typeof p.kind === 'string' && isEnemyKind(p.kind) && isInt(p.route, 0, map.routes.length - 1))) return false;
-    if (!isArrayOf(run.walkers, (x): x is Walker => isRecord(x) && isInt(x.id, 1) && isInt(x.route, 0, map.routes.length - 1) && isInt(x.leg, 1, (map.routes[x.route as number]?.points.length ?? 1) - 1))) return false;
+    if (!isArrayOf(run.walkers, (x): x is Walker => isRecord(x) && isInt(x.id, 1) && isInt(x.route, 0, map.routes.length - 1) && isInt(x.leg, 1, (map.routes[x.route as number]?.points.length ?? 1) - 1) && (x.stun === undefined || isInt(x.stun, 1, STUN_BUDGET)))) return false;
     if (run.walkers.length !== enemies.length || enemies.some((e) => !(run.walkers as Walker[]).some((x) => x.id === e.id))) return false;
     // A wave never holds more units than its schedule (bounds the work a crafted save can cause).
     const scheduled = waveSchedule(v as unknown as TdCore, v.wave as number).length;
