@@ -1,7 +1,7 @@
 import type { Translator } from '@wp/game-core';
 import { clear, h } from '@wp/ui';
 import { CELL, createTerrainLayer, drawDeposit, drawTerrainSwatch, TERRAIN_NAMES } from './draw';
-import { drawIcon, type View } from './icons';
+import { drawIcon, type View } from '@wp/strategy-art';
 import {
   applyTool,
   blankMap,

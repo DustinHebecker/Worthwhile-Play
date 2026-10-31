@@ -80,7 +80,7 @@ import {
   type RcState
 } from './rules';
 import { DIFFICULTIES, type Difficulty } from './ai';
-import { drawIcon, VIEWS, type View } from './icons';
+import { drawIcon, VIEWS, type View } from '@wp/strategy-art';
 import { buildReplay, positionAt, type Replay } from './replay';
 import { createEditor } from './editor';
 import { blankMap, customSpec, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, seatsOf, type EditMap, type MapLibrary, type MapStore } from './maps';

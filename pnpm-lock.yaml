@@ -1013,6 +1013,9 @@ importers:
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../game-core
+      '@wp/strategy-art':
+        specifier: workspace:*
+        version: link:../../strategy-art
       '@wp/strategy-engine':
         specifier: workspace:*
         version: link:../../strategy-engine
@@ -1404,6 +1407,8 @@ importers:
       '@wp/game-core':
         specifier: workspace:*
         version: link:../game-core
+
+  packages/strategy-art: {}
 
   packages/strategy-engine:
     dependencies:
