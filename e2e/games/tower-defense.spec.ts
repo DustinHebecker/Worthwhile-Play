@@ -77,7 +77,7 @@ test('tower-defense: an undefended game is lost, can be retried, and ends calmly
 
 test('tower-defense: the map is chosen on the start screen and kept in the save', async ({ page }) => {
   await startGame(page, 'tower-defense', { settings: { map: 'twin' } });
-  await expect(root(page).getByTestId('wave')).toContainText('12');
+  await expect(root(page).getByTestId('wave')).toContainText('20');
   // Two road entries on the twin map: both corner cells are road.
   await expect(root(page).getByTestId('cell-0-0')).toHaveAttribute('aria-label', /road/);
   await expect(root(page).getByTestId('cell-6-0')).toHaveAttribute('aria-label', /road/);
@@ -86,7 +86,7 @@ test('tower-defense: the map is chosen on the start screen and kept in the save'
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(root(page).getByTestId('cell-6-0')).toHaveAttribute('aria-label', /road/);
-  await expect(root(page).getByTestId('wave')).toContainText('12');
+  await expect(root(page).getByTestId('wave')).toContainText('20');
 });
 
 test('tower-defense: after a new game on a taller map the drawing matches the cells', async ({ page }) => {
