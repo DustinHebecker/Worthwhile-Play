@@ -16,6 +16,7 @@ import {
   interestOf,
   isValidState,
   lockRound,
+  seenBy,
   MAX_WORKSHOPS,
   newGame,
   resolveBattle,
@@ -363,5 +364,38 @@ describe('texts', () => {
       expect(texts['about.amplifier'], locale).not.toBe(UNIT_MESSAGES[locale]!['about.amplifier']);
     }
     expect(messages.en!['about.amplifier']).toMatch(/units/);
+  });
+});
+
+describe('what the computer sees', () => {
+  it('the round start only: no structures, credits, log or interest base of this round', () => {
+    let s = fresh();
+    s = applyPlan(s, 0, { t: 'place', kind: 'gun', x: 2, y: 14 });
+    s = applyPlan(s, 0, { t: 'buy', kind: 'walker' });
+    const seen = seenBy(s);
+    expect(seen.world).toEqual(s.roundStart.world);
+    expect(seen.sides).toEqual(s.roundStart.sides);
+    expect(seen.world.entities).toHaveLength(0);
+    expect(seen.sides[0].credits).toBe(START_CREDITS);
+    expect(seen.sides[0].wave).toEqual([]);
+    expect(seen.log).toEqual([{ player: [], ai: [] }]);
+    expect(seen.unspent).toEqual([0, 0]);
+    expect(seen.run).toBeNull();
+    expect(seen.round).toBe(s.round);
+    expect(seen.phase).toBe('plan');
+    // The real state is untouched.
+    expect(s.log[0]!.player).toHaveLength(2);
+  });
+
+  it('a planner that copies what it sees cannot learn the player’s plan', () => {
+    let s = fresh();
+    s = applyPlan(s, 0, { t: 'place', kind: 'gun', x: 2, y: 14 });
+    let seenLog: unknown = null;
+    lockRound(s, (v) => {
+      seenLog = v.log;
+      expect(v.world.entities.filter((e) => e.side === 0)).toHaveLength(0);
+      return [];
+    });
+    expect(seenLog).toEqual([{ player: [], ai: [] }]);
   });
 });

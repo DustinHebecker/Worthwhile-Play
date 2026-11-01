@@ -71,7 +71,13 @@ test('hold-the-line: Outside force is chosen on the start screen, needs no shop 
   await expect(game(page)).toHaveAttribute('data-round', '1');
   // After a round, what got through is shown with the extra units it brings.
   await expect(root(page).getByTestId('outside-pressure')).toBeVisible();
-  await expect.poll(async () => ((await readSave(page, 'hold-the-line')) as { state?: { mode?: string } } | undefined)?.state?.mode).toBe('external-small');
+  // Wait for the save of round 2's plan (the mode alone is already saved in round 1).
+  await expect
+    .poll(async () => {
+      const saved = (await readSave(page, 'hold-the-line')) as { state?: { mode?: string; round?: number } } | undefined;
+      return `${saved?.state?.mode}/${saved?.state?.round}`;
+    })
+    .toBe('external-small/1');
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(game(page)).toHaveAttribute('data-round', '1');

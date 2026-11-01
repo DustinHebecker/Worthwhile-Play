@@ -9,10 +9,8 @@ import {
   externalWave,
   extractorsOf,
   mapOf,
-  MAX_WORKSHOPS,
   SHOP,
   UNIT_PRICES,
-  WORKSHOP_PRICE,
   type Difficulty,
   type HoldState,
   type PlanCommand
@@ -41,7 +39,6 @@ export interface Profile {
   pads: number;
   steps: number;
   extractors: number;
-  workshops: boolean;
   /** Choose the attack wave by trying candidate waves against the other side's towers. */
   probe: boolean;
   /** Most wave simulations per round (bounds the planning time, whatever the credits). */
@@ -52,9 +49,9 @@ export interface Profile {
 export const PROBE_SIMS = 21;
 
 export const PROFILES: Record<Difficulty, Profile> = {
-  easy: { defence: 0.5, keep: 0, lookahead: false, pads: 1, steps: 1, extractors: 0, workshops: false, probe: false, sims: 0 },
-  normal: { defence: 0.55, keep: 0.1, lookahead: true, pads: 2, steps: 3, extractors: 1, workshops: false, probe: false, sims: 30 },
-  hard: { defence: 0.55, keep: 0.1, lookahead: true, pads: 3, steps: 4, extractors: 1, workshops: false, probe: true, sims: 55 }
+  easy: { defence: 0.5, keep: 0, lookahead: false, pads: 1, steps: 1, extractors: 0, probe: false, sims: 0 },
+  normal: { defence: 0.55, keep: 0.1, lookahead: true, pads: 2, steps: 3, extractors: 1, probe: false, sims: 30 },
+  hard: { defence: 0.55, keep: 0.1, lookahead: true, pads: 3, steps: 4, extractors: 1, probe: true, sims: 55 }
 };
 
 const cellsOf = (route: Route): [number, number][] => {
@@ -104,11 +101,27 @@ export const expectedWave = (s: HoldState, side: number): EnemyKind[] => {
 };
 
 /**
+ * Simulation work spent while planning, in entity-ticks (one entity simulated for one tick): what a
+ * plan costs grows with it, whatever the credits, waves or device.
+ */
+export interface Meter {
+  used: number;
+}
+
+/**
+ * Most simulation work a plan may start (entity-ticks; about 13 µs each in Node). Above every plan of
+ * the measured games (VS Small at most 29 000, External Small 101 000), so it changes no decision
+ * there; it bounds the rare rich rounds (3000 credits in round 10: up to 406 000 before) to about
+ * two seconds in Node. The planner also runs in a Worker (view.ts), so the page stays responsive.
+ */
+export const WORK_BUDGET = 150_000;
+
+/**
  * Threat of `wave` that would get through `side`'s current defence, weighted by health kept. With
  * `bound`, the simulation stops once that much is through (the caller only needs to know it is
  * at least that), and the result is then at least `bound`.
  */
-export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity): number {
+export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity, meter?: Meter): number {
   const route = mapOf(s).lanes[1 - side]!;
   // Only the attacking side's units run; its route index here is 0 of a one-route list.
   // Only what can matter: the defender's towers and extractors (the attacker's own structures never
@@ -122,8 +135,11 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
   });
   let run: LaneRun = { tick: 0, pending, walkers: [] };
   let loss = 0;
-  for (let i = 0; i < 1500 && (run.pending.length > 0 || run.walkers.length > 0) && loss < bound; i++) {
+  // Stops once the loss is clearly above the bound (the epsilon keeps rounding from cutting a run
+  // whose loss only equals the bound).
+  for (let i = 0; i < 1500 && (run.pending.length > 0 || run.walkers.length > 0) && loss <= bound + 1e-9; i++) {
     const step = tickLanes(w, run, [route], true);
+    if (meter) meter.used += step.world.entities.length;
     w = step.world;
     run = step.run;
     for (const l of step.leaks) loss += (ENEMIES[l.kind].threat * l.hp) / (archetypeOf(TD_RULESET, l.kind)?.hp ?? 1);
@@ -151,7 +167,7 @@ export function defenceSims(profile: Profile, mode: HoldState['mode']): number {
 }
 
 /** Plans a side's round (the computer is side 1; tests also let it play side 0). Pure and deterministic. */
-export function planRound(state: HoldState, side = 1, difficulty: Difficulty = state.difficulty): PlanCommand[] {
+export function planRound(state: HoldState, side = 1, difficulty: Difficulty = state.difficulty, meter: Meter = { used: 0 }): PlanCommand[] {
   const profile = PROFILES[difficulty];
   const map = mapOf(state);
   const incoming = map.lanes[1 - side]!;
@@ -181,7 +197,7 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   let sims = 0;
   const threat = (st: HoldState, bound = Infinity): number => {
     sims++;
-    return leakage(st.world, st, side, wave, bound);
+    return leakage(st.world, st, side, wave, bound, meter);
   };
   if (!profile.lookahead) {
     const [x, y] = padsNear(s, side, incoming, 3)[0] ?? [-1, -1];
@@ -201,7 +217,7 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
       }
       let best: { cmd: PlanCommand; loss: number; value: number } | null = null;
       for (const cmd of candidates) {
-        if (sims >= budget) break;
+        if (sims >= budget || meter.used >= WORK_BUDGET) break;
         if (checkPlan(s, side, cmd) !== null) continue;
         const next = applyPlan(s, side, cmd);
         if (next.sides[side]!.credits < floor) continue;
@@ -221,8 +237,7 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   // (External Small: there is none to buy).
   if (s.mode === 'external-small') return plan;
   const keep = Math.floor(start * profile.keep);
-  const order = profile.probe ? probeOrder(s, side, keep) : attackOrder(s, side, profile);
-  if (profile.workshops && own().workshops < MAX_WORKSHOPS && own().credits - keep > WORKSHOP_PRICE + 200) apply({ t: 'workshop' });
+  const order = profile.probe ? probeOrder(s, side, keep, meter) : attackOrder(s, side, profile);
   for (let i = 0; i < capacityOf(own()) * 2; i++) {
     const kind = order[i % order.length]!;
     if (own().credits - (UNIT_PRICES[kind] ?? 0) < keep) break;
@@ -257,7 +272,7 @@ export function attackOrder(s: HoldState, side: number, profile: Profile): Enemy
  * the budget and capacity allow, against the other side's towers as they stand now, and keeps the
  * order whose wave would get the most threat through.
  */
-export function probeOrder(s: HoldState, side: number, keep: number): EnemyKind[] {
+export function probeOrder(s: HoldState, side: number, keep: number, meter?: Meter): EnemyKind[] {
   const own = s.sides[side]!;
   const money = own.credits - keep;
   const cap = capacityOf(own);
@@ -277,9 +292,11 @@ export function probeOrder(s: HoldState, side: number, keep: number): EnemyKind[
   for (let i = 0; i < SHOP.length; i++) for (let j = i + 1; j < SHOP.length; j++) orders.push([SHOP[i]!, SHOP[j]!]);
   let best: { order: EnemyKind[]; through: number } | null = null;
   for (const order of orders) {
+    // Out of work: keep the best order found so far (the first one is always tried).
+    if (best && meter && meter.used >= WORK_BUDGET) break;
     const wave = fill(order);
     if (wave.length === 0) continue;
-    const through = leakage(s.world, s, 1 - side, wave);
+    const through = leakage(s.world, s, 1 - side, wave, Infinity, meter);
     if (!best || through > best.through + 0.01) best = { order, through };
   }
   return best?.order ?? ['walker'];
