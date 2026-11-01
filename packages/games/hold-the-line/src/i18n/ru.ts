@@ -23,6 +23,7 @@ export const ru: Record<MessageKey, string> = {
   'cell.units': '{cell}; юнитов здесь: {n}',
   'structure.extractor': 'Экстрактор',
   'about.extractor': 'Каждый раунд увеличивает ваш доход на {n} кр. Вооружённые юниты могут его уничтожить.',
+  'about.amplifier': 'Без оружия: ваши соседние башни и собственные отряды быстрее перезаряжаются. На уровне 3 ещё и ремонтирует их.',
   'hud.round': 'Раунд {n} из {total}',
   'hud.credits': 'Кредиты: {n}',
   'hud.core.own': 'Ваше ядро: {n}',

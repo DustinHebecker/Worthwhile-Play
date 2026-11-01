@@ -23,6 +23,7 @@ export const de: Record<MessageKey, string> = {
   'cell.units': '{cell}; Einheiten hier: {n}',
   'structure.extractor': 'Förderanlage',
   'about.extractor': 'Bringt dir jede Runde {n} Credits zusätzliches Einkommen. Bewaffnete Einheiten können sie zerstören.',
+  'about.amplifier': 'Keine Waffe: Deine Türme und eigenen Einheiten in der Nähe laden schneller nach. Stufe 3 repariert sie außerdem.',
   'hud.round': 'Runde {n} von {total}',
   'hud.credits': 'Credits: {n}',
   'hud.core.own': 'Dein Kern: {n}',

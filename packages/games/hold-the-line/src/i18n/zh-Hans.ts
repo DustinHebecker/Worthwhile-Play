@@ -23,6 +23,7 @@ export const zhHans: Record<MessageKey, string> = {
   'cell.units': '{cell}；此处单位：{n}',
   'structure.extractor': '采集器',
   'about.extractor': '每轮为你的收入增加 {n} 资金。武装单位可以摧毁它。',
+  'about.amplifier': '没有武器：附近的己方防御塔和己方单位装填更快。3 级时还会修复它们。',
   'hud.round': '第 {n} 轮，共 {total} 轮',
   'hud.credits': '资金：{n}',
   'hud.core.own': '你的核心：{n}',

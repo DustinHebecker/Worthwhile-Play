@@ -353,3 +353,15 @@ describe('properties', () => {
     }
   });
 });
+
+describe('texts', () => {
+  it('the Amplifier text says it also helps own units (its aura reaches every own entity nearby)', async () => {
+    const { messages } = await import('../src/messages');
+    const { UNIT_MESSAGES } = await import('@wp/td-core');
+    for (const [locale, texts] of Object.entries(messages)) {
+      expect(texts['about.amplifier'], locale).toBeTruthy();
+      expect(texts['about.amplifier'], locale).not.toBe(UNIT_MESSAGES[locale]!['about.amplifier']);
+    }
+    expect(messages.en!['about.amplifier']).toMatch(/units/);
+  });
+});

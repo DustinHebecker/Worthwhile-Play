@@ -23,6 +23,7 @@ export const fr: Record<MessageKey, string> = {
   'cell.units': '{cell} ; unités ici : {n}',
   'structure.extractor': 'Extracteur',
   'about.extractor': 'Ajoute {n} crédits à votre revenu à chaque manche. Les unités armées peuvent le détruire.',
+  'about.amplifier': 'Aucune arme : vos tours et vos propres unités proches rechargent plus vite. Au niveau 3, il les répare aussi.',
   'hud.round': 'Manche {n} sur {total}',
   'hud.credits': 'Crédits : {n}',
   'hud.core.own': 'Votre noyau : {n}',

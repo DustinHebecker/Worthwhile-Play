@@ -23,6 +23,7 @@ export const ja: Record<MessageKey, string> = {
   'cell.units': '{cell}。ここにいるユニット：{n}',
   'structure.extractor': '採掘機',
   'about.extractor': '毎ラウンド、収入に {n} クレジットを加えます。武装したユニットに破壊されることがあります。',
+  'about.amplifier': '武器なし：近くの自分のタワーと自軍ユニットの装填が速くなります。レベル3では修理も行います。',
   'hud.round': 'ラウンド {n}/{total}',
   'hud.credits': 'クレジット：{n}',
   'hud.core.own': '自分のコア：{n}',
