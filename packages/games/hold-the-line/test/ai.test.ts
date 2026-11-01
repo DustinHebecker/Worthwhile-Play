@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { archetypeOf } from '@wp/strategy-engine';
 import { BASE_TOWERS, ENEMIES, TD_RULESET, TOWERS, type EnemyKind } from '@wp/td-core';
-import { attackOrder, defenceShare, defenceSims, expectedWave, leakage, padsNear, planRound, probeOrder, PROBE_SIMS, PROFILES } from '../src/ai';
+import { attackOrder, defenceShare, defenceSims, expectedWave, leakage, padsNear, planRound, probeOrder, PROBE_SIMS, PROFILES, WORK_BUDGET, type Meter } from '../src/ai';
 import { DUEL, ownPad } from '../src/maps';
 import { applyPlan, checkPlan, externalWave, EXTRACTOR_PRICE, newGame, SHOP, START_CREDITS, UNIT_PRICES, type HoldState, type PlanCommand } from '../src/rules';
 
@@ -351,5 +351,72 @@ describe('leakage bounds', () => {
     const through = leakage(g.world, g, 1, wave);
     expect(through).toBeGreaterThan(totalThreat(wave) / 2);
     expect(through).toBeLessThan(totalThreat(wave));
+  });
+});
+
+describe('bounded planning work', () => {
+  it('leakage counts its work in entity-ticks; a bound equal to the result changes nothing', () => {
+    let s = newGame(1, 'normal');
+    const [x, y] = padsNear(s, 1, incoming(1), 3)[0]!;
+    s = applyPlan(s, 1, { t: 'place', kind: 'gun', x, y });
+    const wave: EnemyKind[] = Array(10).fill('walker');
+    const m: Meter = { used: 0 };
+    const full = leakage(s.world, s, 1, wave, Infinity, m);
+    expect(m.used).toBeGreaterThan(wave.length);
+    // Without towers there is less to simulate per tick.
+    const bare = newGame(1, 'normal');
+    const m2: Meter = { used: 0 };
+    leakage(bare.world, bare, 1, wave, Infinity, m2);
+    expect(m2.used).toBeLessThan(m.used);
+    // A run stops only once its loss is clearly above the bound.
+    expect(leakage(s.world, s, 1, wave, full)).toBe(full);
+  });
+
+  it('with the budget used up, no more defence candidates are tried', () => {
+    const s = atRound(newGame(1, 'normal'), 3);
+    const free = planRound(s, 1, 'normal');
+    const spent = planRound(s, 1, 'normal', { used: WORK_BUDGET });
+    expect(free.some((c) => c.t === 'place' || c.t === 'upgrade')).toBe(true);
+    expect(spent.some((c) => c.t === 'place' || c.t === 'upgrade')).toBe(false);
+    // With a little budget left it still plans (the work of one wave simulation is far below it).
+    expect(planRound(s, 1, 'normal', { used: WORK_BUDGET / 2 }).some((c) => c.t === 'place')).toBe(true);
+  });
+
+  it('a plan records its work in the meter it is given', () => {
+    const m: Meter = { used: 0 };
+    planRound(atRound(newGame(1, 'normal'), 3), 1, 'normal', m);
+    expect(m.used).toBeGreaterThan(0);
+    expect(m.used).toBeLessThan(WORK_BUDGET);
+  });
+
+  it('Hard keeps the first attack order tried once the budget is used up', () => {
+    const s = newGame(1, 'hard');
+    expect(probeOrder(s, 1, 0, { used: WORK_BUDGET })).toEqual([SHOP[0]]);
+    expect(probeOrder(s, 1, 0, { used: 0 })).toEqual(probeOrder(s, 1, 0));
+  });
+});
+
+describe('planner budgets', () => {
+  it('the simulation budget of a level limits the candidates it tries', () => {
+    const s = atRound(newGame(1, 'normal'), 3);
+    const saved = PROFILES.normal.sims;
+    try {
+      // One simulation: only the current loss is measured, no candidate is tried.
+      (PROFILES.normal as { sims: number }).sims = 1;
+      expect(planRound(s, 1, 'normal').some((c) => c.t === 'place')).toBe(false);
+      (PROFILES.normal as { sims: number }).sims = 2;
+      expect(planRound(s, 1, 'normal').filter((c) => c.t === 'place').length).toBeLessThanOrEqual(1);
+    } finally {
+      (PROFILES.normal as { sims: number }).sims = saved;
+    }
+    expect(planRound(s, 1, 'normal').filter((c) => c.t === 'place').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('Hard’s probe tries further orders while it has budget (against guns another order wins)', () => {
+    let s: HoldState = { ...newGame(1, 'hard'), sides: [{ ...newGame(1, 'hard').sides[0], credits: 2000 }, newGame(1, 'hard').sides[1]] };
+    for (const [x, y] of padsNear(s, 0, incoming(0), 3).slice(0, 4)) s = applyPlan(s, 0, { t: 'place', kind: 'gun', x, y });
+    const free = probeOrder(s, 1, 0, { used: 0 });
+    expect(free).not.toEqual([SHOP[0]]);
+    expect(probeOrder(s, 1, 0, { used: WORK_BUDGET })).toEqual([SHOP[0]]);
   });
 });

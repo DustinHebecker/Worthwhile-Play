@@ -262,10 +262,12 @@ export function applyPlan(s: HoldState, side: number, cmd: PlanCommand): HoldSta
  * Lock the round: the computer plans from the round's start (`plan` never sees the player's plan of
  * this round), its plan is carried out, then both waves set off together.
  */
+/** What the computer may see when it plans: the round's start, without this round's log or interest base. */
+export const seenBy = (s: HoldState): HoldState => ({ ...s, world: s.roundStart.world, sides: s.roundStart.sides, log: s.log.map(() => ({ player: [], ai: [] })), unspent: [0, 0], run: null });
+
 export function lockRound(s: HoldState, plan: Planner): HoldState {
   if (s.phase !== 'plan') return s;
-  // What the computer may see: the round's start, without this round's log or interest base.
-  let seen: HoldState = { ...s, world: s.roundStart.world, sides: s.roundStart.sides, log: s.log.map(() => ({ player: [], ai: [] })), unspent: [0, 0], run: null };
+  let seen = seenBy(s);
   // Its plan names its new structures by the ids they get on that snapshot; the player's builds of
   // this round have taken other ids by now, so those ids are translated when the plan is applied.
   const ids = new Map<number, number>();
