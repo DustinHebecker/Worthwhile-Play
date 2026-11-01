@@ -24,6 +24,7 @@ import {
   refundAt,
   resolveBattle,
   ROUNDS,
+  seenBy,
   SHOP,
   stepBattle,
   UNIT_PRICES,
@@ -45,7 +46,6 @@ const toMode = (m: unknown): Mode => ((MODES as readonly unknown[]).includes(m) 
 const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
 const hpMax = (kind: string): number => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
 const splashOf = (kind: string): number => archetypeOf(TD_RULESET, kind)?.weapon?.splash ?? 0;
-const plan = (s: HoldState) => planRound(s);
 
 export function createHoldTheLine(context: GameContext): GameInstance<HoldState> {
   const { t, root } = context;
@@ -523,11 +523,54 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   };
 
   /**
-   * Locking runs the computer's planner (usually well under a second; with very large budgets a
-   * few seconds on a slow device, design § 16.3; a Worker is the next step if that matters): the
-   * "thinking" state is drawn first, then the plan is made, so the page never freezes silently.
+   * Locking runs the computer's planner. It runs in a Worker where the browser has one, so closing,
+   * pausing and the page stay responsive however long it plans (review of PR #104); elsewhere (tests)
+   * it runs here after the "thinking" state is drawn. Either way the plan is the same: the planner
+   * is pure and deterministic, and its work per plan is bounded (`WORK_BUDGET` in ai.ts).
    */
-  let thinking: ReturnType<typeof setTimeout> | null = null;
+  let thinking: { token: number; timer: ReturnType<typeof setTimeout> | null } | null = null;
+  let tokens = 0;
+  let worker: Worker | null = null;
+  const stopThinking = (): void => {
+    if (thinking?.timer) clearTimeout(thinking.timer);
+    thinking = null;
+    lockButton.disabled = false;
+    delete container.dataset.thinking;
+  };
+  const planned = (token: number, at: HoldState, cmds: PlanCommand[]): void => {
+    if (thinking?.token !== token) return;
+    stopThinking();
+    if (state !== at || hostPaused || state.phase !== 'plan') return render();
+    playing = true;
+    acc = 0;
+    commit(lockRound(state, () => cmds), t('announce.lock', { n: state.round + 1 }));
+    schedule();
+  };
+  const plannerWorker = (): Worker | null => {
+    if (worker || typeof Worker !== 'function') return worker;
+    try {
+      worker = new Worker(new URL('./plan.worker.ts', import.meta.url), { type: 'module' });
+      worker.onmessage = (event: MessageEvent<{ token: number; plan: PlanCommand[] }>) => planned(event.data.token, current(), event.data.plan);
+      worker.onerror = () => {
+        // A worker that cannot start (e.g. blocked): plan here instead from now on.
+        worker?.terminate();
+        worker = null;
+        workerFailed = true;
+        if (thinking) planHere(thinking.token, state);
+      };
+    } catch {
+      worker = null;
+      workerFailed = true;
+    }
+    return worker;
+  };
+  let workerFailed = false;
+  let lockedAt: HoldState | null = null;
+  const current = (): HoldState => lockedAt ?? state;
+  const planHere = (token: number, at: HoldState): void => {
+    if (!thinking) return;
+    thinking.timer = setTimeout(() => planned(token, at, planRound(seenBy(at))), 30);
+  };
   const onLock = (): void => {
     if (hostPaused || state.phase !== 'plan' || thinking !== null) return;
     status.textContent = '';
@@ -535,17 +578,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     phase.textContent = t('common.thinking');
     announce(live, phase.textContent);
     container.dataset.thinking = 'true';
-    const at = state;
-    thinking = setTimeout(() => {
-      thinking = null;
-      lockButton.disabled = false;
-      delete container.dataset.thinking;
-      if (state !== at || hostPaused) return render();
-      playing = true;
-      acc = 0;
-      commit(lockRound(state, plan), t('announce.lock', { n: state.round + 1 }));
-      schedule();
-    }, 30);
+    const token = ++tokens;
+    thinking = { token, timer: null };
+    lockedAt = state;
+    const w = workerFailed ? null : plannerWorker();
+    if (w) w.postMessage({ token, seen: seenBy(state) });
+    else planHere(token, state);
   };
 
   const togglePlay = (): void => {
@@ -590,10 +628,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   const show = (next: HoldState): void => {
     stopLoop();
-    if (thinking !== null) clearTimeout(thinking);
-    thinking = null;
-    lockButton.disabled = false;
-    delete container.dataset.thinking;
+    stopThinking();
     state = next;
     playing = false;
     selected = null;
@@ -635,7 +670,9 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     },
     dispose() {
       stopLoop();
-      if (thinking !== null) clearTimeout(thinking);
+      stopThinking();
+      worker?.terminate();
+      worker = null;
       disposeKeyboard();
       scheme?.removeEventListener?.('change', onScheme);
       resize?.disconnect();
