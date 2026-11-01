@@ -1,9 +1,27 @@
 import { createRng, isRecord } from '@wp/game-core';
-import { archetypeOf, createWorld, DEFAULT_DOCTRINE, isValidWorld, spawn, TARGET_PRIORITIES, type Entity, type SimEvent, type TargetPriority, type World } from '@wp/strategy-engine';
-import { BASE_TOWERS, ENEMIES, isEnemyKind, removeWalkers, STUN_BUDGET, TD_RULESET, tickLanes, TOWERS, type EnemyKind, type Leak, type PendingSpawn, type Walker } from '@wp/td-core';
+import { archetypeOf, createWorld, isValidWorld, TARGET_PRIORITIES, type Entity, type SimEvent, type World } from '@wp/strategy-engine';
+import {
+  applyBuild,
+  checkBuild,
+  ENEMIES,
+  isEnemyKind,
+  removeWalkers,
+  settleAccount,
+  STUN_BUDGET,
+  TD_RULESET,
+  tickLanes,
+  TOWERS,
+  type BuildCommand,
+  type BuildRefusal,
+  type EnemyKind,
+  type Leak,
+  type PendingSpawn,
+  type TowerRecord,
+  type Walker
+} from '@wp/td-core';
 import { mapById, MAPS, type TdMap } from './maps';
 
-export { STUN_BUDGET, type Leak, type PendingSpawn, type Walker } from '@wp/td-core';
+export { refundOf, SELL_PERCENT, STUN_BUDGET, TOWER_PRIORITIES, type BuildCommand, type Leak, type PendingSpawn, type TowerPriority, type TowerRecord, type Walker } from '@wp/td-core';
 
 /**
  * Tower Defense rules on the shared engine (docs/design/tower-defense.md § 15).
@@ -17,12 +35,6 @@ export const DIFFICULTIES = ['relaxed', 'standard', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const DEFAULT_DIFFICULTY: Difficulty = 'standard';
 
-/** Targeting choices offered for towers (engine doctrine priorities that make sense here). */
-export const TOWER_PRIORITIES = ['weakest', 'nearest', 'armor'] as const satisfies readonly TargetPriority[];
-export type TowerPriority = (typeof TOWER_PRIORITIES)[number];
-
-/** Refund share of credits invested before the current build phase. */
-export const SELL_PERCENT = 70;
 /**
  * Interest (owner, 2026-10-31): credits left unspent when a wave starts earn this share at its end,
  * a modest reward for not needing everything; kept low so hoarding does not become the strategy.
@@ -38,13 +50,6 @@ export const incomeAfter = (state: Pick<TdCore, 'mapId' | 'difficulty'>, wave: n
 /** Safety bound: a wave never runs longer (whatever is left then counts as leaked). */
 export const MAX_WAVE_TICKS = 6000;
 
-export interface TowerRecord {
-  id: number;
-  /** All credits put into this tower. */
-  invested: number;
-  /** Credits put in during the current build phase (refunded in full: nothing has happened yet). */
-  fresh: number;
-}
 
 export interface WaveRun {
   tick: number;
@@ -88,13 +93,8 @@ export interface TdState extends TdCore {
   log: BuildCommand[][];
 }
 
-export type BuildCommand =
-  | { t: 'place'; kind: string; x: number; y: number }
-  | { t: 'upgrade'; id: number; kind: string }
-  | { t: 'sell'; id: number }
-  | { t: 'target'; id: number; priority: TowerPriority };
 
-export type Refusal = 'phase' | 'unknown-kind' | 'not-a-pad' | 'occupied' | 'credits' | 'no-tower' | 'not-an-upgrade' | 'priority';
+export type Refusal = 'phase' | BuildRefusal;
 
 const CORE: Record<Difficulty, number> = { relaxed: 30, standard: 20, hard: 12 };
 const CREDIT_PERCENT: Record<Difficulty, number> = { relaxed: 125, standard: 100, hard: 90 };
@@ -166,64 +166,22 @@ export const isPad = (state: Pick<TdCore, 'world'>, x: number, y: number): boole
   x >= 0 && y >= 0 && x < state.world.map.w && y < state.world.map.h && state.world.map.terrain[y * state.world.map.w + x] === 'b';
 
 /** Credits a sale would return now. */
-export const refundOf = (record: TowerRecord): number => record.fresh + Math.floor(((record.invested - record.fresh) * SELL_PERCENT) / 100);
 
 /** Why a build command cannot be applied now, or `null` if it can. Never throws. */
 export function checkCommand(state: TdState, cmd: BuildCommand): Refusal | null {
   if (state.phase !== 'build') return 'phase';
-  if (cmd.t === 'place') {
-    if (!BASE_TOWERS.includes(cmd.kind)) return 'unknown-kind';
-    if (!isPad(state, cmd.x, cmd.y)) return 'not-a-pad';
-    if (state.world.entities.some((e) => e.x === cmd.x && e.y === cmd.y)) return 'occupied';
-    return (TOWERS[cmd.kind]?.price ?? Infinity) > state.credits ? 'credits' : null;
-  }
-  const tower = state.world.entities.find((e) => e.id === cmd.id && e.side === 0);
-  if (!tower) return 'no-tower';
-  if (cmd.t === 'upgrade') {
-    const next = TOWERS[tower.kind]?.next ?? [];
-    if (!next.includes(cmd.kind)) return 'not-an-upgrade';
-    return (TOWERS[cmd.kind]?.price ?? Infinity) > state.credits ? 'credits' : null;
-  }
-  if (cmd.t === 'target') return (TOWER_PRIORITIES as readonly string[]).includes(cmd.priority) ? null : 'priority';
-  return null;
+  return checkBuild(state.world, state, 0, cmd, (x, y) => isPad(state, x, y));
 }
 
 /** Apply a build command; returns the same state object when it is refused. */
 export function applyCommand(state: TdState, cmd: BuildCommand): TdState {
   if (checkCommand(state, cmd) !== null) return state;
+  const built = applyBuild(state.world, state, 0, cmd);
   const s = structuredClone(state);
-  const w = s.world;
-  if (cmd.t === 'place') {
-    const def = TOWERS[cmd.kind]!;
-    const id = w.nextId++;
-    w.entities.push(spawn(id, 0, archetypeOf(TD_RULESET, cmd.kind)!, cmd.x, cmd.y));
-    s.towers.push({ id, invested: def.price, fresh: def.price });
-    s.credits -= def.price;
-    s.stats.spent += def.price;
-  } else {
-    const tower = w.entities.find((e) => e.id === cmd.id)!;
-    const record = s.towers.find((r) => r.id === cmd.id)!;
-    if (cmd.t === 'upgrade') {
-      const price = TOWERS[cmd.kind]!.price;
-      const from = archetypeOf(TD_RULESET, tower.kind)!;
-      const to = archetypeOf(TD_RULESET, cmd.kind)!;
-      tower.kind = cmd.kind;
-      tower.hp = Math.max(1, Math.floor((tower.hp * to.hp) / from.hp));
-      tower.cooldown = 0;
-      tower.beam = null;
-      record.invested += price;
-      record.fresh += price;
-      s.credits -= price;
-      s.stats.spent += price;
-    } else if (cmd.t === 'sell') {
-      s.credits += refundOf(record);
-      s.stats.spent -= record.fresh;
-      w.entities = w.entities.filter((e) => e.id !== cmd.id);
-      s.towers = s.towers.filter((r) => r.id !== cmd.id);
-    } else {
-      tower.doctrine = { ...DEFAULT_DOCTRINE, priority: cmd.priority };
-    }
-  }
+  s.world = built.world;
+  s.credits = built.account.credits;
+  s.towers = built.account.towers;
+  s.stats.spent += built.spent;
   s.log[s.wave]!.push(cmd);
   return s;
 }
@@ -238,7 +196,7 @@ export function startWave(state: TdState): TdState {
   if (state.phase !== 'build') return state;
   const s = structuredClone(state);
   s.checkpoint = coreOf(state);
-  for (const r of s.towers) r.fresh = 0;
+  s.towers = settleAccount(s).towers;
   s.phase = 'wave';
   s.run = { tick: 0, pending: waveSchedule(s, s.wave), walkers: [] };
   return s;

@@ -6,4 +6,5 @@
  */
 export * from './ruleset';
 export * from './lanes';
+export * from './towers';
 export * from './draw';
