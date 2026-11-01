@@ -1,4 +1,4 @@
-import type { Archetype, ArmorClass, Ruleset, StatusEffectSpec, TerrainSpec, WeaponSpec } from '@wp/strategy-engine';
+import type { Archetype, ArmorClass, AuraSpec, Ruleset, StatusEffectSpec, TerrainSpec, WeaponSpec } from '@wp/strategy-engine';
 
 /**
  * Tower Defense ruleset on the shared strategy engine (docs/design/tower-defense.md § 15).
@@ -20,7 +20,8 @@ export const TD_TERRAIN: Readonly<Record<string, TerrainSpec>> = {
 
 export const FAMILIES = ['gun', 'artillery', 'laser', 'support', 'specialist'] as const;
 export type Family = (typeof FAMILIES)[number];
-export type Branch = 'a' | 'b';
+/** Upgrade branches; `c` came with the engine extensions (Prism, Amplifier, Corroder), so saves with a or b stay valid. */
+export type Branch = 'a' | 'b' | 'c';
 
 export interface TowerDef {
   readonly kind: string;
@@ -64,10 +65,11 @@ const weapon = (spec: Partial<WeaponSpec> & Pick<WeaponSpec, 'damage' | 'range' 
 
 const slow = (ticks: number): StatusEffectSpec => ({ kind: 'slowed', ticks });
 const stun = (ticks: number): StatusEffectSpec => ({ kind: 'disabled', ticks });
+const mark = (amount: number, ticks: number): StatusEffectSpec => ({ kind: 'marked', ticks, amount });
 
 const TOWER_HP = 100;
 
-const tower = (id: string, w: WeaponSpec | null): Archetype => ({
+const tower = (id: string, w: WeaponSpec | null, aura?: AuraSpec): Archetype => ({
   id,
   hp: TOWER_HP,
   armor: 'structure',
@@ -81,10 +83,11 @@ const tower = (id: string, w: WeaponSpec | null): Archetype => ({
   production: null,
   weapon: w,
   comms: null,
-  ew: null
+  ew: null,
+  ...(aura && { aura })
 });
 
-const enemy = (id: string, hp: number, armor: ArmorClass, speed: number, w: WeaponSpec | null = null): Archetype => ({
+const enemy = (id: string, hp: number, armor: ArmorClass, speed: number, w: WeaponSpec | null = null, extra: Pick<Archetype, 'aura' | 'shield'> = {}): Archetype => ({
   id,
   hp,
   armor,
@@ -98,7 +101,8 @@ const enemy = (id: string, hp: number, armor: ArmorClass, speed: number, w: Weap
   production: null,
   weapon: w,
   comms: null,
-  ew: null
+  ew: null,
+  ...extra
 });
 
 /** Weapons of the tower kinds. Branch A is listed first in every family. */
@@ -121,6 +125,9 @@ const TOWER_WEAPONS: Readonly<Record<string, WeaponSpec>> = {
   'focus-2': weapon({ damage: 1, range: 4, cooldown: 2, delivery: 'beam', beamRamp: 2, beamMaxStacks: 8, vs: vs(100, 100, 110, 100) }),
   pulse: weapon({ damage: 5, range: 4, cooldown: 2, vs: vs(100, 100, 50, 130) }),
   'pulse-2': weapon({ damage: 8, range: 5, cooldown: 2, vs: vs(100, 100, 50, 130) }),
+  // Prism (branch C): no heat-up; the beam runs on through its target and hits every unit on the line.
+  prism: weapon({ damage: 2, range: 4, cooldown: 2, delivery: 'beam', pierce: true, vs: vs(100, 100, 60, 100) }),
+  'prism-2': weapon({ damage: 3, range: 5, cooldown: 2, delivery: 'beam', pierce: true, vs: vs(100, 100, 60, 100) }),
   // Support: no real damage; slows. Stasis = wide short pulses; Snare = one target, long slow, far.
   support: weapon({ damage: 1, range: 3, cooldown: 10, delivery: 'ballistic', flight: 1, splash: 1, vs: vs(100, 100, 100, 100), effect: slow(10) }),
   stasis: weapon({ damage: 1, range: 3, cooldown: 8, delivery: 'ballistic', flight: 1, splash: 2, vs: vs(100, 100, 100, 100), effect: slow(14) }),
@@ -132,7 +139,19 @@ const TOWER_WEAPONS: Readonly<Record<string, WeaponSpec>> = {
   interceptor: weapon({ damage: 40, range: 6, cooldown: 6, vs: vs(0, 0, 0, 150) }),
   'interceptor-2': weapon({ damage: 70, range: 7, cooldown: 6, vs: vs(0, 0, 0, 150) }),
   blackout: weapon({ damage: 1, range: 4, cooldown: 30, delivery: 'ballistic', flight: 2, splash: 2, vs: vs(100, 100, 100, 100), effect: stun(12) }),
-  'blackout-2': weapon({ damage: 1, range: 4, cooldown: 26, delivery: 'ballistic', flight: 2, splash: 2, vs: vs(100, 100, 100, 100), effect: stun(18) })
+  'blackout-2': weapon({ damage: 1, range: 4, cooldown: 26, delivery: 'ballistic', flight: 2, splash: 2, vs: vs(100, 100, 100, 100), effect: stun(18) }),
+  // Corroder (specialist branch C): marks a unit, which then takes more damage from every tower.
+  corroder: weapon({ damage: 2, range: 4, cooldown: 8, vs: vs(100, 100, 100, 100), effect: mark(25, 24) }),
+  'corroder-2': weapon({ damage: 3, range: 5, cooldown: 6, vs: vs(100, 100, 100, 100), effect: mark(40, 32) })
+};
+
+/**
+ * Towers without a weapon: the Amplifier (support branch C) makes the towers around it reload
+ * faster; its level 3 also repairs them.
+ */
+const TOWER_AURAS: Readonly<Record<string, AuraSpec>> = {
+  amplifier: { radius: 2, cooldownPct: 25 },
+  'amplifier-2': { radius: 2, cooldownPct: 50, heal: { hp: 2, every: 8 } }
 };
 
 const def = (kind: string, family: Family, level: 1 | 2 | 3, branch: Branch | null, price: number, next: readonly string[] = []): TowerDef => ({
@@ -156,28 +175,34 @@ export const TOWERS: Readonly<Record<string, TowerDef>> = Object.fromEntries(
     def('howitzer-2', 'artillery', 3, 'a', 250),
     def('mortar', 'artillery', 2, 'b', 150, ['mortar-2']),
     def('mortar-2', 'artillery', 3, 'b', 220),
-    def('laser', 'laser', 1, null, 150, ['focus', 'pulse']),
+    def('laser', 'laser', 1, null, 150, ['focus', 'pulse', 'prism']),
     def('focus', 'laser', 2, 'a', 175, ['focus-2']),
     def('focus-2', 'laser', 3, 'a', 250),
     def('pulse', 'laser', 2, 'b', 150, ['pulse-2']),
     def('pulse-2', 'laser', 3, 'b', 220),
-    def('support', 'support', 1, null, 125, ['stasis', 'snare']),
+    def('prism', 'laser', 2, 'c', 175, ['prism-2']),
+    def('prism-2', 'laser', 3, 'c', 250),
+    def('support', 'support', 1, null, 125, ['stasis', 'snare', 'amplifier']),
     def('stasis', 'support', 2, 'a', 125, ['stasis-2']),
     def('stasis-2', 'support', 3, 'a', 175),
     def('snare', 'support', 2, 'b', 125, ['snare-2']),
     def('snare-2', 'support', 3, 'b', 175),
-    def('specialist', 'specialist', 1, null, 150, ['interceptor', 'blackout']),
+    def('amplifier', 'support', 2, 'c', 150, ['amplifier-2']),
+    def('amplifier-2', 'support', 3, 'c', 220),
+    def('specialist', 'specialist', 1, null, 150, ['interceptor', 'blackout', 'corroder']),
     def('interceptor', 'specialist', 2, 'a', 150, ['interceptor-2']),
     def('interceptor-2', 'specialist', 3, 'a', 220),
     def('blackout', 'specialist', 2, 'b', 150, ['blackout-2']),
-    def('blackout-2', 'specialist', 3, 'b', 220)
+    def('blackout-2', 'specialist', 3, 'b', 220),
+    def('corroder', 'specialist', 2, 'c', 150, ['corroder-2']),
+    def('corroder-2', 'specialist', 3, 'c', 220)
   ].map((d) => [d.kind, d])
 );
 
 /** Level-1 kind of each family (what can be placed). */
 export const BASE_TOWERS: readonly string[] = FAMILIES;
 
-export const ENEMY_KINDS = ['walker', 'runner', 'swarm', 'brute', 'glider', 'raider', 'crawler'] as const;
+export const ENEMY_KINDS = ['walker', 'runner', 'swarm', 'brute', 'glider', 'raider', 'crawler', 'shielder', 'mender'] as const;
 export type EnemyKind = (typeof ENEMY_KINDS)[number];
 
 const ENEMY_ARCHETYPES: readonly Archetype[] = [
@@ -188,7 +213,11 @@ const ENEMY_ARCHETYPES: readonly Archetype[] = [
   enemy('glider', 30, 'air', 1),
   // Armed: fires at towers within reach while it walks past.
   enemy('raider', 70, 'light', 2, weapon({ damage: 4, range: 2, cooldown: 4, vs: vs(0, 0, 0, 0, 100) })),
-  enemy('crawler', 1500, 'heavy', 2, weapon({ damage: 12, range: 2, cooldown: 6, vs: vs(0, 0, 0, 0, 100) }))
+  enemy('crawler', 1500, 'heavy', 2, weapon({ damage: 12, range: 2, cooldown: 6, vs: vs(0, 0, 0, 0, 100) })),
+  // Shield that soaks damage first and returns after 3 s without a hit; beams hit it harder, an EMP strips it.
+  enemy('shielder', 60, 'light', 2, null, { shield: { hp: 80, regenDelay: 24 } }),
+  // Repairs the units around it (not itself).
+  enemy('mender', 50, 'infantry', 2, null, { aura: { radius: 2, heal: { hp: 3, every: 8 } } })
 ];
 
 export const ENEMIES: Readonly<Record<EnemyKind, EnemyDef>> = {
@@ -198,7 +227,9 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemyDef>> = {
   brute: { kind: 'brute', threat: 3, bounty: 15 },
   glider: { kind: 'glider', threat: 2, bounty: 6 },
   raider: { kind: 'raider', threat: 2, bounty: 10 },
-  crawler: { kind: 'crawler', threat: 10, bounty: 100 }
+  crawler: { kind: 'crawler', threat: 10, bounty: 100 },
+  shielder: { kind: 'shielder', threat: 2, bounty: 10 },
+  mender: { kind: 'mender', threat: 1, bounty: 8 }
 };
 
 export const isEnemyKind = (kind: string): kind is EnemyKind => (ENEMY_KINDS as readonly string[]).includes(kind);
@@ -217,7 +248,7 @@ export const TD_RULESET: Ruleset = {
   id: 'td-1',
   ticksPerTurn: TICKS_PER_SECOND,
   terrain: TD_TERRAIN,
-  archetypes: Object.fromEntries([...Object.keys(TOWER_WEAPONS).map((k) => tower(k, TOWER_WEAPONS[k] as WeaponSpec)), ...ENEMY_ARCHETYPES, ...STRUCTURE_ARCHETYPES].map((a) => [a.id, a])),
+  archetypes: Object.fromEntries([...Object.keys(TOWER_WEAPONS).map((k) => tower(k, TOWER_WEAPONS[k] as WeaponSpec)), ...Object.keys(TOWER_AURAS).map((k) => tower(k, null, TOWER_AURAS[k])), ...ENEMY_ARCHETYPES, ...STRUCTURE_ARCHETYPES].map((a) => [a.id, a])),
   commandNetwork: false,
   relayHillBonus: 0,
   fog: false,

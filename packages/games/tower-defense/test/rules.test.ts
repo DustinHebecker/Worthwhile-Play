@@ -150,13 +150,12 @@ describe('build commands', () => {
     expect(TOWERS['cannon-2']!.next).toEqual([]);
   });
 
-  it('every family has two exclusive branches of two levels', () => {
+  it('every family has two or three exclusive branches of two levels (C: laser, support, specialist)', () => {
     for (const base of BASE_TOWERS) {
       const def = TOWERS[base]!;
       expect(def.level).toBe(1);
-      expect(def.next).toHaveLength(2);
       const branches = def.next.map((k) => TOWERS[k]!);
-      expect(branches.map((b) => b.branch).sort()).toEqual(['a', 'b']);
+      expect(branches.map((b) => b.branch)).toEqual(['laser', 'support', 'specialist'].includes(base) ? ['a', 'b', 'c'] : ['a', 'b']);
       for (const b of branches) {
         expect(b.family).toBe(def.family);
         expect(b.next).toHaveLength(1);

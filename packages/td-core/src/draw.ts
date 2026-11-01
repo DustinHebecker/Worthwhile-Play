@@ -7,7 +7,8 @@ import { isStructureKind, TOWERS, type Family } from './ruleset';
  * (owner, 2026-10-31): its terrain renderer and its unit and structure pictures from
  * @wp/strategy-art. Own towers are filled in the player colour and face right; wave units are a
  * pale tint with an outline in the opponent colour and face the other way. Level and branch are
- * drawn as pips, status effects as rings and crosses: nothing depends on colour alone.
+ * drawn as pips, status effects as rings, crosses, a shield hexagon and a mark diamond: nothing
+ * depends on colour alone.
  */
 
 export interface Palette {
@@ -90,7 +91,9 @@ export const ENEMY_ICON: Readonly<Record<string, readonly [string, number]>> = {
   brute: ['warden', 0.95],
   glider: ['kite', 0.8],
   raider: ['lancer', 0.85],
-  crawler: ['warden', 1.35]
+  crawler: ['warden', 1.35],
+  shielder: ['tracer', 0.85],
+  mender: ['jammer', 0.8]
 };
 
 export interface Frame {
@@ -116,7 +119,7 @@ export interface Frame {
 }
 
 const TAU = Math.PI * 2;
-const has = (e: Entity, kind: 'slowed' | 'disabled'): boolean => e.status.some((s) => s.kind === kind && s.ticks > 0);
+const has = (e: Entity, kind: 'slowed' | 'disabled' | 'marked'): boolean => e.status.some((s) => s.kind === kind && s.ticks > 0);
 
 /** Draws one frame; `terrain` is the cached terrain layer (or null to draw plain cells). */
 export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: Palette, f: Frame, terrain: CanvasImageSource | null): void {
@@ -185,13 +188,17 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     if (!def) continue;
     const [cx, cy] = pos(e);
     if (!drawIcon(g, TOWER_ICON[def.family], cx - cell / 2, cy - cell / 2, k, styleOf(e.side))) fallbackShape(g, cx, cy, cell * 0.3, colourOf(e.side), palette.surface);
-    // Level pips along the bottom edge: filled for branch A, hollow for branch B.
+    // Level pips along the bottom edge: filled dots for branch A, hollow dots for B, squares for C.
     g.fillStyle = colourOf(e.side);
     g.strokeStyle = colourOf(e.side);
     g.lineWidth = 1.5;
     for (let i = 0; i < def.level; i++) {
+      const px = cx - cell * 0.18 + i * cell * 0.18;
+      const py = cy + cell * 0.36;
+      const r = cell * 0.06;
       g.beginPath();
-      g.arc(cx - cell * 0.18 + i * cell * 0.18, cy + cell * 0.36, cell * 0.06, 0, TAU);
+      if (def.branch === 'c') g.rect(px - r, py - r, 2 * r, 2 * r);
+      else g.arc(px, py, r, 0, TAU);
       if (def.branch === 'b') g.stroke();
       else g.fill();
     }
@@ -245,6 +252,34 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.arc(cx, cy, cell * 0.42, 0, TAU);
       g.stroke();
       g.setLineDash([]);
+    }
+    if ((e.shield ?? 0) > 0) {
+      // Shield: a hexagon around the unit, as long as any shield is left.
+      g.strokeStyle = colourOf(e.side);
+      g.lineWidth = 2;
+      g.beginPath();
+      for (let i = 0; i <= 6; i++) {
+        const a = (i * TAU) / 6 + Math.PI / 6;
+        const hx = cx + Math.cos(a) * cell * 0.46;
+        const hy = cy + Math.sin(a) * cell * 0.46;
+        if (i === 0) g.moveTo(hx, hy);
+        else g.lineTo(hx, hy);
+      }
+      g.stroke();
+    }
+    if (has(e, 'marked')) {
+      // Mark: a small diamond at the top right.
+      const mx = cx + cell * 0.3;
+      const my = cy - cell * 0.3;
+      const d = cell * 0.09;
+      g.fillStyle = palette.ink;
+      g.beginPath();
+      g.moveTo(mx, my - d);
+      g.lineTo(mx + d, my);
+      g.lineTo(mx, my + d);
+      g.lineTo(mx - d, my);
+      g.closePath();
+      g.fill();
     }
     if (has(e, 'disabled')) {
       g.strokeStyle = palette.ink;
