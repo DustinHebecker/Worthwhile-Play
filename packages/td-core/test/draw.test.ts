@@ -77,17 +77,20 @@ describe('state marks (never colour alone)', () => {
     expect(lineTos(expired)).toBe(lineTos(plain));
   });
 
-  it('level pips: dots for branches A and B (filled, hollow), squares for C', () => {
+  it('level pips: dots for branches A and B (filled, hollow), squares for C, each on a halo', () => {
     const rects = (calls: string[]) => calls.filter((c) => c.startsWith('rect(')).length;
     const arcs = (calls: string[]) => calls.filter((c) => c.startsWith('arc(')).length;
     const a = draw((w) => put(w, 'focus-2', 0));
     const b = draw((w) => put(w, 'pulse-2', 0));
     const c = draw((w) => put(w, 'prism-2', 0));
-    // The fallback tower shape is one rect; level 3 adds three pips.
+    // The fallback tower shape is one rect; level 3 adds three pips, each a halo and a pip.
     expect(rects(a)).toBe(1);
-    expect(rects(c)).toBe(4);
-    expect(arcs(a) - arcs(c)).toBe(3);
+    expect(rects(c)).toBe(7);
+    expect(arcs(a) - arcs(c)).toBe(6);
     expect(b.filter((x) => x === 'stroke()').length - a.filter((x) => x === 'stroke()').length).toBe(3);
     expect(a.filter((x) => x === 'fill()').length - b.filter((x) => x === 'fill()').length).toBe(3);
+    // Pips are at least 0.15 of a cell wide (6.6 px on a 44 px cell).
+    const pip = c.filter((x) => x.startsWith('rect('))[2]!;
+    expect(Number(pip.slice(5, -1).split(',')[2])).toBeGreaterThanOrEqual((220 / 5) * 0.15 - 0.1);
   });
 });

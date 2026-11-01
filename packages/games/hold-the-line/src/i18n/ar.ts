@@ -23,6 +23,7 @@ export const ar: Record<MessageKey, string> = {
   'cell.units': '{cell}؛ الوحدات هنا: {n}',
   'structure.extractor': 'مستخرِج',
   'about.extractor': 'يضيف {n} رصيد إلى دخلك في كل جولة. يمكن للوحدات المسلّحة تدميره.',
+  'about.amplifier': 'بلا سلاح: أبراجك ووحداتك القريبة تُعيد التلقيم أسرع. في المستوى 3 يُصلحها أيضًا.',
   'hud.round': 'الجولة {n} من {total}',
   'hud.credits': 'الرصيد: {n}',
   'hud.core.own': 'نواتك: {n}',
