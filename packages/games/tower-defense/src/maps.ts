@@ -226,7 +226,7 @@ export const BEND: TdMap = {
   waves: full([0], [1], 130),
   // The long road gives every tower more time: less money keeps it a challenge.
   startCredits: 250,
-  income: INCOME.map((n) => n - 30)
+  income: INCOME.map((n) => n - 45)
 };
 
 /** Twin approach: two entries at the top corners, the roads meet in the middle; gliders come from both. */
