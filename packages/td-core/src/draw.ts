@@ -1,6 +1,6 @@
 import type { Entity, World } from '@wp/strategy-engine';
 import { drawIcon, drawTerrainMap, type TerrainColours } from '@wp/strategy-art';
-import { TOWERS, type Family } from './ruleset';
+import { isStructureKind, TOWERS, type Family } from './ruleset';
 
 /**
  * Canvas painting of the map (view only, floats allowed), in the look of the strategy game
@@ -187,6 +187,15 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     if (e.hp < max) bar(g, cx, cy - cell * 0.44, cell * 0.6, e.hp / max, colourOf(e.side), palette.muted);
   }
 
+  // Economy structures (hybrid): their strategy picture, no pips.
+  for (const e of f.world.entities) {
+    if (!isStructureKind(e.kind)) continue;
+    const [cx, cy] = pos(e);
+    if (!drawIcon(g, e.kind, cx - cell / 2, cy - cell / 2, k, styleOf(e.side))) fallbackShape(g, cx, cy, cell * 0.25, colourOf(e.side), palette.surface);
+    const max = f.hpMax(e.kind);
+    if (e.hp < max) bar(g, cx, cy - cell * 0.44, cell * 0.6, e.hp / max, colourOf(e.side), palette.muted);
+  }
+
   // Beams.
   g.lineWidth = Math.max(2, cell * 0.05);
   g.strokeStyle = palette.focus;
@@ -199,7 +208,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
 
   // Wave units.
   for (const e of f.world.entities) {
-    if (Object.hasOwn(TOWERS, e.kind)) continue;
+    if (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)) continue;
     const [cx, cy] = pos(e);
     const [icon, size] = ENEMY_ICON[e.kind] ?? ['rifles', 0.8];
     const s = cell * size;
