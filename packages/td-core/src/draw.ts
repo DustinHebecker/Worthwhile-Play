@@ -100,7 +100,6 @@ export const ENEMY_ICON: Readonly<Record<string, readonly [string, number]>> = {
 
 export interface Frame {
   world: World;
-  /** Positions before the last step (for interpolation), by entity id. */
   /**
    * Where to draw a moving unit (cells, fractional) and how far through its step it is (0..1),
    * e.g. from `Motion`; absent: on its cell.

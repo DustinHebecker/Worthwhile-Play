@@ -18,8 +18,6 @@ describe('smooth movement', () => {
     expect(half.progress).toBeCloseTo(0.5, 9);
     expect(m.position(1, 2, 1, 10 + DEFAULT_SPAN)).toEqual({ x: 2, y: 1, progress: 1, dx: 0, dy: 1 });
     expect(m.position(1, 2, 1, 99)).toEqual({ x: 2, y: 1, progress: 1, dx: 0, dy: 1 });
-    expect(m.heading(1)).toEqual({ dx: 0, dy: 1 });
-    expect(m.heading(9)).toEqual({ dx: 0, dy: 0 });
     expect(m.position(1, 2, 1, 5)).toEqual({ x: 2, y: 0, progress: 0, dx: 0, dy: 1 });
   });
 

@@ -67,10 +67,4 @@ export class Motion {
     const p = Math.max(0, Math.min(1, (now - g.at) / g.span));
     return { x: g.fx + (g.tx - g.fx) * p, y: g.fy + (g.ty - g.fy) * p, progress: p, dx: Math.sign(g.tx - g.fx), dy: Math.sign(g.ty - g.fy) };
   }
-
-  /** The direction of a unit's last step (0, 0 when it has not moved yet): it keeps facing it when it stops. */
-  heading(id: number): { dx: number; dy: number } {
-    const g = this.glides.get(id);
-    return g ? { dx: Math.sign(g.tx - g.fx), dy: Math.sign(g.ty - g.fy) } : { dx: 0, dy: 0 };
-  }
 }

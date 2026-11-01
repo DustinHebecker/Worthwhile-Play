@@ -125,8 +125,7 @@ const PREVIEWS: Record<string, () => string> = {
       C(18, 47, 7.5, 'p1 fn') + T(18, 47.5, 10, 't tsm ts') + C(24, 41, 2, 'o') +
       C(77, 14, 7.5, 'p2 fn') + T(77, 14.5, 10, 't tsm ts') + tri(83.5, 7.5, 2.4, 'o');
   },
-  // Tower Defense: a winding road over build pads, towers of different shapes beside it (square gun,
-  // diamond laser with its beam, octagonal artillery, round support) and wave units on the road.
+  // Hold the Line: the two-lane duel map, your towers below and theirs above, a wave going each way.
   'hold-the-line': () => {
     const roads = R(6, 6, 8, 52, 'c') + R(6, 6, 42, 8, 'c') + R(82, 6, 8, 52, 'c') + R(48, 50, 42, 8, 'c');
     const towers = R(60, 38, 6, 6, 'p1') + P('M30 34l3.5 3.5-3.5 3.5-3.5-3.5z', 'p1') + R(30, 20, 6, 6, 'p2') + ngon(66, 23, 3.8, 8, 'p2');

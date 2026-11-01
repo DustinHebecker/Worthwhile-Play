@@ -592,6 +592,39 @@ describe('saves from state version 1 (twelve waves on the full maps, six on Trai
     expect(isValidState(migrated)).toBe(true);
   });
 
+  it('a running wave restarts with the retries the game already had', () => {
+    let s = newGame(5, 'standard', 'fork');
+    s = applyCommand(s, { t: 'place', kind: 'gun', x: 3, y: 4 });
+    const locked = startWave(s);
+    const running = stepWave(locked, 30).state;
+    running.stats.retries = 3;
+    if (running.checkpoint) running.checkpoint.stats.retries = 1;
+    const migrated = migrateState(asV1(running, 12), 1)!;
+    expect(migrated.phase).toBe('build');
+    expect(migrated.stats.retries).toBe(3);
+  });
+
+  it('won, ended and lost games stay as they were (a lost one keeps its retry point)', () => {
+    let s = newGame(5, 'standard', 'fork');
+    for (const phase of ['won', 'ended'] as const) {
+      const done = migrateState({ ...asV1(s, 12), phase }, 1)!;
+      expect(done.phase, phase).toBe(phase);
+      expect(isValidState(done), phase).toBe(true);
+    }
+    // A wave lost with nothing built: the game keeps its checkpoint for a retry.
+    s = resolveWave(startWave(s)).state;
+    let lost = s;
+    while (lost.phase === 'build') lost = resolveWave(startWave(lost)).state;
+    expect(lost.phase).toBe('lost');
+    expect(lost.checkpoint).not.toBeNull();
+    const migrated = migrateState(asV1(lost, 12), 1)!;
+    expect(migrated.phase).toBe('lost');
+    expect(migrated.checkpoint).not.toBeNull();
+    expect(migrated.checkpoint!.variants).toHaveLength(20);
+    expect(isValidState(migrated)).toBe(true);
+    expect(retryWave(migrated).phase).toBe('build');
+  });
+
   it('refuses what cannot be a save, and other versions', () => {
     expect(migrateState(null, 1)).toBeUndefined();
     expect(migrateState({ mapId: 'nowhere' }, 1)).toBeUndefined();

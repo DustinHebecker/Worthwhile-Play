@@ -135,6 +135,12 @@ export function newGame(seed: number, difficulty: Difficulty = DEFAULT_DIFFICULT
 
 export const waveCount = (state: Pick<TdCore, 'mapId'>): number => mapOf(state).waves.length;
 
+/**
+ * The number of waves a game shows as its total: the map's, or for a won game the waves it really
+ * held (a game won before the longer wave plans of state version 2 held fewer than the map has now).
+ */
+export const wavesShown = (state: Pick<TdCore, 'mapId' | 'phase' | 'wave'>): number => (state.phase === 'won' ? state.wave + 1 : waveCount(state));
+
 /** The spawn schedule of a wave as the player sees it in the preview (difficulty applied). */
 export function waveSchedule(state: Pick<TdCore, 'mapId' | 'variants' | 'difficulty'>, wave: number): PendingSpawn[] {
   const map = mapOf(state);
@@ -309,7 +315,7 @@ export function retryWave(state: TdState): TdState {
  * Saves of state version 1 (twelve waves on the full maps, six on the Training ground) for the
  * longer wave plans of version 2 (owner playtest 2026-11-01). The game goes on with the new waves
  * from where it was: the wave choices of the slots that exist are kept where the new slot has that
- * many choices, the others take the first; a wave that was running restarts from its lock (its
+ * many choices, the others (for a full map slots 13–20, which a version-1 save never had) take the first; a wave that was running restarts from its lock (its
  * units were scheduled by the old plan). Returns undefined for anything that is not a valid save
  * once migrated.
  */

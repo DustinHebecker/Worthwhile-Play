@@ -22,6 +22,7 @@ import {
   TOWER_PRIORITIES,
   towerAt,
   waveCount,
+  wavesShown,
   wavePreview,
   type BuildCommand,
   type Difficulty,
@@ -176,7 +177,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
 
   // --- Rendering -------------------------------------------------------------------------------
   const renderHud = (): void => {
-    const total = waveCount(state);
+    const total = wavesShown(state);
     wave.textContent = t('hud.wave', { n: state.wave + 1, total });
     phase.textContent = state.phase === 'wave' ? t(playing && !hostPaused ? 'hud.running' : 'hud.paused') : state.phase === 'build' ? t('hud.build') : '';
     credits.textContent = t('hud.credits', { n: state.credits });
@@ -302,7 +303,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     playButton.textContent = t(playing ? 'controls.pause' : 'controls.play');
     speedButton.textContent = t('controls.speed', { n: speed });
     retryButton.textContent = t('controls.retry', { n: (state.checkpoint?.wave ?? state.wave) + 1 });
-    if (p === 'won') status.textContent = t('status.won', { total: waveCount(state), core: state.core });
+    if (p === 'won') status.textContent = t('status.won', { total: wavesShown(state), core: state.core });
     else if (p === 'lost') status.textContent = t('status.lost', { n: state.wave + 1 });
     else if (p === 'ended') status.textContent = t('status.ended', { n: state.wave + 1 });
     status.hidden = status.textContent === '';
@@ -415,7 +416,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
       status.textContent = `${t('status.waveDone', { n: state.wave, killed, leaked })} ${t('status.income', { income, interest: paid })}`;
       announce(live, status.textContent);
     } else if (state.phase === 'won') {
-      announce(live, t('status.won', { total: waveCount(state), core: state.core }));
+      announce(live, t('status.won', { total: wavesShown(state), core: state.core }));
       context.finished({ outcome: 'won', stats: { core: state.core, killed: state.stats.killed, leaked: state.stats.leaked, retries: state.stats.retries } });
     } else if (state.phase === 'lost') {
       announce(live, t('status.lost', { n: state.wave + 1 }));

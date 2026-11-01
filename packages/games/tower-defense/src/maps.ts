@@ -222,9 +222,9 @@ export const BEND: TdMap = {
     { layer: 'ground', points: [[0, 0], [0, 2], [6, 2], [6, 6], [0, 6], [0, 10], [6, 10], [6, 14], [3, 14], [3, 16]] },
     { layer: 'air', points: [[0, 0], [3, 16]] }
   ],
-  // The long road gives towers more time, so more units come.
+  // The long road gives every tower more time: 30 % more units, and less money (with even more
+  // units it only paid out more bounty).
   waves: full([0], [1], 130),
-  // The long road gives every tower more time: less money keeps it a challenge.
   startCredits: 250,
   income: INCOME.map((n) => n - 30)
 };
