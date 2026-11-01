@@ -49,7 +49,7 @@ export interface Profile {
 }
 
 /** Wave simulations Hard keeps for choosing its attack wave (6 single kinds and 15 pairs). */
-const PROBE_SIMS = 21;
+export const PROBE_SIMS = 21;
 
 export const PROFILES: Record<Difficulty, Profile> = {
   easy: { defence: 0.5, keep: 0, lookahead: false, pads: 1, steps: 1, extractors: 0, workshops: false, probe: false, sims: 0 },
@@ -138,6 +138,18 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
   return loss;
 }
 
+/** Share of the round's starting credits the defence may use: all but the kept share in External Small (no attack wave to pay for). */
+export const defenceShare = (profile: Profile, mode: HoldState['mode']): number => (mode === 'external-small' ? 1 - profile.keep : profile.defence);
+
+/**
+ * Wave simulations for choosing the defence. Hard keeps PROBE_SIMS of its budget for probing attack
+ * waves in VS Small; External Small has no attack to probe, so Hard spends 1.5 × its budget on defence.
+ */
+export function defenceSims(profile: Profile, mode: HoldState['mode']): number {
+  if (!profile.probe) return profile.sims;
+  return mode === 'external-small' ? Math.floor((3 * profile.sims) / 2) : profile.sims - PROBE_SIMS;
+}
+
 /** Plans a side's round (the computer is side 1; tests also let it play side 0). Pure and deterministic. */
 export function planRound(state: HoldState, side = 1, difficulty: Difficulty = state.difficulty): PlanCommand[] {
   const profile = PROFILES[difficulty];
@@ -163,12 +175,9 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
 
   // 2. Defence against the wave it expects.
   // The defence budget is a share of what the round started with (an early extractor must not starve it).
-  // External Small has no attack wave to pay for: all but the kept share may go to defence.
-  const share = s.mode === 'external-small' ? 1 - profile.keep : profile.defence;
-  const floor = Math.max(0, own().credits - Math.floor(start * share));
+  const floor = Math.max(0, own().credits - Math.floor(start * defenceShare(profile, s.mode)));
   const wave = expectedWave(s, side);
-  // Hard in External Small has no attack wave to probe: it spends twice the budget on its defence.
-  const extra = profile.probe && s.mode === 'external-small';
+  const budget = defenceSims(profile, s.mode);
   let sims = 0;
   const threat = (st: HoldState, bound = Infinity): number => {
     sims++;
@@ -192,7 +201,7 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
       }
       let best: { cmd: PlanCommand; loss: number; value: number } | null = null;
       for (const cmd of candidates) {
-        if (sims >= (extra ? Math.floor(1.5 * profile.sims) : profile.sims - (profile.probe ? PROBE_SIMS : 0))) break;
+        if (sims >= budget) break;
         if (checkPlan(s, side, cmd) !== null) continue;
         const next = applyPlan(s, side, cmd);
         if (next.sides[side]!.credits < floor) continue;
