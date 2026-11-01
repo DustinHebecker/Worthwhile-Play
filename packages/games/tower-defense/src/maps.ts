@@ -223,7 +223,7 @@ export const BEND: TdMap = {
     { layer: 'air', points: [[0, 0], [3, 16]] }
   ],
   // The long road gives towers more time, so more units come.
-  waves: full([0], [1], 130),
+  waves: full([0], [1], 160),
   startCredits: 300,
   income: INCOME.map((n) => n - 5)
 };
