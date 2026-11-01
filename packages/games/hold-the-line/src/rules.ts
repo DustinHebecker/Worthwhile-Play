@@ -419,7 +419,9 @@ export function isValidState(v: unknown): v is HoldState {
   if (v.phase === 'lost' && !(own.core < foe.core)) return false;
   if (v.phase === 'draw' && own.core !== foe.core) return false;
   if ((v.phase === 'won' || v.phase === 'lost' || v.phase === 'draw') && v.round !== ROUNDS - 1 && Math.min(own.core, foe.core) > 0) return false;
-  if ((v.phase === 'plan' || v.phase === 'battle') && Math.min(own.core, foe.core) === 0) return false;
+  // A battle runs on after a core reaches 0 (until its units are gone), and is saved meanwhile; a
+  // plan phase only follows a round in which both cores held.
+  if (v.phase === 'plan' && Math.min(own.core, foe.core) === 0) return false;
   if (v.phase === 'plan') {
     // While planning, the computer has done nothing yet: it stands exactly as the round began.
     const startSides = start.sides as [SideState, SideState];
@@ -441,6 +443,8 @@ export function isValidState(v: unknown): v is HoldState {
       const rest = run.pending.filter((p) => p.side === i);
       const tail = schedule.slice(schedule.length - rest.length);
       if (rest.length > schedule.length || rest.some((p, k) => p.at !== tail[k]!.at || p.kind !== tail[k]!.kind)) return false;
+      // Spawns are made at their tick or later, never earlier: whatever is not yet due is still pending.
+      if (rest.length < schedule.filter((p) => p.at >= (run.tick as number)).length) return false;
       const sent = side.wave.slice(0, side.wave.length - rest.length);
       const running = units.filter((e) => e.side === i);
       if (running.length > sent.length) return false;

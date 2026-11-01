@@ -492,7 +492,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   };
 
   /**
-   * Locking runs the computer's planner (up to a few hundred milliseconds on a slow device): the
+   * Locking runs the computer's planner (usually well under a second; with very large budgets a
+   * few seconds on a slow device, design § 16.3; a Worker is the next step if that matters): the
    * "thinking" state is drawn first, then the plan is made, so the page never freezes silently.
    */
   let thinking: ReturnType<typeof setTimeout> | null = null;
@@ -501,6 +502,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     status.textContent = '';
     lockButton.disabled = true;
     phase.textContent = t('common.thinking');
+    announce(live, phase.textContent);
     container.dataset.thinking = 'true';
     const at = state;
     thinking = setTimeout(() => {

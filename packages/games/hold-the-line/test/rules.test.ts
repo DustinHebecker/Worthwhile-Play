@@ -246,6 +246,40 @@ describe('properties', () => {
     );
   });
 
+  it('a battle saved after a core reached 0 is valid and resumes exactly (orchestrator review)', () => {
+    // A player who never plans: the computer's waves break the core while units still run.
+    let s = newGame(2, 'hard');
+    let mid: HoldState | null = null;
+    while (s.phase === 'plan' && !mid) {
+      s = lockRound(s, ai);
+      while (s.phase === 'battle') {
+        s = stepBattle(s, 1).state;
+        if (s.phase === 'battle' && s.sides[0].core === 0) {
+          mid = s;
+          break;
+        }
+      }
+    }
+    expect(mid).not.toBeNull();
+    const saved = clone(mid!);
+    expect(isValidState(saved)).toBe(true);
+    const end = resolveBattle(saved).state;
+    expect(end).toEqual(resolveBattle(mid!).state);
+    expect(end.phase).toBe('lost');
+    // A plan phase with a broken core cannot happen.
+    expect(isValidState({ ...clone(end), phase: 'plan' })).toBe(false);
+  });
+
+  it('a spawn that is not yet due cannot be dropped from a save (orchestrator nit)', () => {
+    let s = fresh();
+    for (const kind of ['walker', 'runner'] as const) s = applyPlan(s, 0, { t: 'buy', kind });
+    const locked = lockRound(s, idle);
+    expect(isValidState(clone(locked))).toBe(true);
+    const dropped = clone(locked);
+    dropped.run!.pending = dropped.run!.pending.filter((_p, i, all) => i !== all.findIndex((q) => q.side === 0));
+    expect(isValidState(dropped)).toBe(false);
+  });
+
   it('a running battle must be what the sides bought, in order (review S2)', () => {
     let s = fresh();
     for (const kind of ['walker', 'brute', 'runner'] as const) s = applyPlan(s, 0, { t: 'buy', kind });
