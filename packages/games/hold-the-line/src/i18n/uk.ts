@@ -23,6 +23,7 @@ export const uk: Record<MessageKey, string> = {
   'cell.units': '{cell}; одиниць тут: {n}',
   'structure.extractor': 'Екстрактор',
   'about.extractor': 'Щораунду додає до вашого доходу кредити: {n}. Озброєні одиниці можуть його знищити.',
+  'about.amplifier': 'Без зброї: ваші сусідні вежі та власні загони швидше перезаряджаються. На рівні 3 ще й ремонтує їх.',
   'hud.round': 'Раунд {n} з {total}',
   'hud.credits': 'Кредити: {n}',
   'hud.core.own': 'Ваше ядро: {n}',

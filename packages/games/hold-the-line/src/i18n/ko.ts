@@ -23,6 +23,7 @@ export const ko: Record<MessageKey, string> = {
   'cell.units': '{cell}; 이곳의 유닛: {n}',
   'structure.extractor': '추출기',
   'about.extractor': '매 라운드 수입에 {n} 크레딧을 더합니다. 무장한 유닛이 파괴할 수 있습니다.',
+  'about.amplifier': '무기 없음: 근처의 내 타워와 아군 유닛의 재장전이 빨라집니다. 레벨 3에서는 수리도 합니다.',
   'hud.round': '라운드 {n}/{total}',
   'hud.credits': '크레딧: {n}',
   'hud.core.own': '내 코어: {n}',

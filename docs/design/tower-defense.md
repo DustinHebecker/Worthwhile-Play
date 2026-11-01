@@ -582,7 +582,14 @@ New units (12-wave maps; the Training ground is unchanged):
 - Shield bearers in wave 12 start after the crawler has passed for the same reason (on Long bend the planner lost the crawler fight with them alongside).
 - A marked unit shows a diamond.
 
-Saves stay valid: no kind was removed; a running wave is only bounded by its schedule length, which grew.
+Saves stay valid: no kind was removed; a running wave is only bounded by its schedule length, which grew. **But a 12-wave game in progress plays the new waves from wave 7 on**: the waves are read from the map when a wave starts, so this also holds for a checkpoint retry and for replaying a log recorded before the change (the retried or replayed wave brings the new units). Only a wave already running in the save keeps its old schedule.
+
+Review follow-ups (orchestrator, PR #102):
+- **Amplifier in Hold the Line:** its aura reaches every own entity nearby (engine E2: same side), so there it also speeds up and (level 3) repairs **your own attack units** passing it. **Kept, text fixed** rather than restricting the aura to structures: a restriction would need a new engine field (ADR 0009) for one game, and helping your outgoing wave near your own lane is a readable, deliberate tactic in a duel. Hold the Line overrides the shared text ("your towers and your own units close by"); in Tower Defense the player has no units, so "towers close by" stays exact.
+- **Pips** are 0.15 of a cell (6.6 px at 44 px) on a halo in the surface colour, so they stand out from the picture.
+- **Silhouettes:** the Mender uses the mast-truck picture, the Shield bearer the tracer (they no longer look alike once the shield is gone).
+- **Golden replay through wave 12** (`golden.test.ts`): a fixed build order on Fork (relaxed) that buys every branch C and wins wave 12, so edits to waves 7–12 or to the branch-C towers change a hash.
+- **Names:** no further names close to commercial strategy games; "Prism" stays (the spec names it, the mechanic differs).
 
 **Balance (seed 7, standard; core left of 20):** mixed planner Fork 20, Long bend 20, Twin 20 (relaxed 30/20/30); Hard: Fork and Long bend won with 1 left, Twin lost in wave 12; random building loses all three; single families: Gun 8–10, Laser ≤ 9, the rest lose. **The look-ahead planner never picks a branch-C tower**: their value (lines of units, clusters, focus fire) builds up over more than one wave, which its one-wave look-ahead cannot see. Unit tests prove each one does what its text says (`td-core/test/ruleset.test.ts`); whether they are worth their price is a playtest question. The hybrid's computer opponent sees them as upgrade candidates but, for the same reason, has not chosen them in its measured games.
 

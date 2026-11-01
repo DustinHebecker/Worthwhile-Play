@@ -23,6 +23,7 @@ export const tr: Record<MessageKey, string> = {
   'cell.units': '{cell}; buradaki birimler: {n}',
   'structure.extractor': 'Çıkarıcı',
   'about.extractor': 'Her tur gelirine {n} kredi ekler. Silahlı birimler onu yok edebilir.',
+  'about.amplifier': 'Silahı yok: yakındaki kulelerin ve kendi birliklerin daha hızlı yeniden dolar. Seviye 3\'te onları onarır da.',
   'hud.round': 'Tur {n} / {total}',
   'hud.credits': 'Kredi: {n}',
   'hud.core.own': 'Senin çekirdeğin: {n}',

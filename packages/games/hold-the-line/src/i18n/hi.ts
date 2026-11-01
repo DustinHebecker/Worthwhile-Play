@@ -23,6 +23,7 @@ export const hi: Record<MessageKey, string> = {
   'cell.units': '{cell}; यहाँ इकाइयाँ: {n}',
   'structure.extractor': 'एक्सट्रैक्टर',
   'about.extractor': 'हर दौर में आपकी आय में {n} क्रेडिट जोड़ता है। हथियारबंद इकाइयाँ इसे नष्ट कर सकती हैं।',
+  'about.amplifier': 'कोई हथियार नहीं: पास के आपके टावर और आपकी अपनी इकाइयाँ तेज़ी से दोबारा लोड होती हैं। स्तर 3 पर यह उनकी मरम्मत भी करता है।',
   'hud.round': 'दौर {total} में से {n}',
   'hud.credits': 'क्रेडिट: {n}',
   'hud.core.own': 'आपका कोर: {n}',

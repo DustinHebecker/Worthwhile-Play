@@ -23,6 +23,7 @@ export const it: Record<MessageKey, string> = {
   'cell.units': '{cell}; unità qui: {n}',
   'structure.extractor': 'Estrattore',
   'about.extractor': 'Aggiunge {n} crediti alle tue entrate a ogni turno. Le unità armate possono distruggerlo.',
+  'about.amplifier': 'Nessuna arma: le tue torri e le tue unità vicine ricaricano più in fretta. Al livello 3 le ripara anche.',
   'hud.round': 'Turno {n} di {total}',
   'hud.credits': 'Crediti: {n}',
   'hud.core.own': 'Il tuo nucleo: {n}',

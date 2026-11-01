@@ -26,6 +26,7 @@ export const en = {
   'cell.units': '{cell}; units here: {n}',
   'structure.extractor': 'Extractor',
   'about.extractor': 'Adds {n} credits to your income every round. Armed units can destroy it.',
+  'about.amplifier': 'No weapon: your towers and your own units close by reload faster. Level 3 also repairs them.',
   'hud.round': 'Round {n} of {total}',
   'hud.credits': 'Credits: {n}',
   'hud.core.own': 'Your core: {n}',

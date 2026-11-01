@@ -93,7 +93,7 @@ export const ENEMY_ICON: Readonly<Record<string, readonly [string, number]>> = {
   raider: ['lancer', 0.85],
   crawler: ['warden', 1.35],
   shielder: ['tracer', 0.85],
-  mender: ['jammer', 0.8]
+  mender: ['mast-truck', 0.85]
 };
 
 export interface Frame {
@@ -188,17 +188,23 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     if (!def) continue;
     const [cx, cy] = pos(e);
     if (!drawIcon(g, TOWER_ICON[def.family], cx - cell / 2, cy - cell / 2, k, styleOf(e.side))) fallbackShape(g, cx, cy, cell * 0.3, colourOf(e.side), palette.surface);
-    // Level pips along the bottom edge: filled dots for branch A, hollow dots for B, squares for C.
-    g.fillStyle = colourOf(e.side);
-    g.strokeStyle = colourOf(e.side);
-    g.lineWidth = 1.5;
+    // Level pips along the bottom edge: filled dots for branch A, hollow dots for B, squares for C,
+    // each on a halo of the surface colour so it stands out from the picture below.
+    g.lineWidth = 2;
     for (let i = 0; i < def.level; i++) {
-      const px = cx - cell * 0.18 + i * cell * 0.18;
+      const px = cx - cell * 0.2 + i * cell * 0.2;
       const py = cy + cell * 0.36;
-      const r = cell * 0.06;
-      g.beginPath();
-      if (def.branch === 'c') g.rect(px - r, py - r, 2 * r, 2 * r);
-      else g.arc(px, py, r, 0, TAU);
+      const shape = (r: number): void => {
+        g.beginPath();
+        if (def.branch === 'c') g.rect(px - r, py - r, 2 * r, 2 * r);
+        else g.arc(px, py, r, 0, TAU);
+      };
+      g.fillStyle = palette.surface;
+      shape(cell * 0.11);
+      g.fill();
+      g.fillStyle = colourOf(e.side);
+      g.strokeStyle = colourOf(e.side);
+      shape(cell * 0.075);
       if (def.branch === 'b') g.stroke();
       else g.fill();
     }

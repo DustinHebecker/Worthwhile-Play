@@ -23,6 +23,7 @@ export const nl: Record<MessageKey, string> = {
   'cell.units': '{cell}; eenheden hier: {n}',
   'structure.extractor': 'Extractor',
   'about.extractor': 'Verhoogt je inkomen elke ronde met {n} credits. Bewapende eenheden kunnen hem vernietigen.',
+  'about.amplifier': 'Geen wapen: je eigen torens en eenheden in de buurt herladen sneller. Op niveau 3 repareert hij ze ook.',
   'hud.round': 'Ronde {n} van {total}',
   'hud.credits': 'Credits: {n}',
   'hud.core.own': 'Jouw kern: {n}',
