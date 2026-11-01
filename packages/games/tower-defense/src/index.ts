@@ -1,7 +1,7 @@
 import { defineGame } from '@wp/game-core';
 import { metadata } from './metadata';
 import { MAPS } from './maps';
-import { isValidState, type TdState } from './rules';
+import { isValidState, migrateState, type TdState } from './rules';
 import { createTowerDefense } from './view';
 
 export type { TdState } from './rules';
@@ -10,6 +10,7 @@ export default defineGame<TdState>({
   metadata,
   create: createTowerDefense,
   isValidState,
+  migrateState,
   settings: [
     {
       kind: 'choice',

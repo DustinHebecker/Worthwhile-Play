@@ -305,6 +305,38 @@ export function retryWave(state: TdState): TdState {
   return { ...core, v: 1, checkpoint: null, log: structuredClone(state.log.slice(0, core.wave + 1)), stats: { ...core.stats, retries: state.stats.retries + 1 } };
 }
 
+/**
+ * Saves of state version 1 (twelve waves on the full maps, six on the Training ground) for the
+ * longer wave plans of version 2 (owner playtest 2026-11-01). The game goes on with the new waves
+ * from where it was: the wave choices of the slots that exist are kept where the new slot has that
+ * many choices, the others take the first; a wave that was running restarts from its lock (its
+ * units were scheduled by the old plan). Returns undefined for anything that is not a valid save
+ * once migrated.
+ */
+export function migrateState(old: unknown, fromVersion: number): TdState | undefined {
+  if (fromVersion !== 1 || !isRecord(old) || typeof old.mapId !== 'string') return undefined;
+  const map = mapById(old.mapId);
+  if (!map) return undefined;
+  const variants = (v: unknown): number[] =>
+    map.waves.map((slot, i) => {
+      const x = Array.isArray(v) ? v[i] : undefined;
+      return typeof x === 'number' && Number.isInteger(x) && x >= 0 && x < slot.length ? x : 0;
+    });
+  try {
+    const s = structuredClone(old) as Record<string, unknown>;
+    s.variants = variants(s.variants);
+    if (isRecord(s.checkpoint)) s.checkpoint = { ...s.checkpoint, variants: variants(s.checkpoint.variants) };
+    let next = s as unknown as TdState;
+    if (next.phase === 'wave' && next.checkpoint) {
+      const core = structuredClone(next.checkpoint);
+      next = { ...core, v: 1, checkpoint: null, log: structuredClone(next.log.slice(0, core.wave + 1)), stats: { ...core.stats, retries: next.stats.retries } };
+    }
+    return isValidState(next) ? next : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Replays a game from its log (reproduction and tests). */
 export function replay(seed: number, difficulty: Difficulty, mapId: string, log: readonly (readonly BuildCommand[])[]): TdState {
   let s = newGame(seed, difficulty, mapId);
