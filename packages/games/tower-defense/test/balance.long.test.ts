@@ -28,6 +28,13 @@ describe('balance: Tower Defense maps', () => {
     }
   }, LONG);
 
+  // Hard rewards planning beyond the next wave (owner, 2026-11-01): the one-wave planner need not win,
+  // but it must hold at least the first nine waves, so Hard is not a wall early on.
+  it.each(FULL)('%s on hard: the planner reaches wave 10 or wins', (mapId) => {
+    const end = play(mapId, 'hard', SEED, (s) => planBuild(s));
+    if (end.phase !== 'won') expect(end.wave + 1, `${mapId} hard ended in wave ${end.wave + 1}`).toBeGreaterThanOrEqual(10);
+  }, LONG);
+
   it.each(FULL)('%s is lost by random building on standard', (mapId) => {
     expect(play(mapId, 'standard', SEED, (s, wave) => randomBuild(s, wave + 1)).phase).toBe('lost');
   }, LONG);

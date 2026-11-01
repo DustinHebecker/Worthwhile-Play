@@ -550,7 +550,7 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
   | Artillery, Support or Specialist only | loses by wave 2–7 |
   | Mixed planner, Hard | loses Fork and Twin approach in wave 12, wins Long bend with 1 core left |
 
-  The planner is greedy, so Hard is meant for players who plan ahead of the next wave. Hard is **not** asserted by the harness; whether it must be winnable by the bot is an open owner question.
+  The planner is greedy, so Hard is meant for players who plan ahead of the next wave. Owner (2026-11-01): Hard need not be winnable by this bot; the harness asserts that it reaches at least wave 10 on every 12-wave map.
 - **Stop budget:** a unit can be stopped (EMP) for at most 48 ticks (6 s at 1×) per wave; afterwards it shakes off further stops. Stop-only builds could otherwise stall a wave up to the safety bound (review of PR #97).
 - **Seed on one-lane maps:** Long bend's second variant per wave reverses the order in which the groups start, so the seed matters there too.
 - **Known limit:** 7 cells of 44 px need a viewport of about 340 px (page margins included); below that (e.g. 320 px phones) cells shrink to about 41 px.
