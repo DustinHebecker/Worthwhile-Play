@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, submitStart } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 const game = (page: Page) => root(page).locator('.wp-tower-defense');
@@ -87,4 +87,13 @@ test('tower-defense: the map is chosen on the start screen and kept in the save'
   await page.getByTestId('continue').click();
   await expect(root(page).getByTestId('cell-6-0')).toHaveAttribute('aria-label', /road/);
   await expect(root(page).getByTestId('wave')).toContainText('12');
+});
+
+test('tower-defense: after a new game on a taller map the drawing matches the cells', async ({ page }) => {
+  // The game instance is reused for a new game; the canvas must follow the new map's height.
+  await startGame(page, 'tower-defense');
+  await page.getByTestId('new-game').click();
+  await submitStart(page, { settings: { map: 'fork' } });
+  const canvas = root(page).locator('canvas.td-canvas');
+  await expect.poll(async () => canvas.evaluate((c: HTMLCanvasElement) => c.height / c.width)).toBeCloseTo(15 / 7, 2);
 });

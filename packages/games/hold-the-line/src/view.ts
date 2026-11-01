@@ -343,7 +343,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     if (width <= 0) return;
     const dpr = globalThis.devicePixelRatio || 1;
     const height = (width * state.world.map.h) / state.world.map.w;
-    if (canvas.width !== Math.round(width * dpr)) {
+    // Both sides: maps share a width but not a height (a map change keeps the width).
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
     }
