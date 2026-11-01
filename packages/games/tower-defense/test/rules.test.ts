@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { createRng } from '@wp/game-core';
 import { worldHash } from '@wp/strategy-engine';
 import { MAPS, TRAINING } from '../src/maps';
-import { BASE_TOWERS, TOWERS } from '../src/ruleset';
+import { BASE_TOWERS, TOWERS } from '@wp/td-core';
 import {
   applyCommand,
   checkCommand,

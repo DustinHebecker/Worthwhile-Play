@@ -1,0 +1,11 @@
+{
+  "name": "@wp/td-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@wp/strategy-art": "workspace:*",
+    "@wp/strategy-engine": "workspace:*"
+  }
+}

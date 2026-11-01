@@ -1,20 +1,27 @@
 import { createRng, isRecord } from '@wp/game-core';
+import { archetypeOf, createWorld, isValidWorld, TARGET_PRIORITIES, type Entity, type SimEvent, type World } from '@wp/strategy-engine';
 import {
-  archetypeOf,
-  createWorld,
-  DEFAULT_DOCTRINE,
-  isValidWorld,
-  runTicks,
-  spawn,
-  TARGET_PRIORITIES,
-  type Command,
-  type Entity,
-  type SimEvent,
-  type TargetPriority,
-  type World
-} from '@wp/strategy-engine';
+  applyBuild,
+  checkBuild,
+  ENEMIES,
+  isEnemyKind,
+  removeWalkers,
+  settleAccount,
+  STUN_BUDGET,
+  TD_RULESET,
+  tickLanes,
+  TOWERS,
+  type BuildCommand,
+  type BuildRefusal,
+  type EnemyKind,
+  type Leak,
+  type PendingSpawn,
+  type TowerRecord,
+  type Walker
+} from '@wp/td-core';
 import { mapById, MAPS, type TdMap } from './maps';
-import { BASE_TOWERS, ENEMIES, isEnemyKind, TD_RULESET, TOWERS, type EnemyKind } from './ruleset';
+
+export { refundOf, SELL_PERCENT, STUN_BUDGET, TOWER_PRIORITIES, type BuildCommand, type Leak, type PendingSpawn, type TowerPriority, type TowerRecord, type Walker } from '@wp/td-core';
 
 /**
  * Tower Defense rules on the shared engine (docs/design/tower-defense.md § 15).
@@ -28,12 +35,6 @@ export const DIFFICULTIES = ['relaxed', 'standard', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const DEFAULT_DIFFICULTY: Difficulty = 'standard';
 
-/** Targeting choices offered for towers (engine doctrine priorities that make sense here). */
-export const TOWER_PRIORITIES = ['weakest', 'nearest', 'armor'] as const satisfies readonly TargetPriority[];
-export type TowerPriority = (typeof TOWER_PRIORITIES)[number];
-
-/** Refund share of credits invested before the current build phase. */
-export const SELL_PERCENT = 70;
 /**
  * Interest (owner, 2026-10-31): credits left unspent when a wave starts earn this share at its end,
  * a modest reward for not needing everything; kept low so hoarding does not become the strategy.
@@ -49,34 +50,6 @@ export const incomeAfter = (state: Pick<TdCore, 'mapId' | 'difficulty'>, wave: n
 /** Safety bound: a wave never runs longer (whatever is left then counts as leaked). */
 export const MAX_WAVE_TICKS = 6000;
 
-export interface TowerRecord {
-  id: number;
-  /** All credits put into this tower. */
-  invested: number;
-  /** Credits put in during the current build phase (refunded in full: nothing has happened yet). */
-  fresh: number;
-}
-
-export interface PendingSpawn {
-  at: number;
-  kind: EnemyKind;
-  route: number;
-}
-
-/** A wave unit and the index of the route point it is heading for. */
-export interface Walker {
-  id: number;
-  route: number;
-  leg: number;
-  /** Ticks this unit has spent stopped (EMP) in this wave; absent = 0. */
-  stun?: number;
-}
-
-/**
- * Most ticks a unit can be stopped per wave (6 s at 1×). Without it, several EMP towers could hold
- * a unit for good and stall the wave until the safety bound.
- */
-export const STUN_BUDGET = 48;
 
 export interface WaveRun {
   tick: number;
@@ -120,13 +93,8 @@ export interface TdState extends TdCore {
   log: BuildCommand[][];
 }
 
-export type BuildCommand =
-  | { t: 'place'; kind: string; x: number; y: number }
-  | { t: 'upgrade'; id: number; kind: string }
-  | { t: 'sell'; id: number }
-  | { t: 'target'; id: number; priority: TowerPriority };
 
-export type Refusal = 'phase' | 'unknown-kind' | 'not-a-pad' | 'occupied' | 'credits' | 'no-tower' | 'not-an-upgrade' | 'priority';
+export type Refusal = 'phase' | BuildRefusal;
 
 const CORE: Record<Difficulty, number> = { relaxed: 30, standard: 20, hard: 12 };
 const CREDIT_PERCENT: Record<Difficulty, number> = { relaxed: 125, standard: 100, hard: 90 };
@@ -198,64 +166,22 @@ export const isPad = (state: Pick<TdCore, 'world'>, x: number, y: number): boole
   x >= 0 && y >= 0 && x < state.world.map.w && y < state.world.map.h && state.world.map.terrain[y * state.world.map.w + x] === 'b';
 
 /** Credits a sale would return now. */
-export const refundOf = (record: TowerRecord): number => record.fresh + Math.floor(((record.invested - record.fresh) * SELL_PERCENT) / 100);
 
 /** Why a build command cannot be applied now, or `null` if it can. Never throws. */
 export function checkCommand(state: TdState, cmd: BuildCommand): Refusal | null {
   if (state.phase !== 'build') return 'phase';
-  if (cmd.t === 'place') {
-    if (!BASE_TOWERS.includes(cmd.kind)) return 'unknown-kind';
-    if (!isPad(state, cmd.x, cmd.y)) return 'not-a-pad';
-    if (state.world.entities.some((e) => e.x === cmd.x && e.y === cmd.y)) return 'occupied';
-    return (TOWERS[cmd.kind]?.price ?? Infinity) > state.credits ? 'credits' : null;
-  }
-  const tower = state.world.entities.find((e) => e.id === cmd.id && e.side === 0);
-  if (!tower) return 'no-tower';
-  if (cmd.t === 'upgrade') {
-    const next = TOWERS[tower.kind]?.next ?? [];
-    if (!next.includes(cmd.kind)) return 'not-an-upgrade';
-    return (TOWERS[cmd.kind]?.price ?? Infinity) > state.credits ? 'credits' : null;
-  }
-  if (cmd.t === 'target') return (TOWER_PRIORITIES as readonly string[]).includes(cmd.priority) ? null : 'priority';
-  return null;
+  return checkBuild(state.world, state, 0, cmd, (x, y) => isPad(state, x, y));
 }
 
 /** Apply a build command; returns the same state object when it is refused. */
 export function applyCommand(state: TdState, cmd: BuildCommand): TdState {
   if (checkCommand(state, cmd) !== null) return state;
+  const built = applyBuild(state.world, state, 0, cmd);
   const s = structuredClone(state);
-  const w = s.world;
-  if (cmd.t === 'place') {
-    const def = TOWERS[cmd.kind]!;
-    const id = w.nextId++;
-    w.entities.push(spawn(id, 0, archetypeOf(TD_RULESET, cmd.kind)!, cmd.x, cmd.y));
-    s.towers.push({ id, invested: def.price, fresh: def.price });
-    s.credits -= def.price;
-    s.stats.spent += def.price;
-  } else {
-    const tower = w.entities.find((e) => e.id === cmd.id)!;
-    const record = s.towers.find((r) => r.id === cmd.id)!;
-    if (cmd.t === 'upgrade') {
-      const price = TOWERS[cmd.kind]!.price;
-      const from = archetypeOf(TD_RULESET, tower.kind)!;
-      const to = archetypeOf(TD_RULESET, cmd.kind)!;
-      tower.kind = cmd.kind;
-      tower.hp = Math.max(1, Math.floor((tower.hp * to.hp) / from.hp));
-      tower.cooldown = 0;
-      tower.beam = null;
-      record.invested += price;
-      record.fresh += price;
-      s.credits -= price;
-      s.stats.spent += price;
-    } else if (cmd.t === 'sell') {
-      s.credits += refundOf(record);
-      s.stats.spent -= record.fresh;
-      w.entities = w.entities.filter((e) => e.id !== cmd.id);
-      s.towers = s.towers.filter((r) => r.id !== cmd.id);
-    } else {
-      tower.doctrine = { ...DEFAULT_DOCTRINE, priority: cmd.priority };
-    }
-  }
+  s.world = built.world;
+  s.credits = built.account.credits;
+  s.towers = built.account.towers;
+  s.stats.spent += built.spent;
   s.log[s.wave]!.push(cmd);
   return s;
 }
@@ -270,20 +196,10 @@ export function startWave(state: TdState): TdState {
   if (state.phase !== 'build') return state;
   const s = structuredClone(state);
   s.checkpoint = coreOf(state);
-  for (const r of s.towers) r.fresh = 0;
+  s.towers = settleAccount(s).towers;
   s.phase = 'wave';
   s.run = { tick: 0, pending: waveSchedule(s, s.wave), walkers: [] };
   return s;
-}
-
-const chebyshev = (ax: number, ay: number, bx: number, by: number): number => Math.max(Math.abs(ax - bx), Math.abs(ay - by));
-
-/** Advance the running wave by `ticks` ticks (or until it ends). */
-/** A unit that got through: its kind and the health it still had (for summaries and grading). */
-export interface Leak {
-  id: number;
-  kind: EnemyKind;
-  hp: number;
 }
 
 export interface WaveStep {
@@ -307,46 +223,11 @@ export function resolveWave(state: TdState): WaveStep {
 }
 
 function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
-  const map = mapOf(s);
-  const run = s.run!;
-  let w = s.world;
-  // 1. Spawns that are due and whose spawn cell is free on their layer.
-  const waiting: PendingSpawn[] = [];
-  for (const p of run.pending) {
-    const route = map.routes[p.route]!;
-    const [x, y] = route.points[0]!;
-    const arch = archetypeOf(TD_RULESET, p.kind)!;
-    const blocked = w.entities.some((e) => e.x === x && e.y === y && archetypeOf(TD_RULESET, e.kind)?.layer === arch.layer);
-    if (p.at > run.tick || blocked || waiting.some((q) => q.route === p.route && q.at <= run.tick)) {
-      waiting.push(p);
-      continue;
-    }
-    const id = w.nextId++;
-    w.entities.push(spawn(id, 1, arch, x, y));
-    run.walkers.push({ id, route: p.route, leg: 1 });
-  }
-  run.pending = waiting;
-  // 2. Route following: a unit within one cell of its waypoint heads for the next; at the goal it leaks.
-  const commands: Command[] = [];
-  const leaked = new Set<number>();
-  for (const walker of run.walkers) {
-    const unit = w.entities.find((e) => e.id === walker.id);
-    if (!unit) continue;
-    const points = map.routes[walker.route]!.points;
-    while (walker.leg < points.length - 1 && chebyshev(unit.x, unit.y, ...points[walker.leg]!) <= 1) walker.leg++;
-    const [gx, gy] = points[walker.leg]!;
-    if (walker.leg === points.length - 1 && chebyshev(unit.x, unit.y, gx, gy) <= 1) {
-      leaked.add(unit.id);
-      continue;
-    }
-    if (unit.order.type !== 'move' || unit.order.x !== gx || unit.order.y !== gy) commands.push({ side: 1, unit: unit.id, order: { type: 'move', x: gx, y: gy } });
-  }
-  if (leaked.size > 0) leak(s, w, leaked, leaks);
-  // 3. One engine tick.
-  const result = runTicks(w, TD_RULESET, commands, 1);
-  w = result.world;
-  s.world = w;
-  for (const e of result.events) {
+  const step = tickLanes(s.world, s.run!, mapOf(s).routes);
+  s.world = step.world;
+  s.run = step.run;
+  takeLeaks(s, step.leaks, leaks);
+  for (const e of step.events) {
     events.push(e);
     if (e.t !== 'destroyed') continue;
     if (e.side === 1 && isEnemyKind(e.kind)) {
@@ -356,26 +237,19 @@ function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
       s.towers = s.towers.filter((r) => r.id !== e.id);
     }
   }
-  const alive = new Set(w.entities.map((e) => e.id));
-  run.walkers = run.walkers.filter((x) => alive.has(x.id));
-  // Stop budget: a unit that has been stopped long enough shakes every further stop off.
-  for (const walker of run.walkers) {
-    const unit = w.entities.find((e) => e.id === walker.id);
-    if (!unit?.status.some((st) => st.kind === 'disabled' && st.ticks > 0)) continue;
-    const stun = (walker.stun ?? 0) + 1;
-    if (stun > STUN_BUDGET) unit.status = unit.status.filter((st) => st.kind !== 'disabled');
-    else walker.stun = stun;
-  }
-  run.tick++;
-  // 4. Safety bound, then the end of the wave.
+  const run = s.run;
+  // Safety bound, then the end of the wave.
   if (run.tick >= MAX_WAVE_TICKS) {
-    leak(s, w, new Set(run.walkers.map((x) => x.id)), leaks);
-    for (const p of run.pending) {
+    const rest = removeWalkers(s.world, run, new Set(run.walkers.map((x) => x.id)));
+    s.world = rest.world;
+    s.run = rest.run;
+    takeLeaks(s, rest.leaks, leaks);
+    for (const p of s.run.pending) {
       s.core -= ENEMIES[p.kind].threat;
-      leaks.push({ id: 0, kind: p.kind, hp: archetypeOf(TD_RULESET, p.kind)?.hp ?? 1 });
+      leaks.push({ id: 0, kind: p.kind, hp: archetypeOf(TD_RULESET, p.kind)?.hp ?? 1, side: 1 });
     }
-    s.stats.leaked += run.pending.length;
-    run.pending = [];
+    s.stats.leaked += s.run.pending.length;
+    s.run.pending = [];
   }
   if (s.core <= 0) {
     // The wave is over: what is left of it leaves the map (a lost state holds no running wave).
@@ -386,19 +260,17 @@ function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
     s.world.projectiles = [];
     return s;
   }
-  if (run.pending.length === 0 && run.walkers.length === 0 && w.projectiles.length === 0) endWave(s);
+  if (s.run.pending.length === 0 && s.run.walkers.length === 0 && s.world.projectiles.length === 0) endWave(s);
   return s;
 }
 
-function leak(s: TdState, w: World, ids: ReadonlySet<number>, out: Leak[]): void {
-  for (const e of w.entities) {
-    if (!ids.has(e.id) || !isEnemyKind(e.kind)) continue;
-    out.push({ id: e.id, kind: e.kind, hp: e.hp });
-    s.core -= ENEMIES[e.kind].threat;
+/** Units that got through cost core integrity by their threat. */
+function takeLeaks(s: TdState, got: readonly Leak[], out: Leak[]): void {
+  for (const l of got) {
+    s.core -= ENEMIES[l.kind].threat;
     s.stats.leaked++;
+    out.push(l);
   }
-  w.entities = w.entities.filter((e) => !ids.has(e.id));
-  if (s.run) s.run.walkers = s.run.walkers.filter((x) => !ids.has(x.id));
 }
 
 function endWave(s: TdState): void {
@@ -447,7 +319,8 @@ export function replay(seed: number, difficulty: Difficulty, mapId: string, log:
 // Validation of untrusted saves (never throws).
 
 const isInt = (v: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): v is number => Number.isInteger(v) && (v as number) >= min && (v as number) <= max;
-const isArrayOf = <T>(v: unknown, guard: (x: unknown) => x is T): v is T[] => Array.isArray(v) && v.every(guard);
+/** Every element passes `guard` (holes in sparse arrays count as `undefined`, so they fail). */
+const isArrayOf = <T>(v: unknown, guard: (x: unknown) => x is T): v is T[] => Array.isArray(v) && Array.from(v).every(guard);
 
 const isCommand = (v: unknown): v is BuildCommand => {
   if (!isRecord(v)) return false;
@@ -492,7 +365,7 @@ function isValidCore(v: unknown): v is TdCore {
   if (v.phase === 'wave') {
     const run = v.run;
     if (!isRecord(run) || !isInt(run.tick, 0, MAX_WAVE_TICKS)) return false;
-    if (!isArrayOf(run.pending, (p): p is PendingSpawn => isRecord(p) && isInt(p.at, 0) && typeof p.kind === 'string' && isEnemyKind(p.kind) && isInt(p.route, 0, map.routes.length - 1))) return false;
+    if (!isArrayOf(run.pending, (p): p is PendingSpawn => isRecord(p) && isInt(p.at, 0) && typeof p.kind === 'string' && isEnemyKind(p.kind) && isInt(p.route, 0, map.routes.length - 1) && p.side === undefined)) return false;
     if (!isArrayOf(run.walkers, (x): x is Walker => isRecord(x) && isInt(x.id, 1) && isInt(x.route, 0, map.routes.length - 1) && isInt(x.leg, 1, (map.routes[x.route as number]?.points.length ?? 1) - 1) && (x.stun === undefined || isInt(x.stun, 1, STUN_BUDGET)))) return false;
     if (run.walkers.length !== enemies.length || enemies.some((e) => !(run.walkers as Walker[]).some((x) => x.id === e.id))) return false;
     // A wave never holds more units than its schedule (bounds the work a crafted save can cause).

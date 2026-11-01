@@ -1,6 +1,6 @@
 import { createRng } from '@wp/game-core';
 import { archetypeOf } from '@wp/strategy-engine';
-import { BASE_TOWERS, ENEMIES, TD_RULESET, TOWERS, type Family } from '../src/ruleset';
+import { BASE_TOWERS, ENEMIES, TD_RULESET, TOWERS, type Family } from '@wp/td-core';
 import { applyCommand, checkCommand, isPad, mapOf, newGame, resolveWave, startWave, type BuildCommand, type Difficulty, type TdState } from '../src/rules';
 
 /**

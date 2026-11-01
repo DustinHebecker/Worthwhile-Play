@@ -35,6 +35,7 @@ export const GAMES: readonly GameEntry[] = [
   entry('tower-defense', () => import('@wp/game-tower-defense')),
   entry('node-conquest', () => import('@wp/game-node-conquest')),
   entry('pixel-peel', () => import('@wp/game-pixel-peel')),
+  entry('hold-the-line', () => import('@wp/game-hold-the-line')),
   entry('chess', () => import('@wp/game-chess')),
   entry('minesweeper', () => import('@wp/game-minesweeper')),
   entry('word-guess', () => import('@wp/game-word-guess')),

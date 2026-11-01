@@ -1,4 +1,5 @@
 import type { GameMessages } from '@wp/game-core';
+import { withUnitMessages } from '@wp/td-core';
 import { ar } from './i18n/ar';
 import { de } from './i18n/de';
 import { en } from './i18n/en';
@@ -16,5 +17,8 @@ import { tr } from './i18n/tr';
 import { uk } from './i18n/uk';
 import { zhHans } from './i18n/zh-Hans';
 
-/** Translations for Tower Defense; English is the source (src/i18n/en.ts), the others are AI-assisted. */
-export const messages: GameMessages = { en, de, nl, es, fr, ru, 'zh-Hans': zhHans, ko, ja, ar, pt, it, pl, tr, uk, hi };
+/**
+ * Translations for Tower Defense; English is the source (src/i18n/en.ts), the others are AI-assisted.
+ * Tower, unit and target texts come from @wp/td-core (shared with the hybrid).
+ */
+export const messages: GameMessages = withUnitMessages({ en, de, nl, es, fr, ru, 'zh-Hans': zhHans, ko, ja, ar, pt, it, pl, tr, uk, hi });
