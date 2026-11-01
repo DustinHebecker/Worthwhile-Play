@@ -603,7 +603,7 @@ Deterministic, same rules, never cheating. It plans at the lock. Planning time i
 | Level | Defence | Attack |
 |---|---|---|
 | Easy | one Gun beside the incoming lane | plain Walkers and Runners |
-| Normal | an Extractor early; towers chosen greedily, each tried against the wave it expects (the other side's last wave) | the two unit kinds whose threat per credit is highest against the visible towers, mixed |
+| Normal | an Extractor early, on its own pad least exposed to the incoming lane (fewest lane cells within 3); towers chosen greedily, each tried against the wave it expects (the other side's last wave) | the two unit kinds whose threat per credit is highest against the visible towers, mixed |
 | Hard | as Normal, with more placements tried | tries every single-kind and two-kind wave against the visible towers and sends the one that gets the most threat through; keeps the base wave size (workshops did not pay off in measurement) |
 
 Long suite `ai.long.test.ts`:

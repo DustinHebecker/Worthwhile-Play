@@ -31,7 +31,7 @@ import {
  * Deterministic: no randomness, ties broken by fixed order.
  */
 
-interface Profile {
+export interface Profile {
   /** Share of credits for defence (the rest goes to the wave, a little is kept for interest). */
   defence: number;
   keep: number;
@@ -49,7 +49,7 @@ interface Profile {
 /** Wave simulations Hard keeps for choosing its attack wave (6 single kinds and 15 pairs). */
 const PROBE_SIMS = 21;
 
-const PROFILES: Record<Difficulty, Profile> = {
+export const PROFILES: Record<Difficulty, Profile> = {
   easy: { defence: 0.5, keep: 0, lookahead: false, pads: 1, steps: 1, extractors: 0, workshops: false, probe: false, sims: 0 },
   normal: { defence: 0.55, keep: 0.1, lookahead: true, pads: 2, steps: 3, extractors: 1, workshops: false, probe: false, sims: 30 },
   hard: { defence: 0.55, keep: 0.1, lookahead: true, pads: 3, steps: 4, extractors: 1, workshops: false, probe: true, sims: 55 }
@@ -72,7 +72,7 @@ const cellsOf = (route: Route): [number, number][] => {
 };
 
 /** Own free pads ranked by how many cells of `route` lie within `range` (ties: fixed cell order in the side's frame). */
-function padsNear(s: HoldState, side: number, route: Route, range: number, minRange = 0): [number, number][] {
+export function padsNear(s: HoldState, side: number, route: Route, range: number, minRange = 0): [number, number][] {
   const map = mapOf(s);
   const cells = cellsOf(route);
   const out: [number, number, number][] = [];
@@ -92,13 +92,13 @@ function padsNear(s: HoldState, side: number, route: Route, range: number, minRa
 }
 
 /** The wave a side expects: what the other side sent last round, or a plain first wave. */
-const expectedWave = (s: HoldState, side: number): EnemyKind[] => {
+export const expectedWave = (s: HoldState, side: number): EnemyKind[] => {
   const last = s.sides[1 - side]!.lastWave;
   return last.length > 0 ? last : Array.from({ length: 8 }, () => 'walker' as const);
 };
 
 /** Threat of `wave` that would get through `side`'s current defence, weighted by health kept. */
-function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[]): number {
+export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[]): number {
   const route = mapOf(s).lanes[1 - side]!;
   // Only the attacking side's units run; its route index here is 0 of a one-route list.
   // Only what can matter: the defender's towers and extractors (the attacker's own structures never
@@ -137,9 +137,10 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   const own = () => s.sides[side]!;
   const start = own().credits;
 
-  // 1. Economy: extractors early, on the own pad farthest from the incoming lane.
+  // 1. Economy: extractors early, on the own pad least exposed to the incoming lane (fewest lane
+  // cells within 3, where armed units could reach it).
   if (s.round <= 2 && extractorsOf(s, side) < profile.extractors && start >= EXTRACTOR_PRICE + 150) {
-    const far = padsNear(s, side, incoming, 99).reverse()[0];
+    const far = padsNear(s, side, incoming, 3).reverse()[0];
     if (far) apply({ t: 'extractor', x: far[0], y: far[1] });
   }
 
@@ -198,7 +199,7 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
 }
 
 /** Shop kinds in buying order: best expected threat per credit against the defending towers first. */
-function attackOrder(s: HoldState, side: number, profile: Profile): EnemyKind[] {
+export function attackOrder(s: HoldState, side: number, profile: Profile): EnemyKind[] {
   if (!profile.lookahead) return ['walker', 'walker', 'runner'];
   const defenders = s.world.entities.filter((e) => e.side === 1 - side && Object.hasOwn(TOWERS, e.kind));
   const score = (kind: EnemyKind): number => {
@@ -223,7 +224,7 @@ function attackOrder(s: HoldState, side: number, profile: Profile): EnemyKind[] 
  * the budget and capacity allow, against the other side's towers as they stand now, and keeps the
  * order whose wave would get the most threat through.
  */
-function probeOrder(s: HoldState, side: number, keep: number): EnemyKind[] {
+export function probeOrder(s: HoldState, side: number, keep: number): EnemyKind[] {
   const own = s.sides[side]!;
   const money = own.credits - keep;
   const cap = capacityOf(own);

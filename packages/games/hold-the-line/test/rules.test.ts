@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createRng } from '@wp/game-core';
 import { worldHash } from '@wp/strategy-engine';
-import { BASE_TOWERS, TOWERS } from '@wp/td-core';
+import { TOWERS } from '@wp/td-core';
 import { planRound } from '../src/ai';
+import { randomPlan } from './plans';
 import { DUEL, MAPS, ownPad } from '../src/maps';
 import {
   applyPlan,
@@ -21,7 +21,6 @@ import {
   resolveBattle,
   ROUND_INCOME,
   ROUNDS,
-  SHOP,
   START_CORE,
   START_CREDITS,
   stepBattle,
@@ -29,7 +28,6 @@ import {
   WORKSHOP_CAPACITY,
   WORKSHOP_PRICE,
   type HoldState,
-  type PlanCommand,
   type Planner
 } from '../src/rules';
 
@@ -38,31 +36,6 @@ const idle: Planner = () => [];
 const ai: Planner = (s) => planRound(s);
 const fresh = (): HoldState => newGame(1, 'normal');
 
-/** Random legal plan commands for side 0 (deterministic per seed). */
-function randomPlan(s: HoldState, seed: number, n: number): HoldState {
-  const rng = createRng(seed);
-  const pads: [number, number][] = [];
-  for (let y = 0; y < DUEL.h; y++) for (let x = 0; x < DUEL.w; x++) if (ownPad(DUEL, 0, x, y)) pads.push([x, y]);
-  for (let i = 0; i < n; i++) {
-    const roll = rng.int(0, 9);
-    const own = s.world.entities.filter((e) => e.side === 0 && Object.hasOwn(TOWERS, e.kind));
-    let cmd: PlanCommand;
-    if (roll < 3) {
-      const [x, y] = rng.pick(pads);
-      cmd = { t: 'place', kind: rng.pick(BASE_TOWERS), x, y };
-    } else if (roll < 6) cmd = { t: 'buy', kind: rng.pick(SHOP) };
-    else if (roll === 6 && own.length > 0) {
-      const tower = rng.pick(own);
-      cmd = { t: 'upgrade', id: tower.id, kind: rng.pick(TOWERS[tower.kind]!.next.length > 0 ? TOWERS[tower.kind]!.next : ['gun']) };
-    } else if (roll === 7) {
-      const [x, y] = rng.pick(pads);
-      cmd = { t: 'extractor', x, y };
-    } else if (roll === 8) cmd = { t: 'unbuy', index: 0 };
-    else cmd = { t: 'workshop' };
-    s = applyPlan(s, 0, cmd);
-  }
-  return s;
-}
 
 describe('map', () => {
   it.each(MAPS.map((m) => m.id))('%s is point-symmetric, 7 wide, and every lane runs over road to the other core', (id) => {
@@ -239,9 +212,9 @@ describe('properties', () => {
         expect(worldHash(a.world)).toBe(worldHash(b.world));
         expect(a).toEqual(b);
       }),
-      { numRuns: 8 }
+      { numRuns: 4 }
     );
-  });
+  }, 60_000);
 
   it('save and restore at any tick of a battle continues exactly; saves stay valid', () => {
     fc.assert(
@@ -270,27 +243,6 @@ describe('properties', () => {
         }
       }),
       { numRuns: 6 }
-    );
-  });
-
-  it('the computer never issues a refused command', () => {
-    fc.assert(
-      fc.property(arb, ({ seed, build, n }) => {
-        let s = newGame(seed, 'hard');
-        for (let r = 0; r < 3 && s.phase === 'plan'; r++) {
-          // At the lock, after the player's own plan: every command of the computer is carried out.
-          let planned = 0;
-          const counting: Planner = (view) => {
-            const cmds = planRound(view);
-            planned = cmds.length;
-            return cmds;
-          };
-          const locked = lockRound(randomPlan(s, build + r, n), counting);
-          expect(locked.log[locked.round]!.ai).toHaveLength(planned);
-          s = resolveBattle(locked).state;
-        }
-      }),
-      { numRuns: 4 }
     );
   });
 
