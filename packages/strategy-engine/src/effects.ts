@@ -60,7 +60,7 @@ export interface AuraEffect {
 }
 
 /** Whether heal aura `a` is stronger than `b`: more health per tick, then more per pulse, then the lower source id. */
-const strongerHeal = (a: { hp: number; every: number; by: number }, b: { hp: number; every: number; by: number }): boolean =>
+export const strongerHeal = (a: { hp: number; every: number; by: number }, b: { hp: number; every: number; by: number }): boolean =>
   a.hp * b.every - b.hp * a.every > 0 || (a.hp * b.every === b.hp * a.every && (a.hp > b.hp || (a.hp === b.hp && a.by < b.by)));
 
 /**

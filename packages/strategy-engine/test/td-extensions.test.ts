@@ -19,6 +19,7 @@ import {
   runTicks,
   spawnUnits,
   STRATEGY_RULESET,
+  strongerHeal,
   validExtensions,
   worldHash,
   type Archetype,
@@ -277,6 +278,11 @@ describe('E1: piercing beam', () => {
     expect(out.entities.map((e) => e.hp)).toEqual([150, 90, 90, 100, 90]);
   });
 
+  it('the shooter\'s hill range bonus lengthens the line', () => {
+    const w = world(mapOf('h.......'), [{ side: 0, kind: 'prism', x: 0, y: 0 }, { side: 1, kind: 'walker', x: 1, y: 0 }, { side: 1, kind: 'walker', x: 6, y: 0 }, { side: 1, kind: 'walker', x: 7, y: 0 }]);
+    expect(runTicks(w, RS, [attack(1, 2)], 1).world.entities.map((e) => e.hp)).toEqual([150, 90, 90, 100]);
+  });
+
   it('without pierce only the target is hit (unchanged beam)', () => {
     const w = row();
     const plain = { ...w, entities: w.entities.map((e) => (e.id === 1 ? { ...e, kind: 'laser' } : e)) };
@@ -361,6 +367,35 @@ describe('E2: auras', () => {
     const tie = auraEffects([ent(1, 'repair', 0), ent(3, 'gun', 1), { ...ent(2, 'repair', 2), kind: 'r10' }], (e) => (e.kind === 'r10' ? archetype('r10', { aura: { radius: 2, heal: { hp: 10, every: 4 } } }) : archOf(e)), () => true);
     expect(tie.get(3)?.heal).toEqual({ hp: 10, every: 4, by: 2 });
     expect(auraEffects([ent(1, 'repair', 0), ent(3, 'gun', 1)], archOf, () => false).size).toBe(0);
+  });
+
+  it('strongerHeal: rate first, then the larger pulse, then the lower source id; a strict order', () => {
+    const h = (hp: number, every: number, by: number) => ({ hp, every, by });
+    expect(strongerHeal(h(12, 4, 9), h(5, 2, 1))).toBe(true);
+    expect(strongerHeal(h(5, 2, 1), h(12, 4, 9))).toBe(false);
+    expect(strongerHeal(h(1, 1, 9), h(10, 20, 1))).toBe(true);
+    expect(strongerHeal(h(10, 20, 1), h(1, 1, 9))).toBe(false);
+    expect(strongerHeal(h(10, 4, 9), h(5, 2, 1))).toBe(true);
+    expect(strongerHeal(h(5, 2, 1), h(10, 4, 9))).toBe(false);
+    expect(strongerHeal(h(5, 2, 1), h(5, 2, 2))).toBe(true);
+    expect(strongerHeal(h(5, 2, 2), h(5, 2, 1))).toBe(false);
+    expect(strongerHeal(h(5, 2, 1), h(5, 2, 1))).toBe(false);
+    fc.assert(
+      fc.property(fc.integer({ min: 1, max: 30 }), fc.integer({ min: 1, max: 30 }), fc.integer({ min: 1, max: 30 }), fc.integer({ min: 1, max: 30 }), fc.nat(5), fc.nat(5), (ah, ae, bh, be, ab, bb) => {
+        const a = h(ah, ae, ab);
+        const b = h(bh, be, bb);
+        const same = ah === bh && ae === be && ab === bb;
+        // Exactly one of two different auras is stronger (the choice never depends on the order).
+        expect(strongerHeal(a, b) !== strongerHeal(b, a)).toBe(!same);
+        if (ah * be > bh * ae) expect(strongerHeal(a, b)).toBe(true);
+      })
+    );
+  });
+
+  it('the radius bound is inclusive', () => {
+    const ent = (id: number, kind: string, x: number) => ({ id, kind, x, y: 0, side: 0 }) as Entity;
+    const effects = auraEffects([ent(1, 'amp50', 0), ent(2, 'gun', 2), ent(3, 'gun', 3)], (e) => RS.archetypes[e.kind] as Archetype, () => true);
+    expect([...effects.keys()]).toEqual([2]);
   });
 
   const healWorld = (supports: { kind: string; x: number }[]) => {
