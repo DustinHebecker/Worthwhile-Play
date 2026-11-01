@@ -127,15 +127,20 @@ const FULL: readonly (readonly G[])[] = [
   [['crawler', 1, 1, 60], ['brute', 4, 30, 0], ['raider', 4, 18, 20], ['glider', 8, 12, 40], ['swarm', 20, 3, 120], ['shielder', 4, 16, 160]]
 ];
 
+/** Extra units per wave in the second half of a full map, in percent (wave 20: 2.5 × the authored count). */
+export const LATE_PERCENT = 15;
+
 function full(lanes: readonly number[], air: readonly number[], percent = 100): WaveDef[][] {
   const assign = (shift: number): WaveDef[] =>
-    FULL.map((slot) => {
+    FULL.map((slot, index) => {
       let lane = shift;
       let sky = shift;
+      // The second half climbs: LATE_PERCENT more units per wave after wave 10.
+      const late = 100 + Math.max(0, index - 9) * LATE_PERCENT;
       return {
         groups: slot.map(([kind, count, every, at]) => {
           const route = kind === 'glider' ? air[sky++ % air.length]! : lanes[lane++ % lanes.length]!;
-          return g(kind, kind === 'crawler' ? count : Math.ceil((count * percent) / 100), every, at, route);
+          return g(kind, kind === 'crawler' ? count : Math.ceil((count * percent * late) / 10000), every, at, route);
         })
       };
     });
