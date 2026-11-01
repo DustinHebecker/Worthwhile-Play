@@ -47,8 +47,8 @@ describe('golden replays', () => {
  * before each wave the queue is worked off in order until a command is refused (usually: credits).
  * It reaches the last wave, so edits to the late waves (Shield bearers, Menders, the crawler) and to
  * the branch-C towers change this hash.
+ * Each entry places a level-1 kind on a cell, or upgrades whatever stands there into `kind`.
  */
-/** Place a level-1 kind on a cell, or upgrade whatever stands there into `kind`. */
 const FULL_QUEUE: readonly (readonly [string, number, number])[] = [
   ['gun', 3, 4],
   ['gun', 3, 6],

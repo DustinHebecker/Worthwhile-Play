@@ -23,11 +23,13 @@ import {
   type TowerRecord,
   type Walker
 } from '@wp/td-core';
-import { mapById, MAPS, ownPad, type DuelMap } from './maps';
+import { mapById, mapForMode, ownPad, type DuelMap } from './maps';
 
 /**
- * "Hold the Line", mode VS Small (docs/design/tower-defense.md § 13.2, § 16): two sides build towers
- * in their own half and buy an attack wave each round. PLAN (both sides, no clock) → LOCK → BATTLE:
+ * "Hold the Line" (docs/design/tower-defense.md § 13.2, §§ 16–17). Mode VS Small: two sides build
+ * towers in their own half and buy an attack wave each round. Mode External Small: nobody buys
+ * units; an outside force comes every round and splits evenly towards both cores, and whatever gets
+ * through (on either side) strengthens its next wave. In both modes: PLAN (both sides, no clock) → LOCK → BATTLE:
  * both waves run at the same time on their own lanes and never meet; units that get through cost the
  * defender core integrity. After ROUNDS rounds the side with more core left wins.
  *
@@ -40,7 +42,7 @@ export const DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const DEFAULT_DIFFICULTY: Difficulty = 'normal';
 
-export const MODES = ['vs-small'] as const;
+export const MODES = ['vs-small', 'external-small'] as const;
 export type Mode = (typeof MODES)[number];
 
 export const ROUNDS = 10;
@@ -57,6 +59,29 @@ export const WORKSHOP_PRICE = 120;
 export const MAX_WORKSHOPS = 3;
 /** Safety bound of one battle. */
 export const MAX_BATTLE_TICKS = 6000;
+
+/**
+ * External Small: the outside force per round (each half; both sides get the same half). Rounds
+ * bring the unit kinds in the order Tower Defense introduces them; the last rounds mix them.
+ */
+export const EXTERNAL_WAVES: readonly (readonly (readonly [EnemyKind, number])[])[] = [
+  [['walker', 8]],
+  [['walker', 6], ['runner', 6]],
+  [['swarm', 16], ['walker', 4]],
+  [['brute', 3], ['runner', 6], ['walker', 4]],
+  [['glider', 6], ['walker', 6], ['runner', 6]],
+  [['raider', 6], ['swarm', 12], ['brute', 4]],
+  [['shielder', 8], ['runner', 8], ['glider', 6]],
+  [['brute', 10], ['raider', 6], ['swarm', 12]],
+  [['mender', 4], ['brute', 10], ['shielder', 6], ['glider', 8]],
+  [['brute', 14], ['shielder', 10], ['raider', 6], ['glider', 8]]
+];
+/** Units that got through last round (both sides together) come back as this many extra Walkers, at most. */
+export const MAX_PRESSURE = 12;
+/** External Small pays this share of the bounty (its waves are large; full bounties outgrew them). */
+export const EXTERNAL_BOUNTY_PERCENT = 50;
+/** Longest wave a side can send or face (bounds what a save may hold). */
+export const MAX_WAVE = 64;
 
 /** What a unit of the attack wave costs (the Siege crawler is not for sale). */
 export const UNIT_PRICES: Readonly<Partial<Record<EnemyKind, number>>> = { walker: 20, runner: 25, swarm: 6, brute: 90, glider: 45, raider: 60 };
@@ -86,7 +111,7 @@ export type PlanCommand =
   | { t: 'unbuy'; index: number }
   | { t: 'workshop' };
 
-export type Refusal = 'phase' | BuildRefusal | 'capacity' | 'not-for-sale' | 'no-unit' | 'workshops';
+export type Refusal = 'phase' | BuildRefusal | 'capacity' | 'not-for-sale' | 'no-unit' | 'workshops' | 'mode';
 
 export type Phase = 'plan' | 'battle' | 'won' | 'lost' | 'draw';
 
@@ -107,6 +132,8 @@ export interface HoldState {
   run: LaneRun | null;
   /** Both plans per round (reproduction: seed + difficulty + log). */
   log: { player: PlanCommand[]; ai: PlanCommand[] }[];
+  /** External Small: units that got through last round, on both sides (they strengthen this round's force). */
+  pressure?: number;
 }
 
 export type Planner = (state: HoldState) => PlanCommand[];
@@ -123,14 +150,23 @@ export const capacityOf = (side: Pick<SideState, 'workshops'>): number => BASE_C
 export const extractorsOf = (s: HoldState, side: number): number => s.world.entities.filter((e) => e.side === side && e.kind === 'extractor').length;
 export const incomeOf = (s: HoldState, side: number): number => ROUND_INCOME + EXTRACTOR_INCOME * extractorsOf(s, side);
 
-/** A new game. */
-export function newGame(seed: number, difficulty: Difficulty, mapId: string = MAPS[0]!.id): HoldState {
+/** The outside force of this round, as each side meets it (External Small; empty in VS Small). */
+export function externalWave(s: Pick<HoldState, 'mode' | 'round' | 'pressure'>): EnemyKind[] {
+  if (s.mode !== 'external-small') return [];
+  const wave: EnemyKind[] = [];
+  for (const [kind, n] of EXTERNAL_WAVES[Math.min(s.round, EXTERNAL_WAVES.length - 1)]!) for (let i = 0; i < n; i++) wave.push(kind);
+  for (let i = 0; i < Math.min(MAX_PRESSURE, s.pressure ?? 0); i++) wave.push('walker');
+  return wave;
+}
+
+/** A new game; the map decides the mode (`mapForMode` gives each mode's map). */
+export function newGame(seed: number, difficulty: Difficulty, mapId: string = mapForMode('vs-small').id): HoldState {
   const map = mapById(mapId);
   if (!map) throw new RangeError(`Unknown map ${mapId}`);
   const world = createWorld({ map: { w: map.w, h: map.h, terrain: map.rows.join('') }, sides: 2, entities: [], seed }, TD_RULESET);
   const s: HoldState = {
     v: 1,
-    mode: 'vs-small',
+    mode: map.mode,
     mapId: map.id,
     difficulty,
     seed: world.rng,
@@ -141,7 +177,8 @@ export function newGame(seed: number, difficulty: Difficulty, mapId: string = MA
     roundStart: { world: structuredClone(world), sides: [newSide(), newSide()] },
     unspent: [0, 0],
     run: null,
-    log: [{ player: [], ai: [] }]
+    log: [{ player: [], ai: [] }],
+    ...(map.mode === 'external-small' && { pressure: 0 })
   };
   return s;
 }
@@ -151,6 +188,8 @@ export function checkPlan(s: HoldState, side: number, cmd: PlanCommand): Refusal
   if (s.phase !== 'plan') return 'phase';
   const own = s.sides[side]!;
   const map = mapOf(s);
+  // External Small: the waves come from outside; nobody buys units or workshops.
+  if (s.mode === 'external-small' && (cmd.t === 'buy' || cmd.t === 'unbuy' || cmd.t === 'workshop')) return 'mode';
   switch (cmd.t) {
     case 'extractor':
       if (!ownPad(map, side, cmd.x, cmd.y)) return 'not-a-pad';
@@ -239,6 +278,7 @@ export function lockRound(s: HoldState, plan: Planner): HoldState {
     if (cmd.t === 'place' || cmd.t === 'extractor') ids.set(shadowId, realId);
   }
   n = structuredClone(n);
+  if (n.mode === 'external-small') for (const side of n.sides) side.wave = externalWave(n);
   n.unspent = [n.sides[0].credits, n.sides[1].credits];
   for (const side of n.sides) side.towers = settleAccount(side).towers;
   n.run = { tick: 0, pending: scheduleOf(n.sides), walkers: [] };
@@ -281,9 +321,9 @@ export function stepBattle(state: HoldState, ticks: number): BattleStep {
       events.push(e);
       if (e.t !== 'destroyed') continue;
       if (isEnemyKind(e.kind)) {
-        // The defender (the other side) earns the bounty.
+        // The defender (the other side) earns the bounty (half of it against the large outside force).
         const defender = s.sides[1 - e.side]!;
-        defender.credits += ENEMIES[e.kind].bounty;
+        defender.credits += s.mode === 'external-small' ? Math.floor((ENEMIES[e.kind].bounty * EXTERNAL_BOUNTY_PERCENT) / 100) : ENEMIES[e.kind].bounty;
         defender.stats.killed++;
       } else {
         const owner = s.sides[e.side]!;
@@ -327,6 +367,10 @@ function endRound(s: HoldState): void {
   if (a === 0 || b === 0 || last) {
     s.phase = a > b ? 'won' : a < b ? 'lost' : 'draw';
     return;
+  }
+  if (s.mode === 'external-small') {
+    const through = (sides: readonly SideState[]) => sides[0]!.stats.leaked + sides[1]!.stats.leaked;
+    s.pressure = through(s.sides) - through(s.roundStart.sides);
   }
   s.sides.forEach((side, i) => {
     side.credits += incomeOf(s, i) + interestOf(s.unspent[i as 0 | 1]);
@@ -378,9 +422,11 @@ export function isPlanCommand(v: unknown): v is PlanCommand {
 }
 
 function isValidSide(v: unknown, s: { world: World; map: DuelMap }, index: number): v is SideState {
-  if (!isRecord(v) || !isInt(v.credits, 0, 1_000_000) || !isInt(v.core, 0, START_CORE) || !isInt(v.workshops, 0, MAX_WORKSHOPS)) return false;
-  if (!isArrayOf(v.wave, isKind) || v.wave.length > BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY || v.wave.some((k) => UNIT_PRICES[k] === undefined)) return false;
-  if (!isArrayOf(v.lastWave, isKind) || v.lastWave.length > BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY) return false;
+  const external = s.map.mode === 'external-small';
+  if (!isRecord(v) || !isInt(v.credits, 0, 1_000_000) || !isInt(v.core, 0, START_CORE) || !isInt(v.workshops, 0, external ? 0 : MAX_WORKSHOPS)) return false;
+  const most = external ? MAX_WAVE : BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY;
+  if (!isArrayOf(v.wave, isKind) || v.wave.length > most || (!external && v.wave.some((k) => UNIT_PRICES[k] === undefined))) return false;
+  if (!isArrayOf(v.lastWave, isKind) || v.lastWave.length > most) return false;
   if (!isRecord(v.stats) || !['killed', 'leaked', 'spent'].every((k) => isInt((v.stats as Record<string, unknown>)[k], -1_000_000, 1_000_000))) return false;
   const owned = s.world.entities.filter((e) => e.side === index && (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)));
   if (owned.some((e) => !ownPad(s.map, index, e.x, e.y))) return false;
@@ -393,9 +439,11 @@ function isValidSide(v: unknown, s: { world: World; map: DuelMap }, index: numbe
 }
 
 export function isValidState(v: unknown): v is HoldState {
-  if (!isRecord(v) || v.v !== 1 || v.mode !== 'vs-small' || typeof v.mapId !== 'string') return false;
+  if (!isRecord(v) || v.v !== 1 || typeof v.mapId !== 'string') return false;
   const map = mapById(v.mapId);
-  if (!map) return false;
+  if (!map || v.mode !== map.mode) return false;
+  // External Small keeps the pressure; VS Small has none.
+  if (map.mode === 'external-small' ? !isInt(v.pressure, 0, 1000) : v.pressure !== undefined) return false;
   if (!(DIFFICULTIES as readonly unknown[]).includes(v.difficulty) || !isInt(v.seed, 0, 0xffffffff) || !isInt(v.round, 0, ROUNDS - 1)) return false;
   if (!['plan', 'battle', 'won', 'lost', 'draw'].includes(v.phase as string)) return false;
   if (!isValidWorld(v.world, TD_RULESET) || v.world.sides !== 2) return false;
@@ -426,6 +474,7 @@ export function isValidState(v: unknown): v is HoldState {
     // While planning, the computer has done nothing yet: it stands exactly as the round began.
     const startSides = start.sides as [SideState, SideState];
     if (JSON.stringify(foe) !== JSON.stringify(startSides[1]) || foe.wave.length > 0 || own.core !== startSides[0].core) return false;
+    if (map.mode === 'external-small' && own.wave.length > 0) return false;
     const foeAt = (w: World) => JSON.stringify(w.entities.filter((e) => e.side === 1).map((e) => [e.id, e.kind, e.x, e.y, e.hp]));
     if (foeAt(world) !== foeAt(startWorld)) return false;
   }
@@ -438,6 +487,11 @@ export function isValidState(v: unknown): v is HoldState {
     if (new Set(run.walkers.map((x) => x.id)).size !== run.walkers.length) return false;
     // What is still to come is the tail of each side's bought wave, in order; what runs is of the bought kinds.
     const sides = v.sides as SideState[];
+    // External Small: both sides face exactly this round's outside force.
+    if (map.mode === 'external-small') {
+      const expected = JSON.stringify(externalWave(v as unknown as HoldState));
+      if (sides.some((side) => JSON.stringify(side.wave) !== expected)) return false;
+    }
     for (const [i, side] of sides.entries()) {
       const schedule = scheduleOf([i === 0 ? side : { wave: [] }, i === 1 ? side : { wave: [] }]);
       const rest = run.pending.filter((p) => p.side === i);

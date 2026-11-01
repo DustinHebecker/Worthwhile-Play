@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { archetypeOf } from '@wp/strategy-engine';
-import { ENEMIES, TD_RULESET, TOWERS, type EnemyKind } from '@wp/td-core';
-import { attackOrder, expectedWave, leakage, padsNear, planRound, probeOrder, PROFILES } from '../src/ai';
+import { BASE_TOWERS, ENEMIES, TD_RULESET, TOWERS, type EnemyKind } from '@wp/td-core';
+import { attackOrder, defenceShare, defenceSims, expectedWave, leakage, padsNear, planRound, probeOrder, PROBE_SIMS, PROFILES } from '../src/ai';
 import { DUEL, ownPad } from '../src/maps';
-import { applyPlan, checkPlan, EXTRACTOR_PRICE, newGame, SHOP, START_CREDITS, UNIT_PRICES, type HoldState, type PlanCommand } from '../src/rules';
+import { applyPlan, checkPlan, externalWave, EXTRACTOR_PRICE, newGame, SHOP, START_CREDITS, UNIT_PRICES, type HoldState, type PlanCommand } from '../src/rules';
 
 /** Fast unit tests of the computer opponent; its strength is measured in ai.long.test.ts. */
 const fresh = (difficulty: 'easy' | 'normal' | 'hard' = 'normal'): HoldState => newGame(1, difficulty);
@@ -264,5 +264,92 @@ describe('planRound', () => {
     const tight: HoldState = { ...atRound(s, 5), sides: [s.sides[0], { ...s.sides[1], credits: 60 }] };
     const after = legal(tight, 1, planRound(tight, 1, 'normal'));
     expect(after.sides[1].credits).toBeGreaterThanOrEqual(Math.floor(60 * PROFILES.normal.keep));
+  });
+});
+
+describe('planner details', () => {
+  it('defence share and simulation budget per mode', () => {
+    expect(defenceShare(PROFILES.normal, 'vs-small')).toBe(PROFILES.normal.defence);
+    expect(defenceShare(PROFILES.normal, 'external-small')).toBe(1 - PROFILES.normal.keep);
+    expect(defenceShare(PROFILES.easy, 'external-small')).toBe(1);
+    expect(defenceSims(PROFILES.normal, 'vs-small')).toBe(PROFILES.normal.sims);
+    expect(defenceSims(PROFILES.normal, 'external-small')).toBe(PROFILES.normal.sims);
+    expect(defenceSims(PROFILES.hard, 'vs-small')).toBe(PROFILES.hard.sims - PROBE_SIMS);
+    expect(defenceSims(PROFILES.hard, 'external-small')).toBe(Math.floor((PROFILES.hard.sims * 3) / 2));
+  });
+
+  it('External Small: from round 2 on, it expects that round’s force (not last round’s waves)', () => {
+    const s = atRound(newGame(1, 'normal', 'crossing'), 3);
+    const t: HoldState = { ...s, pressure: 2 };
+    expect(expectedWave(t, 1)).toEqual(externalWave(t));
+    expect(expectedWave(t, 1)).not.toEqual(Array(8).fill('walker'));
+  });
+
+  it('External Small: the defence may use all but the kept share', () => {
+    const s = atRound(newGame(1, 'normal', 'crossing'), 9);
+    let t = s;
+    for (const cmd of planRound(s, 1, 'normal')) t = applyPlan(t, 1, cmd);
+    // VS Small's share (55 % of 300) would allow 165 at most.
+    expect(START_CREDITS - t.sides[1].credits).toBeGreaterThan(Math.floor(START_CREDITS * PROFILES.normal.defence));
+    expect(t.sides[1].credits).toBeGreaterThanOrEqual(START_CREDITS - Math.floor(START_CREDITS * defenceShare(PROFILES.normal, 'external-small')));
+  });
+
+  it('chooses first the tower that saves the most threat per credit (oracle)', () => {
+    const s0 = atRound(newGame(1, 'normal'), 3);
+    const s: HoldState = { ...s0, sides: [s0.sides[0], { ...s0.sides[1], credits: 400 }] };
+    const wave = expectedWave(s, 1);
+    const loss = leakage(s.world, s, 1, wave);
+    const floor = 400 - Math.floor(400 * PROFILES.normal.defence);
+    let best: { cmd: PlanCommand; value: number } | null = null;
+    for (const kind of BASE_TOWERS) {
+      const weapon = archetypeOf(TD_RULESET, kind)?.weapon;
+      if (!weapon) continue;
+      for (const [x, y] of padsNear(s, 1, incoming(1), weapon.range, weapon.minRange).slice(0, PROFILES.normal.pads)) {
+        const cmd: PlanCommand = { t: 'place', kind, x, y };
+        if (checkPlan(s, 1, cmd) !== null) continue;
+        const next = applyPlan(s, 1, cmd);
+        if (next.sides[1].credits < floor) continue;
+        const l = leakage(next.world, next, 1, wave);
+        const value = (loss - l) / (400 - next.sides[1].credits);
+        if (loss - l > 0.01 && (!best || value > best.value)) best = { cmd, value };
+      }
+    }
+    expect(best).not.toBeNull();
+    expect(planRound(s, 1, 'normal')[0]).toEqual(best!.cmd);
+  });
+});
+
+describe('leakage bounds', () => {
+  const defended = (): HoldState => {
+    let s: HoldState = { ...newGame(1, 'normal'), sides: [newGame(1, 'normal').sides[0], { ...newGame(1, 'normal').sides[1], credits: 2000 }] };
+    for (const [x, y] of padsNear(s, 1, incoming(1), 3).slice(0, 1)) s = applyPlan(s, 1, { t: 'place', kind: 'gun', x, y });
+    return s;
+  };
+
+  it('with a bound it stops early: the result is at least the bound, never more than the whole threat', () => {
+    const s = defended();
+    const wave: EnemyKind[] = Array(12).fill('walker');
+    const full = leakage(s.world, s, 1, wave);
+    expect(full).toBeGreaterThan(0.5);
+    expect(full).toBeLessThan(totalThreat(wave));
+    const bounded = leakage(s.world, s, 1, wave, 0.5);
+    expect(bounded).toBeGreaterThanOrEqual(0.5);
+    expect(bounded).toBeLessThanOrEqual(totalThreat(wave));
+    // Stopping early counts what is still on its way as through, so it differs from the full run.
+    expect(bounded).not.toBeCloseTo(full, 6);
+    // A bound above the result changes nothing.
+    expect(leakage(s.world, s, 1, wave, full + 1)).toBeCloseTo(full, 9);
+  });
+
+  it('a wave longer than the simulation cap counts what is left as through', () => {
+    const s = newGame(1, 'normal');
+    // 300 Walkers 8 ticks apart: the last ones are still waiting when the cap (1500 ticks) is reached.
+    const wave: EnemyKind[] = Array(300).fill('walker');
+    expect(leakage(s.world, s, 1, wave)).toBeCloseTo(totalThreat(wave), 6);
+    // With guns, the units on their way at the cap count by the health they kept.
+    const g = defended();
+    const through = leakage(g.world, g, 1, wave);
+    expect(through).toBeGreaterThan(totalThreat(wave) / 2);
+    expect(through).toBeLessThan(totalThreat(wave));
   });
 });

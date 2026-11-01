@@ -3,7 +3,7 @@ import { archetypeOf, type SimEvent } from '@wp/strategy-engine';
 import { BASE_TOWERS, drawFrame, drawTerrain, readPalette, TD_RULESET, TICKS_PER_SECOND, TOWER_PRIORITIES, TOWERS, type EnemyKind, type Palette, type TowerPriority } from '@wp/td-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import { planRound } from './ai';
-import { ownPad } from './maps';
+import { mapForMode, ownPad } from './maps';
 import {
   applyPlan,
   capacityOf,
@@ -12,7 +12,10 @@ import {
   DIFFICULTIES,
   EXTRACTOR_INCOME,
   EXTRACTOR_PRICE,
+  externalWave,
   incomeOf,
+  MAX_PRESSURE,
+  MODES,
   INTEREST_PERCENT,
   lockRound,
   mapOf,
@@ -28,6 +31,7 @@ import {
   WORKSHOP_PRICE,
   type Difficulty,
   type HoldState,
+  type Mode,
   type PlanCommand
 } from './rules';
 import './styles.css';
@@ -37,6 +41,7 @@ const SAVE_EVERY = 5 * TICKS_PER_SECOND;
 const SPEEDS = [1, 2, 4] as const;
 const PLAYER = 0;
 
+const toMode = (m: unknown): Mode => ((MODES as readonly unknown[]).includes(m) ? (m as Mode) : 'vs-small');
 const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
 const hpMax = (kind: string): number => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
 const splashOf = (kind: string): number => archetypeOf(TD_RULESET, kind)?.weapon?.splash ?? 0;
@@ -80,6 +85,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const panel = h('section', { class: 'td-panel wp-card', 'aria-label': t('panel.title'), 'data-testid': 'panel' });
   const shop = h('section', { class: 'td-panel wp-card', 'aria-label': t('shop.title'), 'data-testid': 'shop' });
   const intel = h('section', { class: 'td-preview', 'data-testid': 'intel' });
+  const outside = h('section', { class: 'td-preview', 'data-testid': 'outside' });
   const lockButton = h('button', { type: 'button', class: 'wp-primary', 'data-testid': 'lock', onclick: () => onLock() }, t('controls.lock'));
   const playButton = h('button', { type: 'button', 'data-testid': 'play', onclick: () => togglePlay() });
   const speedButton = h('button', { type: 'button', 'data-testid': 'speed', onclick: () => cycleSpeed() });
@@ -92,7 +98,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     hud,
     status,
     controls,
-    h('div', { class: 'td-layout' }, board, h('div', { class: 'td-side' }, panel, shop, intel)),
+    h('div', { class: 'td-layout' }, board, h('div', { class: 'td-side' }, panel, outside, shop, intel)),
     h('p', { class: 'wp-muted td-help' }, t('keys.help')),
     h('p', { class: 'wp-muted td-help' }, t('access.note')),
     live
@@ -102,7 +108,13 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const nameOf = (kind: string): string => (kind === 'extractor' ? t('structure.extractor') : t(`tower.${kind}`));
   const unitName = (kind: string): string => t(`enemy.${kind}`);
   const about = (kind: string): string =>
-    kind === 'extractor' ? t('about.extractor', { n: EXTRACTOR_INCOME }) : TOWERS[kind]?.level === 3 ? t('about.level3') : t(`about.${kind}`);
+    kind === 'extractor'
+      ? t('about.extractor', { n: EXTRACTOR_INCOME })
+      : kind === 'amplifier-2'
+        ? t('about.amplifier') // its text already says what level 3 adds (and that it reaches own units)
+        : TOWERS[kind]?.level === 3
+          ? t('about.level3')
+          : t(`about.${kind}`);
   const where = (x: number, y: number) => ({ row: y + 1, col: x + 1 });
   const me = () => state.sides[PLAYER];
   const map = () => mapOf(state);
@@ -255,8 +267,25 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     panel.append(h('div', { class: 'wp-row' }, h('button', { type: 'button', 'data-testid': 'sell', onclick: () => onPlan({ t: 'sell', id: s.id }) }, t('panel.sell', { n: refundAt(state, PLAYER, s.id) }))));
   };
 
+  const external = (): boolean => state.mode === 'external-small';
+
+  const renderOutside = (): void => {
+    clear(outside);
+    outside.hidden = !external();
+    if (!external()) return;
+    const extra = Math.min(MAX_PRESSURE, state.pressure ?? 0);
+    outside.append(
+      h('h3', { class: 'td-subtitle' }, t('external.title')),
+      h('p', { 'data-testid': 'outside-wave' }, t('external.incoming', { list: listOf(externalWave(state)) }))
+    );
+    if (state.round > 0) outside.append(h('p', { 'data-testid': 'outside-pressure' }, t('external.pressure', { n: state.pressure ?? 0, extra })));
+    outside.append(h('p', { class: 'wp-muted' }, t('external.note')));
+  };
+
   const renderShop = (): void => {
     clear(shop);
+    shop.hidden = external();
+    if (external()) return;
     const side = me();
     const planning = state.phase === 'plan';
     const max = capacityOf(side);
@@ -284,7 +313,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   const renderIntel = (): void => {
     clear(intel);
-    intel.hidden = state.round === 0 && state.phase === 'plan';
+    intel.hidden = external() || (state.round === 0 && state.phase === 'plan');
+    if (intel.hidden) return;
     intel.append(
       h('h3', { class: 'td-subtitle' }, t('intel.title')),
       h('p', { 'data-testid': 'intel-theirs' }, t('intel.theirs', { list: listOf(state.sides[1].lastWave) })),
@@ -326,7 +356,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
       const [x, y] = r.points.at(-1)!;
       return { x, y, side: 1 - side };
     });
-    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goals, viewer: PLAYER, split: m.split, hpMax, splashOf }, terrainLayer(width, dpr, palette));
+    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goals, viewer: PLAYER, split: m.split, neutralUnits: external(), hpMax, splashOf }, terrainLayer(width, dpr, palette));
   };
 
   let terrainKey = '';
@@ -352,6 +382,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     renderHud();
     renderCells();
     renderPanel();
+    renderOutside();
     renderShop();
     renderIntel();
     renderControls();
@@ -397,7 +428,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     prev = new Map();
     acc = 0;
     if (state.phase === 'plan') {
-      status.textContent = t('status.round', {
+      status.textContent = t(external() ? 'status.roundExternal' : 'status.round', {
         n: before.round + 1,
         lost: before.sides[PLAYER].core - me().core,
         taken: before.sides[1].core - state.sides[1].core,
@@ -580,7 +611,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   return {
     newGame(options: NewGameOptions) {
-      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty));
+      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), mapForMode(toMode(options.settings?.mode)).id);
       show(initial);
     },
     restore(saved: HoldState) {

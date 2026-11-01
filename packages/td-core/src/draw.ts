@@ -114,6 +114,11 @@ export interface Frame {
   viewer?: number;
   /** Two-side maps: the row between the halves (drawn as a dashed line along its middle). */
   split?: number;
+  /**
+   * Wave units belong to an outside force (hybrid External modes): all of them are drawn alike, as
+   * the opponent's would be but in ink, whichever side they count for.
+   */
+  neutralUnits?: boolean;
   hpMax: (kind: string) => number;
   splashOf: (kind: string) => number;
 }
@@ -232,19 +237,22 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
   }
 
   // Wave units.
+  const outside = { own: false, colour: palette.ink, surface: palette.surface, view: 'profile' as const };
+  const unitStyle = (side: number) => (f.neutralUnits ? outside : styleOf(side));
+  const unitColour = (side: number) => (f.neutralUnits ? palette.ink : colourOf(side));
   for (const e of f.world.entities) {
     if (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)) continue;
     const [cx, cy] = pos(e);
     const [icon, size] = ENEMY_ICON[e.kind] ?? ['rifles', 0.8];
     const s = cell * size;
-    if (!drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, styleOf(e.side))) {
+    if (!drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, unitStyle(e.side))) {
       g.beginPath();
       g.arc(cx, cy, s * 0.3, 0, TAU);
-      g.fillStyle = colourOf(e.side);
+      g.fillStyle = unitColour(e.side);
       g.fill();
     }
     if (e.kind === 'crawler') {
-      g.strokeStyle = colourOf(e.side);
+      g.strokeStyle = unitColour(e.side);
       g.lineWidth = 2;
       g.beginPath();
       g.arc(cx, cy, s * 0.55, 0, TAU);
@@ -261,7 +269,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     }
     if ((e.shield ?? 0) > 0) {
       // Shield: a hexagon around the unit, as long as any shield is left.
-      g.strokeStyle = colourOf(e.side);
+      g.strokeStyle = unitColour(e.side);
       g.lineWidth = 2;
       g.beginPath();
       for (let i = 0; i <= 6; i++) {
@@ -298,7 +306,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.stroke();
     }
     const max = f.hpMax(e.kind);
-    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, colourOf(e.side), palette.muted);
+    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, unitColour(e.side), palette.muted);
   }
 
   // Blasts.

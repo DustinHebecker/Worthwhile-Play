@@ -15,6 +15,8 @@ export interface DuelMap {
   readonly lanes: readonly [Route, Route];
   /** Rows each side may build on: side 0 from `split + 1` down, side 1 from `split - 1` up. */
   readonly split: number;
+  /** The mode this map is played in (one map per mode for now). */
+  readonly mode: 'vs-small' | 'external-small';
 }
 
 /**
@@ -48,10 +50,50 @@ export const DUEL: DuelMap = {
     { layer: 'ground', points: [[0, 16], [0, 1], [3, 1], [3, 0]] },
     { layer: 'ground', points: [[6, 0], [6, 15], [3, 15], [3, 16]] }
   ],
-  split: 8
+  split: 8,
+  mode: 'vs-small'
 };
 
-export const MAPS: readonly DuelMap[] = [DUEL];
+/**
+ * External Small (design § 13.2, § 17): an outside force comes in at the middle of the map and splits
+ * into two equal halves, one down the winding road to your core at the bottom, one up the mirrored
+ * road to the opponent's core at the top. Lane `i` carries the units that attack side `1 - i`
+ * (so the opponent's towers never shoot at the half that comes for you, and the other way round).
+ * Two entry cells, one per half, keep the halves from waiting on each other.
+ */
+export const CROSSING: DuelMap = {
+  id: 'crossing',
+  w: 7,
+  h: 17,
+  rows: [
+    'bbb=bbb',
+    'bbb===b',
+    'bb^bb=b',
+    'b=====b',
+    'b=bbb^b',
+    'b=bbbbb',
+    'b====bb',
+    'bbbb=bb',
+    '^b=^=b^',
+    'bb=bbbb',
+    'bb====b',
+    'bbbbb=b',
+    'b^bbb=b',
+    'b=====b',
+    'b=bb^bb',
+    'b===bbb',
+    'bbb=bbb'
+  ],
+  lanes: [
+    { layer: 'ground', points: [[4, 8], [4, 6], [1, 6], [1, 3], [5, 3], [5, 1], [3, 1], [3, 0]] },
+    { layer: 'ground', points: [[2, 8], [2, 10], [5, 10], [5, 13], [1, 13], [1, 15], [3, 15], [3, 16]] }
+  ],
+  split: 8,
+  mode: 'external-small'
+};
+
+export const MAPS: readonly DuelMap[] = [DUEL, CROSSING];
+export const mapForMode = (mode: DuelMap['mode']): DuelMap => MAPS.find((m) => m.mode === mode)!;
 export const mapById = (id: string): DuelMap | undefined => MAPS.find((m) => m.id === id);
 
 /** Whether `side` may build on (x, y): a pad in its own half. */
