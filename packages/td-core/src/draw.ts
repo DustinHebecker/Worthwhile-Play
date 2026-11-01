@@ -104,9 +104,11 @@ export interface Frame {
   /** Shells that landed in the last tick. */
   blasts: readonly (readonly [number, number, number])[];
   selected: { x: number; y: number } | null;
-  /** Road entries (spawn cells) and the end of the road (the core). */
+  /** Road entries (spawn cells) and the cores at the ends of the roads, with their side. */
   entries: readonly (readonly [number, number])[];
-  goal: readonly [number, number];
+  goals: readonly { readonly x: number; readonly y: number; readonly side: number }[];
+  /** The side whose pieces are drawn as own (filled, facing right); default 0. */
+  viewer?: number;
   hpMax: (kind: string) => number;
   splashOf: (kind: string) => number;
 }
@@ -124,7 +126,10 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
   const own = { own: true, colour: palette.own, surface: palette.surface, view: 'profile' as const };
   const foe = { own: false, colour: palette.enemy, surface: palette.surface, view: 'profile' as const };
 
-  // Entry: a chevron into the road. The core: the player's Command Post.
+  const viewer = f.viewer ?? 0;
+  const styleOf = (side: number) => (side === viewer ? own : foe);
+  const colourOf = (side: number) => (side === viewer ? palette.own : palette.enemy);
+  // Entry: a chevron into the road. Each core: its side's Command Post.
   g.strokeStyle = palette.ink;
   g.lineWidth = Math.max(2, cell * 0.05);
   for (const [x, y] of f.entries) {
@@ -136,10 +141,11 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     g.lineTo(cx + cell * 0.22, cy - cell * 0.12);
     g.stroke();
   }
-  if (!drawIcon(g, 'command-post', f.goal[0] * cell, f.goal[1] * cell, k, own)) {
+  for (const goal of f.goals) {
+    if (drawIcon(g, 'command-post', goal.x * cell, goal.y * cell, k, styleOf(goal.side))) continue;
     for (const r of [0.36, 0.22]) {
       g.beginPath();
-      g.arc((f.goal[0] + 0.5) * cell, (f.goal[1] + 0.5) * cell, cell * r, 0, TAU);
+      g.arc((goal.x + 0.5) * cell, (goal.y + 0.5) * cell, cell * r, 0, TAU);
       g.stroke();
     }
   }
@@ -163,14 +169,13 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
 
   // Towers.
   for (const e of f.world.entities) {
-    if (e.side !== 0) continue;
-    const def = TOWERS[e.kind];
+    const def = Object.hasOwn(TOWERS, e.kind) ? TOWERS[e.kind] : undefined;
     if (!def) continue;
     const [cx, cy] = pos(e);
-    if (!drawIcon(g, TOWER_ICON[def.family], cx - cell / 2, cy - cell / 2, k, own)) fallbackShape(g, cx, cy, cell * 0.3, palette.own, palette.surface);
+    if (!drawIcon(g, TOWER_ICON[def.family], cx - cell / 2, cy - cell / 2, k, styleOf(e.side))) fallbackShape(g, cx, cy, cell * 0.3, colourOf(e.side), palette.surface);
     // Level pips along the bottom edge: filled for branch A, hollow for branch B.
-    g.fillStyle = palette.own;
-    g.strokeStyle = palette.own;
+    g.fillStyle = colourOf(e.side);
+    g.strokeStyle = colourOf(e.side);
     g.lineWidth = 1.5;
     for (let i = 0; i < def.level; i++) {
       g.beginPath();
@@ -179,7 +184,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       else g.fill();
     }
     const max = f.hpMax(e.kind);
-    if (e.hp < max) bar(g, cx, cy - cell * 0.44, cell * 0.6, e.hp / max, palette.own, palette.muted);
+    if (e.hp < max) bar(g, cx, cy - cell * 0.44, cell * 0.6, e.hp / max, colourOf(e.side), palette.muted);
   }
 
   // Beams.
@@ -194,18 +199,18 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
 
   // Wave units.
   for (const e of f.world.entities) {
-    if (e.side !== 1) continue;
+    if (Object.hasOwn(TOWERS, e.kind)) continue;
     const [cx, cy] = pos(e);
     const [icon, size] = ENEMY_ICON[e.kind] ?? ['rifles', 0.8];
     const s = cell * size;
-    if (!drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, foe)) {
+    if (!drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, styleOf(e.side))) {
       g.beginPath();
       g.arc(cx, cy, s * 0.3, 0, TAU);
-      g.fillStyle = palette.enemy;
+      g.fillStyle = colourOf(e.side);
       g.fill();
     }
     if (e.kind === 'crawler') {
-      g.strokeStyle = palette.enemy;
+      g.strokeStyle = colourOf(e.side);
       g.lineWidth = 2;
       g.beginPath();
       g.arc(cx, cy, s * 0.55, 0, TAU);
@@ -231,7 +236,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.stroke();
     }
     const max = f.hpMax(e.kind);
-    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, palette.enemy, palette.muted);
+    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, colourOf(e.side), palette.muted);
   }
 
   // Blasts.

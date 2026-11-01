@@ -1335,6 +1335,9 @@ importers:
       '@wp/strategy-engine':
         specifier: workspace:*
         version: link:../../strategy-engine
+      '@wp/td-core':
+        specifier: workspace:*
+        version: link:../../td-core
       '@wp/ui':
         specifier: workspace:*
         version: link:../../ui
@@ -1418,6 +1421,18 @@ importers:
       '@wp/game-core':
         specifier: workspace:*
         version: link:../game-core
+
+  packages/td-core:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../game-core
+      '@wp/strategy-art':
+        specifier: workspace:*
+        version: link:../strategy-art
+      '@wp/strategy-engine':
+        specifier: workspace:*
+        version: link:../strategy-engine
 
   packages/testing:
     dependencies:

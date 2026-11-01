@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FAMILIES } from '../src/ruleset';
+import { FAMILIES } from '@wp/td-core';
 import { MAPS } from '../src/maps';
 import { play, planBuild, randomBuild } from './bots';
 
