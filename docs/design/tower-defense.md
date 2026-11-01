@@ -588,17 +588,23 @@ Owner, 2026-11-01: start the hybrid with VS Small. It is a game of its own, `pac
 
 - One engine world holds both sides. The lanes are TD lanes with a side per unit. Leaks and bounties go to the right side.
 - A round's battle runs `tickLanes` until no unit, spawn or shell is left, with the TD safety bound and stop budget.
-- Saves hold the exact tick; validation checks every structure on its owner's pads, one record per structure, the running wave against what was bought, and the plan log.
+- Saves hold the exact tick. Validation checks:
+  - every structure stands on its owner's pads, with one record per structure;
+  - what is still to come is the exact tail of each side's bought wave, and what runs is of the bought kinds;
+  - while planning, the computer stands exactly as the round began;
+  - results match the cores;
+  - the plan log is bounded.
+- The computer's plan names its new structures by the ids they get on the round-start snapshot; at the lock those ids are translated to the real ones (review of PR #100).
 
 ### 16.3 Computer opponent (`ai.ts`)
 
-Deterministic, same rules, never cheating. Planning takes under 0.1 s per round (Hard about 0.3 s).
+Deterministic, same rules, never cheating. It plans at the lock. Planning time is bounded by a fixed number of wave simulations per round (Normal 30, Hard 55). Measured in Node with 3000 credits, the worst case: about 0.3 s (Normal) and 0.7 s (Hard). On slow phones it can be several times that, so the view first shows "thinking" and plans afterwards (no silent freeze). A Web Worker would move it off the main thread if needed.
 
 | Level | Defence | Attack |
 |---|---|---|
 | Easy | one Gun beside the incoming lane | plain Walkers and Runners |
 | Normal | an Extractor early; towers chosen greedily, each tried against the wave it expects (the other side's last wave) | the two unit kinds whose threat per credit is highest against the visible towers, mixed |
-| Hard | as Normal, with more placements tried | tries every single-kind and two-kind wave against the visible towers and sends the one that gets the most threat through |
+| Hard | as Normal, with more placements tried | tries every single-kind and two-kind wave against the visible towers and sends the one that gets the most threat through; keeps the base wave size (workshops did not pay off in measurement) |
 
 Long suite `ai.long.test.ts`:
 - mirror matches are draws, on every level (both seats are equal);

@@ -225,23 +225,38 @@ export function applyPlan(s: HoldState, side: number, cmd: PlanCommand): HoldSta
  */
 export function lockRound(s: HoldState, plan: Planner): HoldState {
   if (s.phase !== 'plan') return s;
-  const seen: HoldState = { ...s, world: s.roundStart.world, sides: s.roundStart.sides };
+  // What the computer may see: the round's start, without this round's log or interest base.
+  let seen: HoldState = { ...s, world: s.roundStart.world, sides: s.roundStart.sides, log: s.log.map(() => ({ player: [], ai: [] })), unspent: [0, 0], run: null };
+  // Its plan names its new structures by the ids they get on that snapshot; the player's builds of
+  // this round have taken other ids by now, so those ids are translated when the plan is applied.
+  const ids = new Map<number, number>();
   let n = s;
-  for (const cmd of plan(seen)) n = applyPlan(n, 1, cmd);
+  for (const cmd of plan(seen)) {
+    const real = 'id' in cmd ? { ...cmd, id: ids.get(cmd.id) ?? cmd.id } : cmd;
+    const [shadowId, realId] = [seen.world.nextId, n.world.nextId];
+    seen = applyPlan(seen, 1, cmd);
+    n = applyPlan(n, 1, real);
+    if (cmd.t === 'place' || cmd.t === 'extractor') ids.set(shadowId, realId);
+  }
   n = structuredClone(n);
   n.unspent = [n.sides[0].credits, n.sides[1].credits];
+  for (const side of n.sides) side.towers = settleAccount(side).towers;
+  n.run = { tick: 0, pending: scheduleOf(n.sides), walkers: [] };
+  n.phase = 'battle';
+  return n;
+}
+
+/** Both sides' waves as spawns, in sending order with their spacing (merged by time, side 0 first on ties). */
+export function scheduleOf(sides: readonly Pick<SideState, 'wave'>[]): PendingSpawn[] {
   const pending: PendingSpawn[] = [];
-  n.sides.forEach((side, i) => {
-    side.towers = settleAccount(side).towers;
+  sides.forEach((side, i) => {
     let at = 0;
     for (const kind of side.wave) {
       pending.push({ at, kind, route: i, side: i });
       at += SPACING(kind);
     }
   });
-  n.run = { tick: 0, pending: pending.map((p, i) => ({ p, i })).sort((a, b) => a.p.at - b.p.at || a.i - b.i).map(({ p }) => p), walkers: [] };
-  n.phase = 'battle';
-  return n;
+  return pending.map((p, i) => ({ p, i })).sort((a, b) => a.p.at - b.p.at || a.i - b.i).map(({ p }) => p);
 }
 
 export interface BattleStep {
@@ -334,7 +349,8 @@ export const refundAt = (s: HoldState, side: number, id: number): number => {
 // Validation of untrusted saves (never throws).
 
 const isInt = (v: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): v is number => Number.isInteger(v) && (v as number) >= min && (v as number) <= max;
-const isArrayOf = <T>(v: unknown, guard: (x: unknown) => x is T): v is T[] => Array.isArray(v) && v.every(guard);
+/** Every element passes `guard` (holes in sparse arrays count as `undefined`, so they fail). */
+const isArrayOf = <T>(v: unknown, guard: (x: unknown) => x is T): v is T[] => Array.isArray(v) && Array.from(v).every(guard);
 const isKind = (v: unknown): v is EnemyKind => typeof v === 'string' && isEnemyKind(v);
 
 export function isPlanCommand(v: unknown): v is PlanCommand {
@@ -393,9 +409,24 @@ export function isValidState(v: unknown): v is HoldState {
   if (startWorld.entities.some((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind)) || startWorld.projectiles.length > 0) return false;
   if (!Array.isArray(start.sides) || start.sides.length !== 2 || !start.sides.every((side, i) => isValidSide(side, { world: startWorld, map }, i))) return false;
   if (!isArrayOf(v.unspent, (x): x is number => isInt(x, 0, 1_000_000)) || v.unspent.length !== 2) return false;
-  if (!isArrayOf(v.log, (e): e is HoldState['log'][number] => isRecord(e) && isArrayOf(e.player, isPlanCommand) && isArrayOf(e.ai, isPlanCommand)) || v.log.length !== (v.round as number) + 1) return false;
+  const isPlanList = (l: unknown): l is PlanCommand[] => isArrayOf(l, isPlanCommand) && l.length <= 1000;
+  if (!isArrayOf(v.log, (e): e is HoldState['log'][number] => isRecord(e) && isPlanList(e.player) && isPlanList(e.ai)) || v.log.length !== (v.round as number) + 1) return false;
   const units = world.entities.filter((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind));
   if (units.some((e) => !isEnemyKind(e.kind))) return false;
+  const [own, foe] = v.sides as [SideState, SideState];
+  // Results match the cores; a game in progress has both cores standing.
+  if (v.phase === 'won' && !(own.core > foe.core)) return false;
+  if (v.phase === 'lost' && !(own.core < foe.core)) return false;
+  if (v.phase === 'draw' && own.core !== foe.core) return false;
+  if ((v.phase === 'won' || v.phase === 'lost' || v.phase === 'draw') && v.round !== ROUNDS - 1 && Math.min(own.core, foe.core) > 0) return false;
+  if ((v.phase === 'plan' || v.phase === 'battle') && Math.min(own.core, foe.core) === 0) return false;
+  if (v.phase === 'plan') {
+    // While planning, the computer has done nothing yet: it stands exactly as the round began.
+    const startSides = start.sides as [SideState, SideState];
+    if (JSON.stringify(foe) !== JSON.stringify(startSides[1]) || foe.wave.length > 0 || own.core !== startSides[0].core) return false;
+    const foeAt = (w: World) => JSON.stringify(w.entities.filter((e) => e.side === 1).map((e) => [e.id, e.kind, e.x, e.y, e.hp]));
+    if (foeAt(world) !== foeAt(startWorld)) return false;
+  }
   if (v.phase === 'battle') {
     const run = v.run;
     if (!isRecord(run) || !isInt(run.tick, 0, MAX_BATTLE_TICKS)) return false;
@@ -403,8 +434,23 @@ export function isValidState(v: unknown): v is HoldState {
     if (!isArrayOf(run.walkers, (x): x is Walker => isRecord(x) && isInt(x.id, 1) && isInt(x.route, 0, 1) && isInt(x.leg, 1, map.lanes[x.route as number]!.points.length - 1) && (x.stun === undefined || isInt(x.stun, 1, STUN_BUDGET)))) return false;
     if (run.walkers.length !== units.length || units.some((e) => !(run.walkers as Walker[]).some((x) => x.id === e.id && x.route === e.side))) return false;
     if (new Set(run.walkers.map((x) => x.id)).size !== run.walkers.length) return false;
-    const sent = (v.sides as SideState[]).reduce((sum, side) => sum + side.wave.length, 0);
-    if (run.pending.length + run.walkers.length > sent) return false;
+    // What is still to come is the tail of each side's bought wave, in order; what runs is of the bought kinds.
+    const sides = v.sides as SideState[];
+    for (const [i, side] of sides.entries()) {
+      const schedule = scheduleOf([i === 0 ? side : { wave: [] }, i === 1 ? side : { wave: [] }]);
+      const rest = run.pending.filter((p) => p.side === i);
+      const tail = schedule.slice(schedule.length - rest.length);
+      if (rest.length > schedule.length || rest.some((p, k) => p.at !== tail[k]!.at || p.kind !== tail[k]!.kind)) return false;
+      const sent = side.wave.slice(0, side.wave.length - rest.length);
+      const running = units.filter((e) => e.side === i);
+      if (running.length > sent.length) return false;
+      const left = [...sent];
+      for (const e of running) {
+        const k = left.indexOf(e.kind as EnemyKind);
+        if (k < 0) return false;
+        left.splice(k, 1);
+      }
+    }
   } else if (v.run !== null || units.length > 0 || world.projectiles.length > 0) return false;
   return true;
 }

@@ -491,14 +491,28 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     commit(next, message);
   };
 
+  /**
+   * Locking runs the computer's planner (up to a few hundred milliseconds on a slow device): the
+   * "thinking" state is drawn first, then the plan is made, so the page never freezes silently.
+   */
+  let thinking: ReturnType<typeof setTimeout> | null = null;
   const onLock = (): void => {
-    if (hostPaused || state.phase !== 'plan') return;
+    if (hostPaused || state.phase !== 'plan' || thinking !== null) return;
     status.textContent = '';
-    playing = true;
-    acc = 0;
-    const n = state.round + 1;
-    commit(lockRound(state, plan), t('announce.lock', { n }));
-    schedule();
+    lockButton.disabled = true;
+    phase.textContent = t('common.thinking');
+    container.dataset.thinking = 'true';
+    const at = state;
+    thinking = setTimeout(() => {
+      thinking = null;
+      lockButton.disabled = false;
+      delete container.dataset.thinking;
+      if (state !== at || hostPaused) return render();
+      playing = true;
+      acc = 0;
+      commit(lockRound(state, plan), t('announce.lock', { n: state.round + 1 }));
+      schedule();
+    }, 30);
   };
 
   const togglePlay = (): void => {
@@ -543,6 +557,10 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   const show = (next: HoldState): void => {
     stopLoop();
+    if (thinking !== null) clearTimeout(thinking);
+    thinking = null;
+    lockButton.disabled = false;
+    delete container.dataset.thinking;
     state = next;
     playing = false;
     selected = null;
@@ -584,6 +602,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     },
     dispose() {
       stopLoop();
+      if (thinking !== null) clearTimeout(thinking);
       disposeKeyboard();
       scheme?.removeEventListener?.('change', onScheme);
       resize?.disconnect();

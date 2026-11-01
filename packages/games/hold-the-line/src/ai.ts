@@ -25,7 +25,9 @@ import {
  * - easy: one tower beside the incoming lane per round, a plain wave;
  * - normal: towers chosen by trying them against the wave it expects (one round ahead), an
  *   extractor early, a wave that avoids the player's strongest defence;
- * - hard: tries more placements, adds a second extractor and workshops when its wave is capped.
+ * - hard: tries more placements and chooses its wave by trying candidate waves against the player's
+ *   towers (it keeps to the base wave size: workshops did not pay off in measurement).
+ * Planning time is bounded by a fixed number of wave simulations per round (`sims`).
  * Deterministic: no randomness, ties broken by fixed order.
  */
 
@@ -40,12 +42,17 @@ interface Profile {
   workshops: boolean;
   /** Choose the attack wave by trying candidate waves against the other side's towers. */
   probe: boolean;
+  /** Most wave simulations per round (bounds the planning time, whatever the credits). */
+  sims: number;
 }
 
+/** Wave simulations Hard keeps for choosing its attack wave (6 single kinds and 15 pairs). */
+const PROBE_SIMS = 21;
+
 const PROFILES: Record<Difficulty, Profile> = {
-  easy: { defence: 0.5, keep: 0, lookahead: false, pads: 1, steps: 1, extractors: 0, workshops: false, probe: false },
-  normal: { defence: 0.55, keep: 0.1, lookahead: true, pads: 2, steps: 3, extractors: 1, workshops: false, probe: false },
-  hard: { defence: 0.55, keep: 0.1, lookahead: true, pads: 3, steps: 4, extractors: 1, workshops: false, probe: true }
+  easy: { defence: 0.5, keep: 0, lookahead: false, pads: 1, steps: 1, extractors: 0, workshops: false, probe: false, sims: 0 },
+  normal: { defence: 0.55, keep: 0.1, lookahead: true, pads: 2, steps: 3, extractors: 1, workshops: false, probe: false, sims: 30 },
+  hard: { defence: 0.55, keep: 0.1, lookahead: true, pads: 3, steps: 4, extractors: 1, workshops: false, probe: true, sims: 55 }
 };
 
 const cellsOf = (route: Route): [number, number][] => {
@@ -94,7 +101,9 @@ const expectedWave = (s: HoldState, side: number): EnemyKind[] => {
 function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[]): number {
   const route = mapOf(s).lanes[1 - side]!;
   // Only the attacking side's units run; its route index here is 0 of a one-route list.
-  let w: World = { ...world, entities: world.entities.filter((e) => Object.hasOwn(TOWERS, e.kind) || e.kind === 'extractor'), projectiles: [] };
+  // Only what can matter: the defender's towers and extractors (the attacker's own structures never
+  // fire at its own units, and a raider's shots at an extractor do not change what gets through).
+  let w: World = { ...world, entities: world.entities.filter((e) => e.side === side && Object.hasOwn(TOWERS, e.kind)), projectiles: [] };
   let at = 0;
   const pending: PendingSpawn[] = wave.map((kind) => {
     const p = { at, kind, route: 0, side: 1 - side };
@@ -103,7 +112,7 @@ function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyK
   });
   let run: LaneRun = { tick: 0, pending, walkers: [] };
   let loss = 0;
-  for (let i = 0; i < 3000 && (run.pending.length > 0 || run.walkers.length > 0); i++) {
+  for (let i = 0; i < 1500 && (run.pending.length > 0 || run.walkers.length > 0); i++) {
     const step = tickLanes(w, run, [route]);
     w = step.world;
     run = step.run;
@@ -138,7 +147,11 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   // The defence budget is a share of what the round started with (an early extractor must not starve it).
   const floor = Math.max(0, own().credits - Math.floor(start * profile.defence));
   const wave = expectedWave(s, side);
-  const threat = (st: HoldState): number => leakage(st.world, st, side, wave);
+  let sims = 0;
+  const threat = (st: HoldState): number => {
+    sims++;
+    return leakage(st.world, st, side, wave);
+  };
   if (!profile.lookahead) {
     const [x, y] = padsNear(s, side, incoming, 3)[0] ?? [-1, -1];
     apply({ t: 'place', kind: 'gun', x, y });
@@ -157,6 +170,7 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
       }
       let best: { cmd: PlanCommand; loss: number; value: number } | null = null;
       for (const cmd of candidates) {
+        if (sims >= profile.sims - (profile.probe ? PROBE_SIMS : 0)) break;
         if (checkPlan(s, side, cmd) !== null) continue;
         const next = applyPlan(s, side, cmd);
         if (next.sides[side]!.credits < floor) continue;

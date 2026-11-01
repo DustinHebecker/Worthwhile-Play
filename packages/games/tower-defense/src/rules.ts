@@ -319,7 +319,8 @@ export function replay(seed: number, difficulty: Difficulty, mapId: string, log:
 // Validation of untrusted saves (never throws).
 
 const isInt = (v: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): v is number => Number.isInteger(v) && (v as number) >= min && (v as number) <= max;
-const isArrayOf = <T>(v: unknown, guard: (x: unknown) => x is T): v is T[] => Array.isArray(v) && v.every(guard);
+/** Every element passes `guard` (holes in sparse arrays count as `undefined`, so they fail). */
+const isArrayOf = <T>(v: unknown, guard: (x: unknown) => x is T): v is T[] => Array.isArray(v) && Array.from(v).every(guard);
 
 const isCommand = (v: unknown): v is BuildCommand => {
   if (!isRecord(v)) return false;
@@ -364,7 +365,7 @@ function isValidCore(v: unknown): v is TdCore {
   if (v.phase === 'wave') {
     const run = v.run;
     if (!isRecord(run) || !isInt(run.tick, 0, MAX_WAVE_TICKS)) return false;
-    if (!isArrayOf(run.pending, (p): p is PendingSpawn => isRecord(p) && isInt(p.at, 0) && typeof p.kind === 'string' && isEnemyKind(p.kind) && isInt(p.route, 0, map.routes.length - 1))) return false;
+    if (!isArrayOf(run.pending, (p): p is PendingSpawn => isRecord(p) && isInt(p.at, 0) && typeof p.kind === 'string' && isEnemyKind(p.kind) && isInt(p.route, 0, map.routes.length - 1) && p.side === undefined)) return false;
     if (!isArrayOf(run.walkers, (x): x is Walker => isRecord(x) && isInt(x.id, 1) && isInt(x.route, 0, map.routes.length - 1) && isInt(x.leg, 1, (map.routes[x.route as number]?.points.length ?? 1) - 1) && (x.stun === undefined || isInt(x.stun, 1, STUN_BUDGET)))) return false;
     if (run.walkers.length !== enemies.length || enemies.some((e) => !(run.walkers as Walker[]).some((x) => x.id === e.id))) return false;
     // A wave never holds more units than its schedule (bounds the work a crafted save can cause).

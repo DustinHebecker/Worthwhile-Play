@@ -1455,9 +1455,6 @@ importers:
 
   packages/td-core:
     dependencies:
-      '@wp/game-core':
-        specifier: workspace:*
-        version: link:../game-core
       '@wp/strategy-art':
         specifier: workspace:*
         version: link:../strategy-art

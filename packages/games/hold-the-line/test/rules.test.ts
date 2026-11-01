@@ -109,6 +109,29 @@ describe('planning', () => {
     expect(locked.world.entities.some((e) => e.side === 1)).toBe(true);
   });
 
+  it('the computer\'s upgrades of towers it builds this round reach those towers, also when the player built first (review S1)', () => {
+    let s = { ...fresh(), sides: [fresh().sides[0], { ...fresh().sides[1], credits: 1500 }] as HoldState['sides'] };
+    s = { ...s, roundStart: { world: s.world, sides: structuredClone(s.sides) } };
+    // The player builds two towers this round: they take the next ids.
+    s = applyPlan(applyPlan(s, 0, { t: 'place', kind: 'gun', x: 2, y: 14 }), 0, { t: 'place', kind: 'gun', x: 3, y: 14 });
+    const planner: Planner = (view) => {
+      const laser = view.world.nextId;
+      const artillery = laser + 1;
+      return [
+        { t: 'place', kind: 'laser', x: 5, y: 3 },
+        { t: 'place', kind: 'artillery', x: 4, y: 5 },
+        { t: 'upgrade', id: laser, kind: 'pulse' },
+        { t: 'upgrade', id: artillery, kind: 'howitzer' }
+      ];
+    };
+    const locked = lockRound(s, planner);
+    const foe = locked.world.entities.filter((e) => e.side === 1).map((e) => e.kind).sort();
+    expect(foe).toEqual(['howitzer', 'pulse']);
+    expect(locked.log[0]!.ai).toHaveLength(4);
+    expect(locked.world.entities.filter((e) => e.side === 0).map((e) => e.kind)).toEqual(['gun', 'gun']);
+    expect(locked.sides[1].credits).toBe(1500 - TOWERS.laser!.price - TOWERS.artillery!.price - TOWERS.pulse!.price - TOWERS.howitzer!.price);
+  });
+
   it('buys and removes units within capacity and credits', () => {
     let s = fresh();
     s = applyPlan(s, 0, { t: 'buy', kind: 'walker' });
@@ -255,16 +278,65 @@ describe('properties', () => {
       fc.property(arb, ({ seed, build, n }) => {
         let s = newGame(seed, 'hard');
         for (let r = 0; r < 3 && s.phase === 'plan'; r++) {
-          let t = s;
-          for (const cmd of planRound({ ...s, world: s.roundStart.world, sides: s.roundStart.sides })) {
-            expect(checkPlan(t, 1, cmd), JSON.stringify(cmd)).toBeNull();
-            t = applyPlan(t, 1, cmd);
-          }
-          s = resolveBattle(lockRound(randomPlan(s, build + r, n), ai)).state;
+          // At the lock, after the player's own plan: every command of the computer is carried out.
+          let planned = 0;
+          const counting: Planner = (view) => {
+            const cmds = planRound(view);
+            planned = cmds.length;
+            return cmds;
+          };
+          const locked = lockRound(randomPlan(s, build + r, n), counting);
+          expect(locked.log[locked.round]!.ai).toHaveLength(planned);
+          s = resolveBattle(locked).state;
         }
       }),
       { numRuns: 4 }
     );
+  });
+
+  it('a running battle must be what the sides bought, in order (review S2)', () => {
+    let s = fresh();
+    for (const kind of ['walker', 'brute', 'runner'] as const) s = applyPlan(s, 0, { t: 'buy', kind });
+    s = applyPlan(s, 1, { t: 'buy', kind: 'walker' });
+    const mid = clone(stepBattle(lockRound(s, idle), 2).state);
+    expect(isValidState(mid)).toBe(true);
+    const bad: ((t: HoldState) => void)[] = [
+      (t) => (t.run!.pending.find((p) => p.side === 0)!.kind = 'crawler'),
+      (t) => (t.run!.pending.find((p) => p.side === 0)!.kind = 'swarm'),
+      (t) => (t.run!.pending.find((p) => p.side === 0)!.at = 1e12),
+      (t) => {
+        for (const p of t.run!.pending) if (p.side === 0) Object.assign(p, { side: 1, route: 1 });
+      },
+      (t) => (t.world.entities.find((e) => e.side === 0 && !Object.hasOwn(TOWERS, e.kind))!.kind = 'brute'),
+      (t) => (t.sides[0].wave = ['walker'])
+    ];
+    for (const tamper of bad) {
+      const t = clone(mid);
+      tamper(t);
+      expect(isValidState(t)).toBe(false);
+    }
+  });
+
+  it('rejects saves whose result, snapshot or log cannot happen', () => {
+    const s = fresh();
+    const bad: ((t: HoldState) => void)[] = [
+      (t) => (t.phase = 'won'),
+      (t) => (t.phase = 'draw'),
+      (t) => (t.sides[0].core = 0),
+      (t) => (t.sides[1].credits = 999_999),
+      (t) => (t.sides[1].wave = ['walker']),
+      (t) => (t.roundStart.sides[0].core = 5),
+      (t) => (t.log[0]!.player = Array.from({ length: 1001 }, () => ({ t: 'workshop' }) as const)),
+      (t) => (t.sides[0].lastWave = new Array(3) as never)
+    ];
+    for (const tamper of bad) {
+      const t = clone(s);
+      tamper(t);
+      expect(isValidState(t)).toBe(false);
+    }
+    // A finished game at the last round with equal cores is a draw, and valid.
+    const end = { ...clone(s), round: ROUNDS - 1, phase: 'draw' as const, log: Array.from({ length: ROUNDS }, () => ({ player: [], ai: [] })) };
+    expect(isValidState(end)).toBe(true);
   });
 
   it('isValidState never throws and rejects junk and tampered saves', () => {

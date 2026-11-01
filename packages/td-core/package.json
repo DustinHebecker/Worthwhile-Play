@@ -5,7 +5,6 @@
   "type": "module",
   "exports": { ".": "./src/index.ts" },
   "dependencies": {
-    "@wp/game-core": "workspace:*",
     "@wp/strategy-art": "workspace:*",
     "@wp/strategy-engine": "workspace:*"
   }

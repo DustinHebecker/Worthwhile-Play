@@ -94,7 +94,7 @@ export function applyBuild(world: World, account: Account, side: number, cmd: Bu
       spent = price;
     } else if (cmd.t === 'sell') {
       a.credits += refundOf(record);
-      spent = -record.fresh;
+      spent = record.fresh > 0 ? -record.fresh : 0;
       w.entities = w.entities.filter((e) => e.id !== cmd.id);
       a.towers = a.towers.filter((r) => r.id !== cmd.id);
     } else {
