@@ -517,13 +517,13 @@ Everything else in § 12 already exists (determinism, plain JSON, integer math, 
 
 | Id | Request | Needed for | Interim |
 |---|---|---|---|
-| E0 | `spawnUnits(world, ruleset, specs)` and `removeEntities(world, ids)`, pure and validated (or `ModeDefinition.spawns`) | waves, leaks | the TD layer uses `spawn()` and filters `entities` itself (works, but bypasses validation) |
-| E1 | Beam option `pierce`: a beam hits every hostile unit on the grid line from the tower through its target up to its range (later: 45° mirror entities) | Prism | Prism branch not offered |
-| E2 | Archetype `aura`: friendly structures within radius get −x % cooldown, or heal y HP per n ticks | Amplifier / Repair | Support B not offered |
-| E3 | Status kinds `marked` (+x % damage taken) and `shielded` (absorbs first n damage, regenerates) | Corroder, Warden enemy | not offered |
+| E0 | `spawnUnits(world, ruleset, specs)` and `removeEntities(world, ids)`, pure and validated (or `ModeDefinition.spawns`) | waves, leaks | **done** (2026-11-01): `strategy-engine/src/spawn.ts`, ADR 0009 amendment "Tower Defense extensions" |
+| E1 | Beam option `pierce`: a beam hits every hostile unit on the grid line from the tower through its target up to its range (later: 45° mirror entities) | Prism | **done** (2026-11-01): `WeaponSpec.pierce`, `sim.ts` fire system, `lineCells` in `effects.ts`; mirrors not yet |
+| E2 | Archetype `aura`: friendly structures within radius get −x % cooldown, or heal y HP per n ticks | Amplifier / Repair | **done** (2026-11-01): `Archetype.aura { radius, cooldownPct?, heal? }`, status system in `sim.ts`, `auraEffects`/`coolDown` in `effects.ts` |
+| E3 | Status kinds `marked` (+x % damage taken) and `shielded` (absorbs first n damage, regenerates) | Corroder, Warden enemy | **done** (2026-11-01): status `marked` with `amount`, `Archetype.shield { hp, regenDelay }` + `Entity.shield`, damage system in `sim.ts`, `absorb` in `effects.ts` |
 | E4 | `runTicks` hook for per-tick spawns (avoids one clone per tick) | performance on large hybrid maps | measured fine without it |
 
-The owner relays these to the strategy context (engine owner, ADR 0009). If preferred, this context implements E0–E3 as an engine PR reviewed by the strategy context.
+The owner relays these to the strategy context (engine owner, ADR 0009). If preferred, this context implements E0–E3 as an engine PR reviewed by the strategy context. Owner decision 2026-11-01: this context built E0–E3 (opt-in archetype data only; Relay Command unchanged), described in the ADR 0009 amendment "Tower Defense extensions".
 
 ### 15.6 Map size and title (2026-10-31)
 

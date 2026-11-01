@@ -1,5 +1,6 @@
 import { isRecord } from '@wp/game-core';
-import { cellOf, dirsFor, dist2, frameCell, frameDirs, frameIndexIn, frameOf, maxStepCost, passable, stepCost, terrainAt } from './grid';
+import { cellOf, dirsFor, dist2, frameCell, frameDirs, frameIndexIn, frameOf, inBounds, maxStepCost, passable, stepCost, terrainAt } from './grid';
+import { absorb, auraEffects, coolDown, lineCells, markOf, marked } from './effects';
 import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
 import { DEFAULT_DOCTRINE, MAX_SUPPLY, NEUTRAL, type Archetype, type Command, type Doctrine, type Entity, type Order, type OrderEndReason, type Report, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, isActiveEw, isEmitter, type Network } from './network';
@@ -67,6 +68,8 @@ export function inWeaponRange(world: World, ruleset: Ruleset, shooter: Entity, a
 interface Hit {
   damage: number;
   effect: WeaponSpec['effect'];
+  /** Beam (energy) damage: counts ×3/2 against shields. */
+  beam: boolean;
 }
 
 /** One tick in the fixed system order of ADR 0009 (systems not yet implemented are no-ops). */
@@ -461,7 +464,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     for (const target of w.entities) {
       if (!hostile(w, p.side, target.side) || dist2(p.x, p.y, target.x, target.y) > weapon.splash * weapon.splash) continue;
       const damage = computeDamage(weapon.damage, weapon, arch(target), 0);
-      if (damage > 0) addHit(target.id, { damage, effect: weapon.effect });
+      if (damage > 0) addHit(target.id, { damage, effect: weapon.effect, beam: false });
     }
   }
   for (const e of w.entities) {
@@ -487,7 +490,20 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       base += weapon.beamRamp * stacks;
     }
     events.push({ t: 'fire', tick: t, id: e.id, target: target.id });
-    addHit(target.id, { damage: computeDamage(base, weapon, arch(target), cover), effect: weapon.effect });
+    const beam = weapon.delivery === 'beam';
+    addHit(target.id, { damage: computeDamage(base, weapon, arch(target), cover), effect: weapon.effect, beam });
+    // E1, piercing beam: every other hostile unit on the line through the target up to the range
+    // takes the base damage once (any layer the weapon can engage; the shooter's own cell is left out).
+    if (beam && weapon.pierce) {
+      const range = weapon.range + terrainAt(w.map, rs, e.x, e.y).rangeBonus;
+      const line = lineCells(e.x, e.y, target.x, target.y, (x, y) => inBounds(w.map, x, y) && dist2(e.x, e.y, x, y) <= range * range);
+      const onLine = new Set(line.map(([x, y]) => cellOf(w.map, x, y)));
+      for (const other of w.entities) {
+        if (other === target || !onLine.has(cellOf(w.map, other.x, other.y)) || !hostile(w, e.side, other.side)) continue;
+        const damage = computeDamage(weapon.damage, weapon, arch(other), terrainAt(w.map, rs, other.x, other.y).cover);
+        if (damage > 0) addHit(other.id, { damage, effect: weapon.effect, beam });
+      }
+    }
   }
 
   // 6. Damage, applied simultaneously
@@ -495,13 +511,26 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   for (const e of w.entities) {
     const list = hits.get(e.id);
     if (!list) continue;
-    const damage = list.reduce((sum, h) => sum + h.damage, 0);
+    const a = arch(e);
+    // E3: `marked` raises the damage by its percentage (beam and other damage separately, as the
+    // shield takes them differently); a shield absorbs before health, a `disabled` hit strips it.
+    const mark = markOf(e);
+    const beamDamage = marked(list.reduce((sum, h) => sum + (h.beam ? h.damage : 0), 0), mark);
+    const otherDamage = marked(list.reduce((sum, h) => sum + (h.beam ? 0 : h.damage), 0), mark);
+    const incoming = beamDamage + otherDamage;
+    const shieldBefore = e.shield ?? 0;
+    const split = absorb(a.shield ? shieldBefore : 0, beamDamage, otherDamage);
+    const damage = split.hp;
     e.hp -= damage;
+    const strip = list.some((h) => h.effect?.kind === 'disabled');
+    if (a.shield && (incoming > 0 || strip)) {
+      e.shield = strip ? 0 : split.shield;
+      e.shieldAt = t;
+    }
+    if (incoming > 0) e.hitAt = t;
     if (damage > 0) {
-      e.hitAt = t;
       // Retreat doctrine: a hit that leaves the unit below its threshold sends it back to regroup.
       // (Checked on hits only, so fresh orders to an already damaged unit are obeyed.)
-      const a = arch(e);
       const below = doctrineOf(e).retreatBelow;
       // A unit already holding inside its coverage has nowhere to retreat to: no new order, no
       // repeated 'retreat' → 'regrouped' on every further hit.
@@ -511,22 +540,41 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
         events.push({ t: 'order-ended', tick: t, id: e.id, reason: 'retreat' });
       }
     }
-    events.push({ t: 'hit', tick: t, id: e.id, side: e.side, damage });
-    const effects = list.flatMap((h) => (h.effect ? [{ kind: h.effect.kind, ticks: h.effect.ticks }] : []));
+    const shieldLost = shieldBefore - (e.shield ?? 0);
+    events.push({ t: 'hit', tick: t, id: e.id, side: e.side, damage, ...(shieldLost > 0 && { shield: shieldLost }) });
+    const effects = list.flatMap((h): Status[] => (h.effect ? [h.effect.kind === 'marked' ? { kind: 'marked', ticks: h.effect.ticks, amount: h.effect.amount ?? 0 } : { kind: h.effect.kind, ticks: h.effect.ticks }] : []));
     if (effects.length > 0) pendingEffects.set(e.id, effects);
   }
 
   // 7. Status effects and cooldowns: existing effects count down, new ones start next tick.
+  // E2, auras: judged on the entities as they stand after damage (a source works while alive, not
+  // disabled and not a site); the strongest cooldown and heal aura on each entity applies.
+  const auras = auraEffects(w.entities, arch, (s) => s.hp > 0 && s.build === undefined && !has(s, 'disabled'));
   for (const e of w.entities) {
     if (e.order.type === 'deploy' && !has(e, 'disabled')) e.deploy = Math.min(rs.ticksPerTurn, (e.deploy ?? 0) + 1);
     // A set-up node stays set up only while deploying or holding; any other order packs it up.
     if (e.deploy !== undefined && e.order.type !== 'deploy' && e.order.type !== 'hold') delete e.deploy;
-    if (e.cooldown > 0) e.cooldown -= 1;
-    e.status = e.status.map((s) => ({ kind: s.kind, ticks: s.ticks - 1 })).filter((s) => s.ticks > 0);
+    const aura = auras.get(e.id);
+    coolDown(e, aura?.cooldownPct ?? 0);
+    const max = arch(e).hp;
+    if (aura?.heal && e.hp > 0 && e.hp < max && t % aura.heal.every === 0) {
+      const hp = Math.min(aura.heal.hp, max - e.hp);
+      e.hp += hp;
+      events.push({ t: 'repaired', tick: t, id: e.id, by: aura.heal.by, hp });
+    }
+    // E3, shield: back in full after `regenDelay` ticks without damage, never while disabled.
+    const shield = arch(e).shield;
+    if (shield && (e.shield ?? 0) < shield.hp && !has(e, 'disabled') && (e.shieldAt === undefined || t - e.shieldAt >= shield.regenDelay)) {
+      e.shield = shield.hp;
+      delete e.shieldAt;
+    }
+    e.status = e.status.map((s): Status => (s.kind === 'marked' ? { kind: s.kind, ticks: s.ticks - 1, amount: s.amount ?? 0 } : { kind: s.kind, ticks: s.ticks - 1 })).filter((s) => s.ticks > 0);
     for (const effect of pendingEffects.get(e.id) ?? []) {
       const existing = e.status.find((s) => s.kind === effect.kind);
-      if (existing) existing.ticks = Math.max(existing.ticks, effect.ticks);
-      else e.status.push(effect);
+      if (!existing) e.status.push(effect);
+      // `marked`: the stronger mark wins (with its duration); equal marks keep the longer duration.
+      else if (effect.kind === 'marked' && (effect.amount ?? 0) > (existing.amount ?? 0)) Object.assign(existing, effect);
+      else if (effect.kind !== 'marked' || effect.amount === existing.amount) existing.ticks = Math.max(existing.ticks, effect.ticks);
     }
     e.status.sort((a, b) => (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0));
   }

@@ -6,7 +6,11 @@ export type ArmorClass = (typeof ARMOR_CLASSES)[number];
 export const LAYERS = ['ground', 'air'] as const;
 export type Layer = (typeof LAYERS)[number];
 
-export const STATUS_KINDS = ['disabled', 'slowed'] as const;
+/**
+ * `marked` (Tower Defense extension E3, ADR 0009 amendment): the unit takes `amount` % more damage
+ * from every source while it lasts. No ruleset before it uses it.
+ */
+export const STATUS_KINDS = ['disabled', 'slowed', 'marked'] as const;
 export type StatusKind = (typeof STATUS_KINDS)[number];
 
 export type Delivery = 'direct' | 'ballistic' | 'beam';
@@ -15,6 +19,8 @@ export interface StatusEffectSpec {
   readonly kind: StatusKind;
   /** Number of following ticks the effect is active. */
   readonly ticks: number;
+  /** `marked` only (required there): extra damage taken, integer percent (1–1000). */
+  readonly amount?: number;
 }
 
 export interface WeaponSpec {
@@ -37,6 +43,35 @@ export interface WeaponSpec {
   /** Cannot fire in a tick in which the unit moved. */
   readonly stationary: boolean;
   readonly effect: StatusEffectSpec | null;
+  /**
+   * Beam only (Tower Defense extension E1): the beam also hits every other hostile unit (any layer
+   * its `vs` row can engage) on the integer line from the shooter through its target up to its
+   * range, once each, with the base damage (the ramp applies to the target only). Absent: off.
+   */
+  readonly pierce?: boolean;
+}
+
+/**
+ * Support aura (Tower Defense extension E2): other entities of the same side within `radius`
+ * cells (squared Euclidean distance) are helped while the source is working (not disabled, not a
+ * site, alive). Several auras do not stack: the strongest applies.
+ */
+export interface AuraSpec {
+  readonly radius: number;
+  /** Weapon cooldowns tick down this many percent faster (1–1000; per-entity accumulator `haste`, see `coolDown`). */
+  readonly cooldownPct?: number;
+  /** Every `every` ticks (world ticks divisible by it) restore `hp` health, never above the maximum. */
+  readonly heal?: { readonly hp: number; readonly every: number };
+}
+
+/**
+ * Energy shield (Tower Defense extension E3): `hp` shield points absorb damage before health and
+ * come back in full after `regenDelay` ticks without damage. Beam damage counts ×3/2 against it;
+ * a `disabled` hit strips it and blocks regeneration while the unit is disabled.
+ */
+export interface ShieldSpec {
+  readonly hp: number;
+  readonly regenDelay: number;
 }
 
 /** Command-network role of an archetype (docs/design/strategy.md § 5). */
@@ -101,6 +136,10 @@ export interface Archetype {
   readonly ew: EwSpec | null;
   /** Carries a drone (absent: carries none). */
   readonly carrier?: CarrierSpec;
+  /** Support aura (absent: none). */
+  readonly aura?: AuraSpec;
+  /** Energy shield (absent: none). */
+  readonly shield?: ShieldSpec;
 }
 
 export interface TerrainSpec {
@@ -228,6 +267,8 @@ export const DEFAULT_DOCTRINE: Doctrine = { retreatBelow: 0, priority: 'weakest'
 export interface Status {
   kind: StatusKind;
   ticks: number;
+  /** `marked` only: extra damage taken in percent. */
+  amount?: number;
 }
 
 export interface Entity {
@@ -275,6 +316,12 @@ export interface Entity {
   rebuild?: number;
   /** Drone: id of the carrier it belongs to (leash, landing). */
   carrier?: number;
+  /** Shielded archetypes: shield points left (absent = 0). */
+  shield?: number;
+  /** Shielded archetypes: tick of the last damage or strip while the shield is below full. */
+  shieldAt?: number;
+  /** Inside a cooldown aura: accumulated cooldown progress in percent of a tick (see `coolDown`). */
+  haste?: number;
 }
 
 export interface QueueItem {
@@ -374,7 +421,8 @@ export type SimEvent =
   | { t: 'fire'; tick: number; id: number; target: number }
   | { t: 'launch'; tick: number; id: number; x: number; y: number }
   | { t: 'land'; tick: number; x: number; y: number }
-  | { t: 'hit'; tick: number; id: number; side: number; damage: number }
+  /** `damage` is the health lost; `shield` (shielded archetypes only, when > 0) the shield points lost. */
+  | { t: 'hit'; tick: number; id: number; side: number; damage: number; shield?: number }
   | { t: 'destroyed'; tick: number; id: number; side: number; kind: string; x: number; y: number }
   /** A standing order changed without a command: why (never silently). */
   | { t: 'order-ended'; tick: number; id: number; reason: OrderEndReason }
