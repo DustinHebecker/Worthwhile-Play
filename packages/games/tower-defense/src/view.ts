@@ -1,8 +1,8 @@
 import { bcp47Tag, normalizeSeed, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { archetypeOf, type SimEvent } from '@wp/strategy-engine';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
-import { drawFrame, drawTerrain, readPalette, type Palette } from './draw';
-import { BASE_TOWERS, TICKS_PER_SECOND, TD_RULESET, TOWERS, type EnemyKind } from './ruleset';
+import { drawFrame, drawTerrain, readPalette, type Palette } from '@wp/td-core';
+import { BASE_TOWERS, TICKS_PER_SECOND, TD_RULESET, TOWERS, type EnemyKind } from '@wp/td-core';
 import {
   applyCommand,
   checkCommand,
@@ -323,8 +323,9 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     const alpha = context.reducedMotion || !playing ? 1 : Math.min(1, acc);
     const map = mapOf(state);
     const entries = map.routes.filter((r) => r.layer === 'ground').map((r) => r.points[0]!);
-    const goal = map.routes[0]!.points.at(-1)!;
-    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goal, hpMax, splashOf }, terrainLayer(width, dpr, palette));
+    const [gx, gy] = map.routes[0]!.points.at(-1)!;
+    const goals = [{ x: gx, y: gy, side: 0 }];
+    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goals, hpMax, splashOf }, terrainLayer(width, dpr, palette));
   };
 
   /** The terrain drawn once per map, size and theme (the strategy terrain renderer is detailed). */

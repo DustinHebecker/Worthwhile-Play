@@ -1,0 +1,615 @@
+import { bcp47Tag, normalizeSeed, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
+import { archetypeOf, type SimEvent } from '@wp/strategy-engine';
+import { BASE_TOWERS, drawFrame, drawTerrain, readPalette, TD_RULESET, TICKS_PER_SECOND, TOWER_PRIORITIES, TOWERS, type EnemyKind, type Palette, type TowerPriority } from '@wp/td-core';
+import { announce, clear, gridKeyboard, h } from '@wp/ui';
+import { planRound } from './ai';
+import { ownPad } from './maps';
+import {
+  applyPlan,
+  capacityOf,
+  checkPlan,
+  DEFAULT_DIFFICULTY,
+  DIFFICULTIES,
+  EXTRACTOR_INCOME,
+  EXTRACTOR_PRICE,
+  incomeOf,
+  INTEREST_PERCENT,
+  lockRound,
+  mapOf,
+  MAX_WORKSHOPS,
+  newGame,
+  refundAt,
+  resolveBattle,
+  ROUNDS,
+  SHOP,
+  stepBattle,
+  UNIT_PRICES,
+  WORKSHOP_CAPACITY,
+  WORKSHOP_PRICE,
+  type Difficulty,
+  type HoldState,
+  type PlanCommand
+} from './rules';
+import './styles.css';
+
+/** Ticks between autosaves while a battle runs (5 simulated seconds). */
+const SAVE_EVERY = 5 * TICKS_PER_SECOND;
+const SPEEDS = [1, 2, 4] as const;
+const PLAYER = 0;
+
+const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
+const hpMax = (kind: string): number => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
+const splashOf = (kind: string): number => archetypeOf(TD_RULESET, kind)?.weapon?.splash ?? 0;
+const plan = (s: HoldState) => planRound(s);
+
+export function createHoldTheLine(context: GameContext): GameInstance<HoldState> {
+  const { t, root } = context;
+  let state: HoldState = newGame(0, DEFAULT_DIFFICULTY);
+  let initial: HoldState = state;
+  let hostPaused = false;
+  let playing = false;
+  let speed: (typeof SPEEDS)[number] = 1;
+  let selected: { x: number; y: number } | null = null;
+  let frameId = 0;
+  let lastTime = 0;
+  let acc = 0;
+  let sinceSave = 0;
+  let prev = new Map<number, readonly [number, number]>();
+  let beams: [number, number, number, number][] = [];
+  let blasts: [number, number, number][] = [];
+  let palette: Palette | null = null;
+  let disposeKeyboard: () => void = () => {};
+  let builtFor = '';
+  let reported = false;
+
+  const raf: ((cb: (t: number) => void) => number) | undefined = typeof requestAnimationFrame === 'function' ? requestAnimationFrame.bind(globalThis) : undefined;
+  const caf: ((id: number) => void) | undefined = typeof cancelAnimationFrame === 'function' ? cancelAnimationFrame.bind(globalThis) : undefined;
+
+  // --- DOM -------------------------------------------------------------------------------------
+  const round = h('span', { 'data-testid': 'round' });
+  const phase = h('span', { 'data-testid': 'phase' });
+  const credits = h('span', { 'data-testid': 'credits' });
+  const coreOwn = h('span', { 'data-testid': 'core-own' });
+  const coreFoe = h('span', { 'data-testid': 'core-foe' });
+  const income = h('span', { 'data-testid': 'income' });
+  const hud = h('p', { class: 'td-hud' }, round, phase, credits, coreOwn, coreFoe, income);
+  const status = h('p', { class: 'wp-status td-status', 'data-testid': 'status', hidden: true });
+  const canvas = h('canvas', { class: 'td-canvas', 'aria-hidden': 'true' });
+  const cells = h('div', { class: 'td-cells', role: 'group', 'aria-label': t('board'), 'data-testid': 'board' });
+  const board = h('div', { class: 'td-board', dir: 'ltr' }, canvas, cells);
+  const panel = h('section', { class: 'td-panel wp-card', 'aria-label': t('panel.title'), 'data-testid': 'panel' });
+  const shop = h('section', { class: 'td-panel wp-card', 'aria-label': t('shop.title'), 'data-testid': 'shop' });
+  const intel = h('section', { class: 'td-preview', 'data-testid': 'intel' });
+  const lockButton = h('button', { type: 'button', class: 'wp-primary', 'data-testid': 'lock', onclick: () => onLock() }, t('controls.lock'));
+  const playButton = h('button', { type: 'button', 'data-testid': 'play', onclick: () => togglePlay() });
+  const speedButton = h('button', { type: 'button', 'data-testid': 'speed', onclick: () => cycleSpeed() });
+  const instantButton = h('button', { type: 'button', 'data-testid': 'instant', onclick: () => onInstant() }, t('controls.instant'));
+  const controls = h('div', { class: 'wp-row td-controls' }, lockButton, playButton, speedButton, instantButton);
+  const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'announcer' });
+  const container = h(
+    'div',
+    { class: `wp-hold-the-line${context.reducedMotion ? ' td-reduced' : ''}`, dir: t.direction, lang: bcp47Tag(t.locale) },
+    hud,
+    status,
+    controls,
+    h('div', { class: 'td-layout' }, board, h('div', { class: 'td-side' }, panel, shop, intel)),
+    h('p', { class: 'wp-muted td-help' }, t('keys.help')),
+    h('p', { class: 'wp-muted td-help' }, t('access.note')),
+    live
+  );
+
+  // --- Helpers ---------------------------------------------------------------------------------
+  const nameOf = (kind: string): string => (kind === 'extractor' ? t('structure.extractor') : t(`tower.${kind}`));
+  const unitName = (kind: string): string => t(`enemy.${kind}`);
+  const about = (kind: string): string =>
+    kind === 'extractor' ? t('about.extractor', { n: EXTRACTOR_INCOME }) : TOWERS[kind]?.level === 3 ? t('about.level3') : t(`about.${kind}`);
+  const where = (x: number, y: number) => ({ row: y + 1, col: x + 1 });
+  const me = () => state.sides[PLAYER];
+  const map = () => mapOf(state);
+  const structureAt = (x: number, y: number) => state.world.entities.find((e) => e.x === x && e.y === y && (Object.hasOwn(TOWERS, e.kind) || e.kind === 'extractor'));
+  const listOf = (wave: readonly EnemyKind[]): string => {
+    if (wave.length === 0) return t('intel.none');
+    const counts = new Map<EnemyKind, number>();
+    for (const k of wave) counts.set(k, (counts.get(k) ?? 0) + 1);
+    return [...counts].map(([k, n]) => t('intel.item', { n, enemy: unitName(k) })).join(', ');
+  };
+  const commit = (next: HoldState, message?: string): void => {
+    if (next === state) return;
+    state = next;
+    render();
+    context.requestSave();
+    if (message) announce(live, message);
+  };
+
+  const cellLabel = (x: number, y: number): string => {
+    const m = map();
+    const p = where(x, y);
+    const s = structureAt(x, y);
+    let label: string;
+    const [ox, oy] = m.lanes[1]!.points.at(-1)!;
+    const [fx, fy] = m.lanes[0]!.points.at(-1)!;
+    if (s) label = t(s.side === PLAYER ? 'cell.tower.own' : 'cell.tower.foe', { ...p, tower: nameOf(s.kind), hp: s.hp, max: hpMax(s.kind) });
+    else if (x === ox && y === oy) label = t('cell.core.own', p);
+    else if (x === fx && y === fy) label = t('cell.core.foe', p);
+    else {
+      const code = m.rows[y]![x];
+      label = code === '=' ? t('cell.road', p) : code === 'b' ? t(ownPad(m, PLAYER, x, y) ? 'cell.pad.own' : 'cell.pad.foe', p) : t('cell.rock', p);
+    }
+    const n = state.world.entities.filter((e) => e.x === x && e.y === y && !Object.hasOwn(TOWERS, e.kind) && e.kind !== 'extractor').length;
+    return n > 0 ? t('cell.units', { cell: label, n }) : label;
+  };
+
+  const buildCells = (): void => {
+    const key = `${state.world.map.w}x${state.world.map.h}`;
+    if (key === builtFor) return;
+    builtFor = key;
+    disposeKeyboard();
+    clear(cells);
+    const { w, h: rows } = state.world.map;
+    board.style.setProperty('--td-w', String(w));
+    board.style.setProperty('--td-h', String(rows));
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < w; x++) {
+        cells.append(
+          h('button', {
+            type: 'button',
+            class: 'td-cell',
+            'data-cell': '',
+            'data-testid': `cell-${x}-${y}`,
+            tabindex: x === 0 && y === 0 ? 0 : -1,
+            onclick: () => select(x, y),
+            onkeydown: (event: Event) => onCellKey(event as KeyboardEvent),
+            onkeyup: (event: Event) => {
+              if ((event as KeyboardEvent).key === ' ') event.preventDefault();
+            }
+          })
+        );
+      }
+    }
+    disposeKeyboard = gridKeyboard(cells, w);
+  };
+
+  // --- Rendering -------------------------------------------------------------------------------
+  const renderHud = (): void => {
+    round.textContent = t('hud.round', { n: state.round + 1, total: ROUNDS });
+    phase.textContent = state.phase === 'plan' ? t('hud.plan') : state.phase === 'battle' ? t(playing && !hostPaused ? 'hud.battle' : 'hud.paused') : '';
+    credits.textContent = t('hud.credits', { n: me().credits });
+    credits.dataset.value = String(me().credits);
+    coreOwn.textContent = t('hud.core.own', { n: me().core });
+    coreOwn.dataset.value = String(me().core);
+    coreFoe.textContent = t('hud.core.foe', { n: state.sides[1].core });
+    coreFoe.dataset.value = String(state.sides[1].core);
+    income.hidden = state.phase !== 'plan';
+    income.textContent = t('hud.income', { n: incomeOf(state, PLAYER), p: INTEREST_PERCENT });
+    container.dataset.phase = state.phase;
+    container.dataset.round = String(state.round);
+    container.dataset.tick = String(state.run?.tick ?? 0);
+  };
+
+  const renderCells = (): void => {
+    const { w } = state.world.map;
+    [...cells.children].forEach((el, i) => {
+      const x = i % w;
+      const y = Math.floor(i / w);
+      el.setAttribute('aria-label', cellLabel(x, y));
+      el.setAttribute('aria-pressed', String(selected?.x === x && selected?.y === y));
+    });
+  };
+
+  const option = (label: string, testId: string, onclick: () => void, disabled: boolean, note?: string): HTMLElement =>
+    h('button', { type: 'button', class: 'td-option', 'data-testid': testId, disabled, onclick }, h('span', { class: 'td-option-name' }, label), note ? h('span', { class: 'td-option-note' }, note) : '');
+
+  const renderPanel = (): void => {
+    clear(panel);
+    panel.append(h('h3', { class: 'td-subtitle' }, t('panel.title')));
+    if (!selected) {
+      panel.append(h('p', { class: 'wp-muted' }, t('panel.none')));
+      return;
+    }
+    const { x, y } = selected;
+    const planning = state.phase === 'plan';
+    const s = structureAt(x, y);
+    panel.append(h('p', { class: 'td-where' }, cellLabel(x, y)));
+    if (!s) {
+      const code = map().rows[y]![x];
+      if (code !== 'b') return void panel.append(h('p', { class: 'wp-muted' }, t('panel.road')));
+      if (!ownPad(map(), PLAYER, x, y)) return void panel.append(h('p', { class: 'wp-muted' }, t('panel.notOwn')));
+      if (!planning) return void panel.append(h('p', { class: 'wp-muted' }, t('panel.locked')));
+      panel.append(h('p', {}, t('panel.build')));
+      const list = h('div', { class: 'td-options' });
+      for (const kind of BASE_TOWERS) {
+        const price = TOWERS[kind]!.price;
+        const short = price > me().credits;
+        list.append(option(t('panel.price', { name: nameOf(kind), n: price }), `build-${kind}`, () => onPlan({ t: 'place', kind, x, y }), short, short ? `${about(kind)} ${t('panel.short')}` : about(kind)));
+      }
+      const short = EXTRACTOR_PRICE > me().credits;
+      list.append(option(t('panel.price', { name: nameOf('extractor'), n: EXTRACTOR_PRICE }), 'build-extractor', () => onPlan({ t: 'extractor', x, y }), short, short ? `${about('extractor')} ${t('panel.short')}` : about('extractor')));
+      panel.append(list);
+      return;
+    }
+    panel.append(h('p', { class: 'td-tower-name' }, nameOf(s.kind)));
+    const def = TOWERS[s.kind];
+    panel.append(h('p', { class: 'wp-muted' }, `${def ? `${t('panel.level', { n: def.level })} · ` : ''}${t('panel.health', { hp: s.hp, max: hpMax(s.kind) })}`), h('p', {}, about(s.kind)));
+    if (s.side !== PLAYER) return;
+    if (!planning) return void panel.append(h('p', { class: 'wp-muted' }, t('panel.locked')));
+    if (def && def.next.length > 0) {
+      panel.append(h('h4', { class: 'td-subtitle' }, t('panel.upgrade')));
+      if (def.level === 1) panel.append(h('p', { class: 'wp-muted' }, t('panel.final')));
+      const list = h('div', { class: 'td-options' });
+      for (const kind of def.next) {
+        const price = TOWERS[kind]!.price;
+        const short = price > me().credits;
+        list.append(option(t('panel.upgradeTo', { name: nameOf(kind), n: price }), `upgrade-${kind}`, () => onPlan({ t: 'upgrade', id: s.id, kind }), short, short ? `${about(kind)} ${t('panel.short')}` : about(kind)));
+      }
+      panel.append(list);
+    } else if (def) panel.append(h('p', { class: 'wp-muted' }, t('panel.maxed')));
+    if (def) {
+      const current = (s.doctrine?.priority ?? 'weakest') as TowerPriority;
+      const select = h(
+        'select',
+        { id: 'htl-target', 'data-testid': 'target', onchange: (e: Event) => onPlan({ t: 'target', id: s.id, priority: (e.target as HTMLSelectElement).value as TowerPriority }) },
+        ...TOWER_PRIORITIES.map((p) => h('option', { value: p, selected: p === current }, t(`target.${p}`)))
+      );
+      panel.append(h('label', { class: 'td-target', for: 'htl-target' }, t('panel.target')), select);
+    }
+    panel.append(h('div', { class: 'wp-row' }, h('button', { type: 'button', 'data-testid': 'sell', onclick: () => onPlan({ t: 'sell', id: s.id }) }, t('panel.sell', { n: refundAt(state, PLAYER, s.id) }))));
+  };
+
+  const renderShop = (): void => {
+    clear(shop);
+    const side = me();
+    const planning = state.phase === 'plan';
+    const max = capacityOf(side);
+    shop.append(h('h3', { class: 'td-subtitle' }, t('shop.title')), h('p', { 'data-testid': 'capacity' }, t('shop.capacity', { n: side.wave.length, max })));
+    const wave = h('ul', { class: 'td-wave-list', 'data-testid': 'wave' });
+    side.wave.forEach((kind, index) => {
+      wave.append(h('li', {}, h('button', { type: 'button', disabled: !planning, 'data-testid': `unbuy-${index}`, onclick: () => onPlan({ t: 'unbuy', index }) }, t('shop.remove', { name: unitName(kind) }))));
+    });
+    if (side.wave.length === 0) wave.append(h('li', { class: 'wp-muted' }, t('shop.empty')));
+    shop.append(wave);
+    if (!planning) return;
+    const list = h('div', { class: 'td-options' });
+    for (const kind of SHOP) {
+      const price = UNIT_PRICES[kind]!;
+      const refusal = checkPlan(state, PLAYER, { t: 'buy', kind });
+      list.append(option(t('shop.buy', { name: unitName(kind), n: price }), `buy-${kind}`, () => onPlan({ t: 'buy', kind }), refusal !== null, t(`enemyAbout.${kind}`)));
+    }
+    shop.append(list);
+    if (side.wave.length >= max && side.workshops < MAX_WORKSHOPS) shop.append(h('p', { class: 'wp-muted' }, t('shop.full', { n: WORKSHOP_CAPACITY })));
+    shop.append(
+      h('p', { class: 'wp-muted' }, t('shop.workshops', { n: side.workshops, max: MAX_WORKSHOPS })),
+      option(t('shop.workshop', { n: WORKSHOP_PRICE, more: WORKSHOP_CAPACITY }), 'workshop', () => onPlan({ t: 'workshop' }), checkPlan(state, PLAYER, { t: 'workshop' }) !== null)
+    );
+  };
+
+  const renderIntel = (): void => {
+    clear(intel);
+    intel.hidden = state.round === 0 && state.phase === 'plan';
+    intel.append(
+      h('h3', { class: 'td-subtitle' }, t('intel.title')),
+      h('p', { 'data-testid': 'intel-theirs' }, t('intel.theirs', { list: listOf(state.sides[1].lastWave) })),
+      h('p', {}, t('intel.yours', { list: listOf(me().lastWave) }))
+    );
+  };
+
+  const renderControls = (): void => {
+    const p = state.phase;
+    lockButton.hidden = p !== 'plan';
+    playButton.hidden = p !== 'battle';
+    speedButton.hidden = p !== 'battle';
+    instantButton.hidden = p !== 'battle';
+    playButton.textContent = t(playing ? 'controls.pause' : 'controls.play');
+    speedButton.textContent = t('controls.speed', { n: speed });
+    const own = me().core;
+    const foe = state.sides[1].core;
+    if (p === 'won' || p === 'lost' || p === 'draw') status.textContent = t(`status.${p}`, { n: state.round + 1, own, foe });
+    status.hidden = status.textContent === '';
+  };
+
+  const draw = (): void => {
+    const g = canvas.getContext?.('2d');
+    if (!g) return;
+    const width = board.clientWidth;
+    if (width <= 0) return;
+    const dpr = globalThis.devicePixelRatio || 1;
+    const height = (width * state.world.map.h) / state.world.map.w;
+    if (canvas.width !== Math.round(width * dpr)) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+    }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    palette ??= readPalette(container);
+    const alpha = context.reducedMotion || !playing ? 1 : Math.min(1, acc);
+    const m = map();
+    const entries = m.lanes.map((r) => r.points[0]!);
+    const goals = m.lanes.map((r, side) => {
+      const [x, y] = r.points.at(-1)!;
+      return { x, y, side: 1 - side };
+    });
+    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goals, viewer: PLAYER, split: m.split, hpMax, splashOf }, terrainLayer(width, dpr, palette));
+  };
+
+  let terrainKey = '';
+  let terrainCanvas: HTMLCanvasElement | null = null;
+  const terrainLayer = (width: number, dpr: number, p: Palette): HTMLCanvasElement | null => {
+    const key = `${state.mapId}|${Math.round(width * dpr)}|${p.terrain.key}`;
+    if (key === terrainKey && terrainCanvas) return terrainCanvas;
+    const layer = document.createElement('canvas');
+    const cell = width / state.world.map.w;
+    layer.width = Math.round(width * dpr);
+    layer.height = Math.round(cell * state.world.map.h * dpr);
+    const lg = layer.getContext?.('2d');
+    if (!lg) return null;
+    lg.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawTerrain(lg, state.world, cell, p);
+    terrainKey = key;
+    terrainCanvas = layer;
+    return layer;
+  };
+
+  const render = (): void => {
+    buildCells();
+    renderHud();
+    renderCells();
+    renderPanel();
+    renderShop();
+    renderIntel();
+    renderControls();
+    draw();
+  };
+
+  // --- Battle playback -------------------------------------------------------------------------
+  const collect = (events: readonly SimEvent[]): void => {
+    beams = [];
+    blasts = [];
+    const lastTick = events.at(-1)?.tick;
+    for (const e of events) {
+      if (e.tick !== lastTick) continue;
+      if (e.t === 'fire') {
+        const shooter = state.world.entities.find((x) => x.id === e.id);
+        const target = state.world.entities.find((x) => x.id === e.target);
+        if (shooter && target && archetypeOf(TD_RULESET, shooter.kind)?.weapon?.delivery === 'beam') beams.push([shooter.x, shooter.y, target.x, target.y]);
+      } else if (e.t === 'land') blasts.push([e.x, e.y, 0]);
+    }
+  };
+
+  const advance = (ticks: number): void => {
+    const before = state;
+    prev = new Map(before.world.entities.map((e) => [e.id, [e.x, e.y] as const]));
+    const result = ticks > 1_000 ? resolveBattle(before) : stepBattle(before, ticks);
+    state = result.state;
+    collect(result.events);
+    sinceSave += ticks;
+    if (state.phase !== 'battle') return onBattleOver(before);
+    if (sinceSave >= SAVE_EVERY) {
+      sinceSave = 0;
+      context.requestSave();
+    }
+    renderHud();
+  };
+
+  const onBattleOver = (before: HoldState): void => {
+    stopLoop();
+    playing = false;
+    sinceSave = 0;
+    beams = [];
+    blasts = [];
+    prev = new Map();
+    acc = 0;
+    if (state.phase === 'plan') {
+      status.textContent = t('status.round', {
+        n: before.round + 1,
+        lost: before.sides[PLAYER].core - me().core,
+        taken: before.sides[1].core - state.sides[1].core,
+        killed: me().stats.killed - before.sides[PLAYER].stats.killed
+      });
+      announce(live, status.textContent);
+    } else {
+      status.textContent = '';
+      reportEnd();
+    }
+    context.requestSave();
+    render();
+  };
+
+  const reportEnd = (): void => {
+    if (reported || (state.phase !== 'won' && state.phase !== 'lost' && state.phase !== 'draw')) return;
+    reported = true;
+    announce(live, t(`status.${state.phase}`, { n: state.round + 1, own: me().core, foe: state.sides[1].core }));
+    context.finished({ outcome: state.phase, stats: { core: me().core, opponent: state.sides[1].core, rounds: state.round + 1, killed: me().stats.killed } });
+  };
+
+  const loop = (time: number): void => {
+    frameId = 0;
+    if (!playing || hostPaused || state.phase !== 'battle') return;
+    const dt = lastTime === 0 ? 0 : Math.min(250, time - lastTime);
+    lastTime = time;
+    acc += (dt * speed * TICKS_PER_SECOND) / 1000;
+    const n = Math.floor(acc);
+    if (n > 0) {
+      acc -= n;
+      advance(n);
+    }
+    if (state.phase === 'battle') {
+      draw();
+      schedule();
+    }
+  };
+  const schedule = (): void => {
+    if (!raf || frameId !== 0) return;
+    frameId = raf(loop);
+  };
+  const stopLoop = (): void => {
+    if (frameId !== 0) caf?.(frameId);
+    frameId = 0;
+    lastTime = 0;
+  };
+
+  // --- Actions ---------------------------------------------------------------------------------
+  const select = (x: number, y: number): void => {
+    selected = { x, y };
+    for (const el of cells.children) (el as HTMLElement).tabIndex = -1;
+    const el = cells.children[y * state.world.map.w + x] as HTMLElement | undefined;
+    if (el) el.tabIndex = 0;
+    renderCells();
+    renderPanel();
+    draw();
+  };
+
+  const onPlan = (cmd: PlanCommand): void => {
+    if (hostPaused || checkPlan(state, PLAYER, cmd) !== null) return;
+    const before = state;
+    const next = applyPlan(state, PLAYER, cmd);
+    let message = '';
+    const kindOf = (id: number) => before.world.entities.find((e) => e.id === id)?.kind ?? 'gun';
+    switch (cmd.t) {
+      case 'place':
+        message = t('announce.placed', { name: nameOf(cmd.kind) });
+        break;
+      case 'extractor':
+        message = t('announce.placed', { name: nameOf('extractor') });
+        break;
+      case 'upgrade':
+        message = t('announce.upgraded', { name: nameOf(cmd.kind) });
+        break;
+      case 'sell':
+        message = t('announce.sold', { name: nameOf(kindOf(cmd.id)), n: refundAt(before, PLAYER, cmd.id) });
+        break;
+      case 'target':
+        message = t('announce.target', { name: nameOf(kindOf(cmd.id)), target: t(`target.${cmd.priority}`) });
+        break;
+      case 'buy':
+        message = t('announce.bought', { name: unitName(cmd.kind) });
+        break;
+      case 'unbuy':
+        message = t('announce.removed', { name: unitName(before.sides[PLAYER].wave[cmd.index] ?? 'walker') });
+        break;
+      case 'workshop':
+        message = t('announce.workshop');
+        break;
+    }
+    commit(next, message);
+  };
+
+  /**
+   * Locking runs the computer's planner (usually well under a second; with very large budgets a
+   * few seconds on a slow device, design § 16.3; a Worker is the next step if that matters): the
+   * "thinking" state is drawn first, then the plan is made, so the page never freezes silently.
+   */
+  let thinking: ReturnType<typeof setTimeout> | null = null;
+  const onLock = (): void => {
+    if (hostPaused || state.phase !== 'plan' || thinking !== null) return;
+    status.textContent = '';
+    lockButton.disabled = true;
+    phase.textContent = t('common.thinking');
+    announce(live, phase.textContent);
+    container.dataset.thinking = 'true';
+    const at = state;
+    thinking = setTimeout(() => {
+      thinking = null;
+      lockButton.disabled = false;
+      delete container.dataset.thinking;
+      if (state !== at || hostPaused) return render();
+      playing = true;
+      acc = 0;
+      commit(lockRound(state, plan), t('announce.lock', { n: state.round + 1 }));
+      schedule();
+    }, 30);
+  };
+
+  const togglePlay = (): void => {
+    if (state.phase !== 'battle' || hostPaused) return;
+    playing = !playing;
+    if (playing) schedule();
+    else {
+      stopLoop();
+      context.requestSave();
+    }
+    renderHud();
+    renderControls();
+  };
+
+  const cycleSpeed = (): void => {
+    speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]!;
+    renderControls();
+  };
+
+  const onInstant = (): void => {
+    if (state.phase !== 'battle' || hostPaused) return;
+    advance(Number.MAX_SAFE_INTEGER);
+  };
+
+  const onCellKey = (event: KeyboardEvent): void => {
+    if (event.key !== ' ') return;
+    event.preventDefault();
+    if (state.phase === 'plan') onLock();
+    else togglePlay();
+  };
+
+  // Redraw in the theme's colours and size.
+  const scheme = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : undefined;
+  const onScheme = (): void => {
+    palette = null;
+    draw();
+  };
+  scheme?.addEventListener?.('change', onScheme);
+  const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => draw()) : undefined;
+  const onWindowResize = (): void => draw();
+  globalThis.addEventListener?.('resize', onWindowResize);
+
+  const show = (next: HoldState): void => {
+    stopLoop();
+    if (thinking !== null) clearTimeout(thinking);
+    thinking = null;
+    lockButton.disabled = false;
+    delete container.dataset.thinking;
+    state = next;
+    playing = false;
+    selected = null;
+    prev = new Map();
+    beams = [];
+    blasts = [];
+    status.textContent = '';
+    reported = next.phase === 'won' || next.phase === 'lost' || next.phase === 'draw';
+    if (!container.isConnected) {
+      root.appendChild(container);
+      resize?.observe(board);
+    }
+    render();
+  };
+
+  return {
+    newGame(options: NewGameOptions) {
+      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty));
+      show(initial);
+    },
+    restore(saved: HoldState) {
+      initial = newGame(saved.seed, saved.difficulty, saved.mapId);
+      show(structuredClone(saved));
+    },
+    serialize: () => structuredClone(state),
+    pause() {
+      hostPaused = true;
+      stopLoop();
+      renderHud();
+    },
+    resume() {
+      hostPaused = false;
+      if (playing && state.phase === 'battle') schedule();
+      renderHud();
+    },
+    reset() {
+      show(initial);
+      context.requestSave();
+    },
+    dispose() {
+      stopLoop();
+      if (thinking !== null) clearTimeout(thinking);
+      disposeKeyboard();
+      scheme?.removeEventListener?.('change', onScheme);
+      resize?.disconnect();
+      globalThis.removeEventListener?.('resize', onWindowResize);
+      clear(root);
+    }
+  };
+}

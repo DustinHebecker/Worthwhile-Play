@@ -67,7 +67,7 @@ const stun = (ticks: number): StatusEffectSpec => ({ kind: 'disabled', ticks });
 
 const TOWER_HP = 100;
 
-const tower = (id: string, w: WeaponSpec): Archetype => ({
+const tower = (id: string, w: WeaponSpec | null): Archetype => ({
   id,
   hp: TOWER_HP,
   armor: 'structure',
@@ -204,11 +204,20 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemyDef>> = {
 export const isEnemyKind = (kind: string): kind is EnemyKind => (ENEMY_KINDS as readonly string[]).includes(kind);
 export const isTowerKind = (kind: string): boolean => Object.hasOwn(TOWERS, kind);
 
+/**
+ * Economy structures (strategy/TD hybrid): built on a pad like a tower, no weapon. An Extractor adds
+ * income every round; it can be shot by armed units like any structure.
+ */
+export const STRUCTURES = ['extractor'] as const;
+export type StructureKind = (typeof STRUCTURES)[number];
+export const isStructureKind = (kind: string): kind is StructureKind => (STRUCTURES as readonly string[]).includes(kind);
+const STRUCTURE_ARCHETYPES: readonly Archetype[] = [{ ...tower('extractor', null), hp: 120 }];
+
 export const TD_RULESET: Ruleset = {
   id: 'td-1',
   ticksPerTurn: TICKS_PER_SECOND,
   terrain: TD_TERRAIN,
-  archetypes: Object.fromEntries([...Object.keys(TOWER_WEAPONS).map((k) => tower(k, TOWER_WEAPONS[k] as WeaponSpec)), ...ENEMY_ARCHETYPES].map((a) => [a.id, a])),
+  archetypes: Object.fromEntries([...Object.keys(TOWER_WEAPONS).map((k) => tower(k, TOWER_WEAPONS[k] as WeaponSpec)), ...ENEMY_ARCHETYPES, ...STRUCTURE_ARCHETYPES].map((a) => [a.id, a])),
   commandNetwork: false,
   relayHillBonus: 0,
   fog: false,

@@ -8,6 +8,7 @@
     "@wp/game-core": "workspace:*",
     "@wp/strategy-art": "workspace:*",
     "@wp/strategy-engine": "workspace:*",
+    "@wp/td-core": "workspace:*",
     "@wp/ui": "workspace:*"
   },
   "devDependencies": {

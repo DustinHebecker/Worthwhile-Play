@@ -1,11 +1,6 @@
-import type { Layer } from '@wp/strategy-engine';
-import type { EnemyKind } from './ruleset';
+import type { EnemyKind, Route } from '@wp/td-core';
 
-/** A route: a spawn cell followed by waypoints; the last point is the goal (reaching it = a leak). */
-export interface Route {
-  readonly layer: Layer;
-  readonly points: readonly (readonly [number, number])[];
-}
+export type { Route } from '@wp/td-core';
 
 /** `count` units of `kind`, the first at wave tick `at`, then one every `every` ticks. */
 export interface SpawnGroup {
