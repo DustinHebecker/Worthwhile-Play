@@ -9,10 +9,8 @@ import {
   externalWave,
   extractorsOf,
   mapOf,
-  MAX_WORKSHOPS,
   SHOP,
   UNIT_PRICES,
-  WORKSHOP_PRICE,
   type Difficulty,
   type HoldState,
   type PlanCommand
@@ -41,7 +39,6 @@ export interface Profile {
   pads: number;
   steps: number;
   extractors: number;
-  workshops: boolean;
   /** Choose the attack wave by trying candidate waves against the other side's towers. */
   probe: boolean;
   /** Most wave simulations per round (bounds the planning time, whatever the credits). */
@@ -52,9 +49,9 @@ export interface Profile {
 export const PROBE_SIMS = 21;
 
 export const PROFILES: Record<Difficulty, Profile> = {
-  easy: { defence: 0.5, keep: 0, lookahead: false, pads: 1, steps: 1, extractors: 0, workshops: false, probe: false, sims: 0 },
-  normal: { defence: 0.55, keep: 0.1, lookahead: true, pads: 2, steps: 3, extractors: 1, workshops: false, probe: false, sims: 30 },
-  hard: { defence: 0.55, keep: 0.1, lookahead: true, pads: 3, steps: 4, extractors: 1, workshops: false, probe: true, sims: 55 }
+  easy: { defence: 0.5, keep: 0, lookahead: false, pads: 1, steps: 1, extractors: 0, probe: false, sims: 0 },
+  normal: { defence: 0.55, keep: 0.1, lookahead: true, pads: 2, steps: 3, extractors: 1, probe: false, sims: 30 },
+  hard: { defence: 0.55, keep: 0.1, lookahead: true, pads: 3, steps: 4, extractors: 1, probe: true, sims: 55 }
 };
 
 const cellsOf = (route: Route): [number, number][] => {
@@ -241,7 +238,6 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   if (s.mode === 'external-small') return plan;
   const keep = Math.floor(start * profile.keep);
   const order = profile.probe ? probeOrder(s, side, keep, meter) : attackOrder(s, side, profile);
-  if (profile.workshops && own().workshops < MAX_WORKSHOPS && own().credits - keep > WORKSHOP_PRICE + 200) apply({ t: 'workshop' });
   for (let i = 0; i < capacityOf(own()) * 2; i++) {
     const kind = order[i % order.length]!;
     if (own().credits - (UNIT_PRICES[kind] ?? 0) < keep) break;

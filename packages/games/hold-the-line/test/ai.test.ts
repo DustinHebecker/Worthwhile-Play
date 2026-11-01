@@ -395,3 +395,28 @@ describe('bounded planning work', () => {
     expect(probeOrder(s, 1, 0, { used: 0 })).toEqual(probeOrder(s, 1, 0));
   });
 });
+
+describe('planner budgets', () => {
+  it('the simulation budget of a level limits the candidates it tries', () => {
+    const s = atRound(newGame(1, 'normal'), 3);
+    const saved = PROFILES.normal.sims;
+    try {
+      // One simulation: only the current loss is measured, no candidate is tried.
+      (PROFILES.normal as { sims: number }).sims = 1;
+      expect(planRound(s, 1, 'normal').some((c) => c.t === 'place')).toBe(false);
+      (PROFILES.normal as { sims: number }).sims = 2;
+      expect(planRound(s, 1, 'normal').filter((c) => c.t === 'place').length).toBeLessThanOrEqual(1);
+    } finally {
+      (PROFILES.normal as { sims: number }).sims = saved;
+    }
+    expect(planRound(s, 1, 'normal').filter((c) => c.t === 'place').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('Hard’s probe tries further orders while it has budget (against guns another order wins)', () => {
+    let s: HoldState = { ...newGame(1, 'hard'), sides: [{ ...newGame(1, 'hard').sides[0], credits: 2000 }, newGame(1, 'hard').sides[1]] };
+    for (const [x, y] of padsNear(s, 0, incoming(0), 3).slice(0, 4)) s = applyPlan(s, 0, { t: 'place', kind: 'gun', x, y });
+    const free = probeOrder(s, 1, 0, { used: 0 });
+    expect(free).not.toEqual([SHOP[0]]);
+    expect(probeOrder(s, 1, 0, { used: WORK_BUDGET })).toEqual([SHOP[0]]);
+  });
+});
