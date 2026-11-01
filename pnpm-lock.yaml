@@ -131,6 +131,9 @@ importers:
       '@wp/game-harmony':
         specifier: workspace:*
         version: link:../../packages/games/harmony
+      '@wp/game-hold-the-line':
+        specifier: workspace:*
+        version: link:../../packages/games/hold-the-line
       '@wp/game-laser-circuit':
         specifier: workspace:*
         version: link:../../packages/games/laser-circuit
@@ -681,6 +684,34 @@ importers:
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/hold-the-line:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/strategy-art':
+        specifier: workspace:*
+        version: link:../../strategy-art
+      '@wp/strategy-engine':
+        specifier: workspace:*
+        version: link:../../strategy-engine
+      '@wp/td-core':
+        specifier: workspace:*
+        version: link:../../td-core
       '@wp/ui':
         specifier: workspace:*
         version: link:../../ui

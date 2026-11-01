@@ -109,6 +109,8 @@ export interface Frame {
   goals: readonly { readonly x: number; readonly y: number; readonly side: number }[];
   /** The side whose pieces are drawn as own (filled, facing right); default 0. */
   viewer?: number;
+  /** Two-side maps: the row between the halves (drawn as a dashed line along its middle). */
+  split?: number;
   hpMax: (kind: string) => number;
   splashOf: (kind: string) => number;
 }
@@ -129,6 +131,16 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
   const viewer = f.viewer ?? 0;
   const styleOf = (side: number) => (side === viewer ? own : foe);
   const colourOf = (side: number) => (side === viewer ? palette.own : palette.enemy);
+  if (f.split !== undefined) {
+    g.strokeStyle = palette.ink;
+    g.lineWidth = 2;
+    g.setLineDash([6, 5]);
+    g.beginPath();
+    g.moveTo(0, (f.split + 0.5) * cell);
+    g.lineTo(width, (f.split + 0.5) * cell);
+    g.stroke();
+    g.setLineDash([]);
+  }
   // Entry: a chevron into the road. Each core: its side's Command Post.
   g.strokeStyle = palette.ink;
   g.lineWidth = Math.max(2, cell * 0.05);

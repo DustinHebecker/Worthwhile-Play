@@ -565,3 +565,48 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
 2. **TD view:** canvas map, HUD, keyboard/touch, 16 locales, contract and e2e tests; three 12-wave maps; balance harness; catalogue place 4.
 3. **Engine extensions** E0–E3 (via the strategy context), then Prism, Amplifier/Repair, Corroder, Warden.
 4. **Hybrid** `strategy-td-hybrid`: VS Small → External Small → External Large → VS Large on the engine economy (`produce`, yards, Supply), catalogue place 7.
+
+---
+
+## 16. Hold the Line (strategy/TD hybrid), mode VS Small — as built (2026-11-01)
+
+Owner, 2026-11-01: start the hybrid with VS Small. It is a game of its own, `packages/games/hold-the-line` (id `hold-the-line`, title "Hold the Line", catalogue place 7). It is built on the shared TD core `@wp/td-core`, which holds the ruleset, wave lanes, tower commands, map drawing and the shared tower and unit texts. Tower Defense uses the same core, and its golden replays are unchanged.
+
+### 16.1 Rules
+
+- **Two sides, one point-symmetric map** (`duel`, 7 × 17). You are side 0 at the bottom; the computer is side 1 at the top. Each side builds only on pads of its own half. Each side's attack wave uses its own road along the map edge to the other core; the waves never meet, and towers fire only at the other side's units.
+- **Rounds:** PLAN (no clock) → LOCK → BATTLE (both waves at the same time, deterministic, pausable, 1×/2×/4× or at once). 10 rounds. A core that falls ends the game after that battle; otherwise the higher core after round 10 wins, and equal cores are a draw.
+- **Planning:**
+  - towers with the full TD branch tree (full refund within the same planning phase, 70 % later);
+  - **Extractors** (120 credits, +25 income per round, can be shot by armed units);
+  - **the attack wave**: units from a shop (Walker 20, Runner 25, Swarm unit 6, Brute 90, Glider 45, Raider 60; the Siege crawler is not for sale), up to the capacity of 8 units;
+  - **Workshops** (120 credits, +4 capacity, at most 3).
+- **Economy:** 300 credits at the start, 100 per round plus extractors, the defender's bounty for every unit destroyed, and **10 % interest** on what was unspent at the lock (as in TD). Core integrity starts at 30; a unit that gets through costs its threat.
+- **Fairness and information:** the computer plans at the start of each round (state field `aiPlan`, not shown) from what either side could see then: both sides' structures and the waves both sides sent last round. It never sees the player's plan of the round; its new structures appear at the lock. It uses the same rules and prices.
+
+### 16.2 Engine use
+
+- One engine world holds both sides. The lanes are TD lanes with a side per unit. Leaks and bounties go to the right side.
+- A round's battle runs `tickLanes` until no unit, spawn or shell is left, with the TD safety bound and stop budget.
+- Saves hold the exact tick; validation checks every structure on its owner's pads, one record per structure, the running wave against what was bought, and the plan log.
+
+### 16.3 Computer opponent (`ai.ts`)
+
+Deterministic, same rules, never cheating. Planning takes under 0.1 s per round (Hard about 0.3 s).
+
+| Level | Defence | Attack |
+|---|---|---|
+| Easy | one Gun beside the incoming lane | plain Walkers and Runners |
+| Normal | an Extractor early; towers chosen greedily, each tried against the wave it expects (the other side's last wave) | the two unit kinds whose threat per credit is highest against the visible towers, mixed |
+| Hard | as Normal, with more placements tried | tries every single-kind and two-kind wave against the visible towers and sends the one that gets the most threat through |
+
+Long suite `ai.long.test.ts`:
+- mirror matches are draws, on every level (both seats are equal);
+- Hard beats Normal and both beat Easy, from either seat;
+- a player who never plans loses to every level.
+
+### 16.4 Next
+
+- **Modes:** External Small → External Large → VS Large (mobile units fighting each other; that needs engine unit combat between lanes).
+- **Hot-seat** play is in the backlog (owner D15).
+- **Balance:** the human-facing balance of VS Small still needs a playtest. The bots only show that the levels are ordered and the seats fair.

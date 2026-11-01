@@ -135,6 +135,13 @@ const PREVIEWS: Record<string, () => string> = {
     const units = C(14, 13, 2.2, 'p2') + C(26, 13, 2.2, 'p2') + C(66, 20, 2.2, 'p2') + C(66, 31, 2.2, 'p2') + C(50, 31, 2.2, 'p2') + C(26, 42, 2.2, 'p2');
     return pads + road + towers + units;
   },
+  // Hold the Line: the two-lane duel map, your towers below and theirs above, a wave going each way.
+  'hold-the-line': () => {
+    const roads = R(6, 6, 8, 52, 'c') + R(6, 6, 42, 8, 'c') + R(82, 6, 8, 52, 'c') + R(48, 50, 42, 8, 'c');
+    const towers = R(60, 38, 6, 6, 'p1') + P('M30 34l3.5 3.5-3.5 3.5-3.5-3.5z', 'p1') + R(30, 20, 6, 6, 'p2') + ngon(66, 23, 3.8, 8, 'p2');
+    const units = C(10, 44, 2.2, 'p1') + C(10, 30, 2.2, 'p1') + C(24, 10, 2.2, 'p1') + C(86, 20, 2.2, 'p2') + C(86, 36, 2.2, 'p2') + C(70, 54, 2.2, 'p2');
+    return R(4, 4, 88, 56, 'e', 3) + L(4, 32, 92, 32, 'mu ds') + roads + towers + units;
+  },
   // Nonogram: the 5×5 grid with stacked number clues above and beside it, most rows filled in, one cell crossed out.
   nonogram: () => {
     const s = 8, x0 = 38, y0 = 21;
