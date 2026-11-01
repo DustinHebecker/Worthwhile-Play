@@ -6,6 +6,7 @@ import {
   capacityOf,
   checkPlan,
   EXTRACTOR_PRICE,
+  externalWave,
   extractorsOf,
   mapOf,
   MAX_WORKSHOPS,
@@ -18,7 +19,8 @@ import {
 } from './rules';
 
 /**
- * The computer opponent of "Hold the Line" (docs/design/tower-defense.md § 16.3). It plans at the
+ * The computer opponent of "Hold the Line" (docs/design/tower-defense.md § 16.3, § 17). In External
+ * Small it only defends (and builds extractors): the wave it expects is the known outside force. It plans at the
  * start of a round from what any side could see then: both sides' structures and the wave each side
  * sent last round, never the player's plan of this round. It plays by the same rules and prices; the
  * levels differ in how far it thinks, not in what it gets:
@@ -91,19 +93,27 @@ export function padsNear(s: HoldState, side: number, route: Route, range: number
   return out.sort((a, b) => b[0] - a[0] || key(a[1], a[2]) - key(b[1], b[2])).map(([, x, y]) => [x, y]);
 }
 
-/** The wave a side expects: what the other side sent last round, or a plain first wave. */
+/**
+ * The wave a side expects: in External Small the outside force of this round (known in advance);
+ * in VS Small what the other side sent last round, or a plain first wave.
+ */
 export const expectedWave = (s: HoldState, side: number): EnemyKind[] => {
+  if (s.mode === 'external-small') return externalWave(s);
   const last = s.sides[1 - side]!.lastWave;
   return last.length > 0 ? last : Array.from({ length: 8 }, () => 'walker' as const);
 };
 
-/** Threat of `wave` that would get through `side`'s current defence, weighted by health kept. */
-export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[]): number {
+/**
+ * Threat of `wave` that would get through `side`'s current defence, weighted by health kept. With
+ * `bound`, the simulation stops once that much is through (the caller only needs to know it is
+ * at least that), and the result is then at least `bound`.
+ */
+export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity): number {
   const route = mapOf(s).lanes[1 - side]!;
   // Only the attacking side's units run; its route index here is 0 of a one-route list.
   // Only what can matter: the defender's towers and extractors (the attacker's own structures never
   // fire at its own units, and a raider's shots at an extractor do not change what gets through).
-  let w: World = { ...world, entities: world.entities.filter((e) => e.side === side && Object.hasOwn(TOWERS, e.kind)), projectiles: [] };
+  let w: World = structuredClone({ ...world, entities: world.entities.filter((e) => e.side === side && Object.hasOwn(TOWERS, e.kind)), projectiles: [] });
   let at = 0;
   const pending: PendingSpawn[] = wave.map((kind) => {
     const p = { at, kind, route: 0, side: 1 - side };
@@ -112,12 +122,19 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
   });
   let run: LaneRun = { tick: 0, pending, walkers: [] };
   let loss = 0;
-  for (let i = 0; i < 1500 && (run.pending.length > 0 || run.walkers.length > 0); i++) {
-    const step = tickLanes(w, run, [route]);
+  for (let i = 0; i < 1500 && (run.pending.length > 0 || run.walkers.length > 0) && loss < bound; i++) {
+    const step = tickLanes(w, run, [route], true);
     w = step.world;
     run = step.run;
     for (const l of step.leaks) loss += (ENEMIES[l.kind].threat * l.hp) / (archetypeOf(TD_RULESET, l.kind)?.hp ?? 1);
   }
+  // Whatever is still on its way at the cap counts as through (a long wave is not a held wave).
+  for (const x of run.walkers) {
+    const unit = w.entities.find((e) => e.id === x.id);
+    const kind = unit?.kind as EnemyKind | undefined;
+    if (unit && kind && Object.hasOwn(ENEMIES, kind)) loss += (ENEMIES[kind].threat * unit.hp) / (archetypeOf(TD_RULESET, kind)?.hp ?? 1);
+  }
+  for (const p of run.pending) loss += ENEMIES[p.kind].threat;
   return loss;
 }
 
@@ -146,12 +163,16 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
 
   // 2. Defence against the wave it expects.
   // The defence budget is a share of what the round started with (an early extractor must not starve it).
-  const floor = Math.max(0, own().credits - Math.floor(start * profile.defence));
+  // External Small has no attack wave to pay for: all but the kept share may go to defence.
+  const share = s.mode === 'external-small' ? 1 - profile.keep : profile.defence;
+  const floor = Math.max(0, own().credits - Math.floor(start * share));
   const wave = expectedWave(s, side);
+  // Hard in External Small has no attack wave to probe: it spends twice the budget on its defence.
+  const extra = profile.probe && s.mode === 'external-small';
   let sims = 0;
-  const threat = (st: HoldState): number => {
+  const threat = (st: HoldState, bound = Infinity): number => {
     sims++;
-    return leakage(st.world, st, side, wave);
+    return leakage(st.world, st, side, wave, bound);
   };
   if (!profile.lookahead) {
     const [x, y] = padsNear(s, side, incoming, 3)[0] ?? [-1, -1];
@@ -171,12 +192,13 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
       }
       let best: { cmd: PlanCommand; loss: number; value: number } | null = null;
       for (const cmd of candidates) {
-        if (sims >= profile.sims - (profile.probe ? PROBE_SIMS : 0)) break;
+        if (sims >= (extra ? Math.floor(1.5 * profile.sims) : profile.sims - (profile.probe ? PROBE_SIMS : 0))) break;
         if (checkPlan(s, side, cmd) !== null) continue;
         const next = applyPlan(s, side, cmd);
         if (next.sides[side]!.credits < floor) continue;
-        const l = threat(next);
         const price = Math.max(1, own().credits - next.sides[side]!.credits);
+        // Only a loss below this can be chosen: an improvement, and a better value than the best so far.
+        const l = threat(next, Math.min(loss - 0.01, best ? loss - best.value * price : Infinity));
         const value = (loss - l) / price;
         if (loss - l > 0.01 && (!best || value > best.value)) best = { cmd, loss: l, value };
       }
@@ -186,7 +208,9 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
     }
   }
 
-  // 3. The attack wave: the units that get furthest per credit against the player's visible towers.
+  // 3. The attack wave: the units that get furthest per credit against the player's visible towers
+  // (External Small: there is none to buy).
+  if (s.mode === 'external-small') return plan;
   const keep = Math.floor(start * profile.keep);
   const order = profile.probe ? probeOrder(s, side, keep) : attackOrder(s, side, profile);
   if (profile.workshops && own().workshops < MAX_WORKSHOPS && own().credits - keep > WORKSHOP_PRICE + 200) apply({ t: 'workshop' });

@@ -11,9 +11,9 @@ import { randomPlan } from './plans';
  */
 const LONG = 300_000;
 
-function match(player: Difficulty | 'passive', opponent: Difficulty): HoldState {
+function match(player: Difficulty | 'passive', opponent: Difficulty, mapId = 'duel'): HoldState {
   const plan: Planner = (s) => planRound(s, 1, opponent);
-  let s = newGame(1, opponent);
+  let s = newGame(1, opponent, mapId);
   while (s.phase === 'plan') {
     if (player !== 'passive') for (const cmd of planRound(s, 0, player)) s = applyPlan(s, 0, cmd);
     s = resolveBattle(lockRound(s, plan)).state;
@@ -63,4 +63,36 @@ describe('the computer opponent', () => {
     );
   }, LONG);
 
+});
+
+// External Small (§ 17): both sides only defend against the same outside force, so strength shows as
+// core kept; Hard keeps more than Normal, which keeps more than Easy, and wins from either seat.
+describe('the computer opponent in External Small', () => {
+  it.each(DIFFICULTIES)('mirror match at %s is a draw', (level) => {
+    const end = match(level, level, 'crossing');
+    expect(end.phase).toBe('draw');
+  }, LONG);
+
+  it('hard beats normal, and both beat easy, from either seat', () => {
+    expect(match('hard', 'normal', 'crossing').phase).toBe('won');
+    expect(match('normal', 'hard', 'crossing').phase).toBe('lost');
+    expect(match('normal', 'easy', 'crossing').phase).toBe('won');
+    expect(match('easy', 'normal', 'crossing').phase).toBe('lost');
+    expect(match('hard', 'easy', 'crossing').phase).toBe('won');
+    expect(match('easy', 'hard', 'crossing').phase).toBe('lost');
+  }, LONG);
+
+  it('in self-play hard lasts longer or keeps more core than normal, normal than easy', () => {
+    // The shared pressure can break both cores in the same round: how far a side got counts first.
+    const kept = (level: Difficulty) => {
+      const end = match(level, level, 'crossing');
+      return end.round * 100 + end.sides[0].core;
+    };
+    expect(kept('hard')).toBeGreaterThan(kept('normal'));
+    expect(kept('normal')).toBeGreaterThan(kept('easy'));
+  }, LONG);
+
+  it.each(DIFFICULTIES)('a player who never builds loses against %s', (level) => {
+    expect(match('passive', level, 'crossing').phase).toBe('lost');
+  }, LONG);
 });
