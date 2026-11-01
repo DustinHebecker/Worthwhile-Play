@@ -640,6 +640,39 @@ Long suite `ai.long.test.ts`:
 
 ### 16.4 Next
 
-- **Modes:** External Small → External Large → VS Large (mobile units fighting each other; that needs engine unit combat between lanes).
+- **Modes:** External Small (built, § 17) → External Large → VS Large (mobile units fighting each other; that needs engine unit combat between lanes).
 - **Hot-seat** play is in the backlog (owner D15).
 - **Balance:** the human-facing balance of VS Small still needs a playtest. The bots only show that the levels are ordered and the seats fair.
+
+---
+
+## 17. Hold the Line, mode External Small ("Outside force") — as built (2026-11-01)
+
+Owner, 2026-11-01: "carry on with the next steps". The mode is chosen on the start screen (ADR 0017 setting `mode`: "Duel" = VS Small, "Outside force" = External Small); the map belongs to the mode, so a save's `mapId` decides its mode.
+
+### 17.1 Rules
+
+- **Map `crossing`** (7 × 17, point-symmetric). An outside force enters in the middle row and splits evenly: one half winds down to your core at the bottom, the mirrored half up to the opponent's core. The halves have their own entry cells (2, 8) and (4, 8), so they never wait for each other.
+- **Nobody buys units or workshops** (refusal `mode`). Each round both sides face the same force: the round's row of `EXTERNAL_WAVES` (Walkers first, then Runners, Swarms, Brutes, Gliders, Raiders, Shield bearers, Menders, as in Tower Defense; up to 38 units per half in round 10), shown before the lock ("This round, each side faces: …").
+- **Shared pressure (D14 "shared threat escalation"):** every unit that got through last round, on either side, comes back as one extra Walker in this round's force (at most 12). Each side therefore gains when the other side defends well, while the two still compete on core integrity. The state keeps it as `pressure`.
+- **Economy:** as VS Small (300 start, 100 per round, extractors, 10 % interest), but destroyed units pay **half** their bounty: with full bounties the defence outgrew every later wave (both computer levels ended rounds 5–10 with over 1000 unspent credits and nothing getting through).
+- **Engine mapping:** the half that attacks side *k* is owned by side *1 − k* (lane *i* carries side *i*'s units), so VS Small's battle, leak, bounty and validation code is reused unchanged; only the drawing shows all units alike, in ink (`Frame.neutralUnits`), so they read as one outside force.
+- **Validation:** `pressure` is required in External Small and forbidden in VS Small; the mode must match the map; while planning no side has a wave; during a battle both waves equal this round's force exactly.
+
+### 17.2 Computer opponent
+
+It only defends (and builds an Extractor early): the wave it expects is the known force of this round, and all but its kept share of credits may go to defence. Hard has no attack to probe, so it spends 1.5 × its simulation budget on defence instead.
+
+Measured (Node, seed 1; long suite `ai.long.test.ts`):
+- mirror matches are draws on every level;
+- Hard beats Normal and both beat Easy, from either seat;
+- in self-play Hard lasts longer or keeps more core than Normal, and Normal more than Easy (Hard 19 core after 10 rounds; Normal falls in round 9, Easy in round 7);
+- a player who never builds loses to every level.
+
+A Hard planner that also looked one round ahead (the next force is known) did worse: it bought for the next force at the cost of the current one.
+
+**Planning time.** The planner's simulations now skip the per-tick copy in `tickLanes` (`owned`) and stop a candidate as soon as it can no longer be chosen (the bound is exact, so decisions are unchanged). Measured worst per round in a game: Normal 0.9 s, Hard 0.5 s. With 3000 credits in round 10 (not reached in measured games): Normal 1.7 s, Hard 5 s. The view shows "thinking" first. A Web Worker, or the engine hook E4 (one copy per wave instead of two per tick), are the next steps if this matters on phones.
+
+### 17.3 Next
+
+External Large (mobile defenders meet the outside force before the split) needs unit-versus-unit combat on a shared approach; VS Large needs the same between the two sides' waves.

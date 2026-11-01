@@ -62,10 +62,14 @@ export interface LaneTick {
   leaks: Leak[];
 }
 
-/** Advances the lanes by one engine tick: spawns, route orders, leaks, the tick itself, the stop budget. */
-export function tickLanes(world: World, run: LaneRun, routes: readonly Route[]): LaneTick {
-  const w = structuredClone(world);
-  const r = structuredClone(run);
+/**
+ * Advances the lanes by one engine tick: spawns, route orders, leaks, the tick itself, the stop budget.
+ * Pure by default; `owned: true` lets a caller that owns `world` and `run` (a planner's private
+ * simulation) skip the copies, and then both may be changed.
+ */
+export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], owned = false): LaneTick {
+  const w = owned ? world : structuredClone(world);
+  const r = owned ? run : structuredClone(run);
   // 1. Spawns that are due and whose spawn cell is free on their layer (in order per route).
   const waiting: PendingSpawn[] = [];
   for (const p of r.pending) {

@@ -55,3 +55,26 @@ test('hold-the-line: a whole game ends calmly with a result', async ({ page }) =
   const saved = (await readSave(page, 'hold-the-line')) as { state: { phase: string } };
   expect(['won', 'lost', 'draw']).toContain(saved.state.phase);
 });
+
+test('hold-the-line: Outside force is chosen on the start screen, needs no shop and survives a reload', async ({ page }) => {
+  await startGame(page, 'hold-the-line', { settings: { mode: 'external-small' }, difficulty: 'easy' });
+  await expect(root(page).getByTestId('outside-wave')).toBeVisible();
+  await expect(root(page).getByTestId('shop')).toBeHidden();
+  // The force comes in at the middle row: both entry cells are road.
+  await expect(root(page).getByTestId('cell-2-8')).toHaveAttribute('aria-label', /road/);
+  await expect(root(page).getByTestId('cell-4-8')).toHaveAttribute('aria-label', /road/);
+  await root(page).getByTestId('cell-3-9').click();
+  await root(page).getByTestId('build-gun').click();
+  await root(page).getByTestId('lock').click();
+  await expect(game(page)).toHaveAttribute('data-phase', 'battle');
+  await root(page).getByTestId('instant').click();
+  await expect(game(page)).toHaveAttribute('data-round', '1');
+  // After a round, what got through is shown with the extra units it brings.
+  await expect(root(page).getByTestId('outside-pressure')).toBeVisible();
+  await expect.poll(async () => ((await readSave(page, 'hold-the-line')) as { state?: { mode?: string } } | undefined)?.state?.mode).toBe('external-small');
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(game(page)).toHaveAttribute('data-round', '1');
+  await expect(root(page).getByTestId('outside-wave')).toBeVisible();
+  await expect(root(page).getByTestId('shop')).toBeHidden();
+});
