@@ -9,7 +9,10 @@ function recorder(): { g: CanvasRenderingContext2D; calls: string[] } {
   const calls: string[] = [];
   const g = new Proxy({} as Record<string, unknown>, {
     get: (_t, key: string) => (...args: unknown[]) => calls.push(`${key}(${args.map((a) => (typeof a === 'number' ? Math.round(a * 10) / 10 : String(a))).join(',')})`),
-    set: () => true
+    set: (_t, key: string, value: unknown) => {
+      calls.push(`${key}=${String(value)}`);
+      return true;
+    }
   });
   return { g: g as unknown as CanvasRenderingContext2D, calls };
 }
@@ -17,11 +20,11 @@ const PALETTE: Palette = { surface: '#fff', ink: '#000', muted: '#888', own: '#0
 function frameOf(world: World): Frame {
   return { world, prev: new Map(), alpha: 1, beams: [], blasts: [], selected: null, entries: [], goals: [], hpMax: (k) => archetypeOf(TD_RULESET, k)?.hp ?? 1, splashOf: () => 0 };
 }
-function draw(build: (w: World) => void): string[] {
+function draw(build: (w: World) => void, extra: Partial<Frame> = {}): string[] {
   const w = createWorld({ map: { w: 5, h: 5, terrain: '='.repeat(25) }, sides: 2, entities: [], seed: 1 }, TD_RULESET);
   build(w);
   const { g, calls } = recorder();
-  drawFrame(g, 220, PALETTE, frameOf(w), null);
+  drawFrame(g, 220, PALETTE, { ...frameOf(w), ...extra }, null);
   return calls;
 }
 const put = (w: World, kind: string, side = 1) => {
@@ -92,5 +95,23 @@ describe('state marks (never colour alone)', () => {
     // Pips are at least 0.15 of a cell wide (6.6 px on a 44 px cell).
     const pip = c.filter((x) => x.startsWith('rect('))[2]!;
     expect(Number(pip.slice(5, -1).split(',')[2])).toBeGreaterThanOrEqual((220 / 5) * 0.15 - 0.1);
+  });
+});
+
+describe('outside force (hybrid External modes)', () => {
+  it('draws the wave units of both sides alike, in ink', () => {
+    const unitFills = (neutral: boolean) => {
+      const calls = draw(
+        (w) => {
+          put(w, 'walker', 0);
+          w.entities.push(spawn(w.nextId++, 1, archetypeOf(TD_RULESET, 'walker')!, 3, 3));
+        },
+        { neutralUnits: neutral }
+      );
+      // Without Path2D a unit is a filled dot: the fill colour set right before each unit's fill.
+      return calls.filter((c, i) => c.startsWith('fillStyle=') && calls[i + 1] === 'fill()').map((c) => c.slice(10));
+    };
+    expect(unitFills(false)).toEqual([PALETTE.own, PALETTE.enemy]);
+    expect(unitFills(true)).toEqual([PALETTE.ink, PALETTE.ink]);
   });
 });
