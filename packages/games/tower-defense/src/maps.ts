@@ -94,7 +94,9 @@ export const TRAINING: TdMap = {
  * authoring order). The second variant of a slot sends every group to the next lane instead (one-lane
  * maps: the groups start in reverse order), so the seed changes where or when the pressure comes,
  * never how much there is. Waves 4, 8 and 12 mix
- * archetypes that need different answers; wave 12 brings the Siege crawler.
+ * archetypes that need different answers; Shield bearers come from wave 7, Menders in waves 9 and 11
+ * (not beside the crawler: a repaired crawler decides the game on its own);
+ * wave 12 brings the Siege crawler.
  */
 type G = readonly [EnemyKind, number, number, number];
 const TWELVE: readonly (readonly G[])[] = [
@@ -104,12 +106,12 @@ const TWELVE: readonly (readonly G[])[] = [
   [['brute', 1, 40, 0], ['runner', 10, 8, 20], ['walker', 10, 8, 60]],
   [['glider', 6, 16, 0], ['walker', 12, 8, 30]],
   [['raider', 4, 20, 0], ['swarm', 16, 3, 40], ['brute', 2, 40, 80]],
-  [['runner', 18, 5, 0], ['glider', 6, 14, 30]],
+  [['runner', 18, 5, 0], ['glider', 6, 14, 30], ['shielder', 4, 20, 50]],
   [['brute', 5, 30, 0], ['swarm', 24, 3, 40], ['raider', 3, 24, 90]],
-  [['glider', 10, 12, 0], ['walker', 16, 6, 20], ['runner', 10, 6, 80]],
-  [['brute', 6, 24, 0], ['raider', 6, 16, 30], ['glider', 6, 14, 60]],
-  [['swarm', 40, 2, 0], ['brute', 4, 30, 40], ['runner', 12, 5, 100]],
-  [['crawler', 1, 1, 60], ['brute', 4, 30, 0], ['raider', 6, 16, 20], ['glider', 8, 12, 40], ['swarm', 20, 3, 120]]
+  [['glider', 10, 12, 0], ['walker', 16, 6, 20], ['mender', 2, 30, 40], ['runner', 10, 6, 80]],
+  [['brute', 6, 24, 0], ['raider', 6, 16, 30], ['glider', 6, 14, 60], ['shielder', 5, 16, 40]],
+  [['swarm', 40, 2, 0], ['brute', 4, 30, 40], ['mender', 3, 30, 50], ['runner', 12, 5, 100]],
+  [['crawler', 1, 1, 60], ['brute', 4, 30, 0], ['raider', 6, 16, 20], ['glider', 8, 12, 40], ['swarm', 20, 3, 120], ['shielder', 4, 16, 160]]
 ];
 
 function twelve(lanes: readonly number[], air: readonly number[], percent = 100): WaveDef[][] {

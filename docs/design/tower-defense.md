@@ -509,7 +509,7 @@ Enemies are engine archetypes in the TD ruleset:
 - **Raider**, armed: it fires at towers in passing, so tower health and repair matter;
 - Siege crawler (heavy, armed, final wave).
 
-**Deferred until the engine supports them:** shields (Warden), healers (Mender) and the Corroder branch (mark / armour shred). These need **E3**.
+**Built on E1–E3 (2026-11-01, § 15.9):** Shield bearer (shields), Mender (repairs units around it), and the branch-C towers Prism, Amplifier and Corroder. Armour shred is not built (no engine support; the mark alone carries the Corroder).
 
 ### 15.5 Requests to the strategy engine (replaces the long list of § 12)
 
@@ -563,8 +563,28 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
 
 1. **TD core:** ruleset, the training map (6 waves), the build/wave phase machine on the engine, upgrades and branches, economy, leaks, victory and defeat, the checkpoint retry; unit and property tests (determinism, chunking invariance, save/restore at any tick, conservation, termination).
 2. **TD view:** canvas map, HUD, keyboard/touch, 16 locales, contract and e2e tests; three 12-wave maps; balance harness; catalogue place 4.
-3. **Engine extensions** E0–E3 (via the strategy context), then Prism, Amplifier/Repair, Corroder, Warden.
+3. **Engine extensions** E0–E3 (built here, reviewed by the strategy context), then Prism, Amplifier/Repair, Corroder, Shield bearer, Mender (§ 15.9).
 4. **Hybrid** `strategy-td-hybrid`: VS Small → External Small → External Large → VS Large on the engine economy (`produce`, yards, Supply), catalogue place 7.
+
+### 15.9 Branch C towers and the new units (2026-11-01)
+
+**Third branch instead of replacing branch B.** The design's B branches (Prism, Amplifier, Corroder) arrived after Pulse, Snare and Blackout had shipped as interim B branches. Replacing them would invalidate saves that hold those towers and remove choices players know, so each of the three families gains a **branch C**; Gun and Artillery keep two branches. The branch choice stays exclusive and final. In the view, level pips are filled dots (A), hollow dots (B) and squares (C).
+
+| Family | Branch C (level 2, level 3) | Engine | Price |
+|---|---|---|---|
+| Laser | **Prism**: beam without heat-up that runs on through its target and hits every unit on the line up to its range (`pierce`); 2/3 damage, range 4/5, weak vs heavy (60 %) | E1 | 175 / 250 |
+| Support | **Amplifier**: no weapon; own towers within radius 2 reload 25 %/50 % faster; level 3 also repairs 2 health per second | E2 | 150 / 220 |
+| Specialist | **Corroder**: small hits that mark a unit for 3/4 s; marked units take +25 %/+40 % damage from every tower | E3 | 150 / 220 |
+
+New units (12-wave maps; the Training ground is unchanged):
+- **Shield bearer** (light, 60 health, shield 80 that returns after 3 s without a hit; beams hit the shield ×1.5; an EMP strips it): threat 2, bounty 10; waves 7, 10 and 12. Drawn with a hexagon while the shield lasts.
+- **Mender** (infantry, 50 health, repairs units within radius 2 by 3 health per second, never itself): threat 1, bounty 8; waves 9 and 11. **Not in wave 12:** beside the Siege crawler it decided the game on its own (the mixed planner lost 10 core on Fork).
+- Shield bearers in wave 12 start after the crawler has passed for the same reason (on Long bend the planner lost the crawler fight with them alongside).
+- A marked unit shows a diamond.
+
+Saves stay valid: no kind was removed; a running wave is only bounded by its schedule length, which grew.
+
+**Balance (seed 7, standard; core left of 20):** mixed planner Fork 20, Long bend 20, Twin 20 (relaxed 30/20/30); Hard: Fork and Long bend won with 1 left, Twin lost in wave 12; random building loses all three; single families: Gun 8–10, Laser ≤ 9, the rest lose. **The look-ahead planner never picks a branch-C tower**: their value (lines of units, clusters, focus fire) builds up over more than one wave, which its one-wave look-ahead cannot see. Unit tests prove each one does what its text says (`td-core/test/ruleset.test.ts`); whether they are worth their price is a playtest question. The hybrid's computer opponent sees them as upgrade candidates but, for the same reason, has not chosen them in its measured games.
 
 ---
 
