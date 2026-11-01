@@ -44,7 +44,7 @@ const plan = (s: HoldState) => planRound(s);
 
 export function createHoldTheLine(context: GameContext): GameInstance<HoldState> {
   const { t, root } = context;
-  let state: HoldState = newGame(0, DEFAULT_DIFFICULTY, plan);
+  let state: HoldState = newGame(0, DEFAULT_DIFFICULTY);
   let initial: HoldState = state;
   let hostPaused = false;
   let playing = false;
@@ -376,7 +376,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const advance = (ticks: number): void => {
     const before = state;
     prev = new Map(before.world.entities.map((e) => [e.id, [e.x, e.y] as const]));
-    const result = ticks > 1_000 ? resolveBattle(before, plan) : stepBattle(before, ticks, plan);
+    const result = ticks > 1_000 ? resolveBattle(before) : stepBattle(before, ticks);
     state = result.state;
     collect(result.events);
     sinceSave += ticks;
@@ -497,7 +497,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     playing = true;
     acc = 0;
     const n = state.round + 1;
-    commit(lockRound(state), t('announce.lock', { n }));
+    commit(lockRound(state, plan), t('announce.lock', { n }));
     schedule();
   };
 
@@ -560,11 +560,11 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   return {
     newGame(options: NewGameOptions) {
-      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), plan);
+      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty));
       show(initial);
     },
     restore(saved: HoldState) {
-      initial = newGame(saved.seed, saved.difficulty, plan, saved.mapId);
+      initial = newGame(saved.seed, saved.difficulty, saved.mapId);
       show(structuredClone(saved));
     },
     serialize: () => structuredClone(state),

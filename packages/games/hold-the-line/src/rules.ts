@@ -31,9 +31,9 @@ import { mapById, MAPS, ownPad, type DuelMap } from './maps';
  * both waves run at the same time on their own lanes and never meet; units that get through cost the
  * defender core integrity. After ROUNDS rounds the side with more core left wins.
  *
- * Side 0 is the player, side 1 the computer. The computer plans at the start of every round from
- * what it could see then (`ai.ts`), so it never knows the player's plan of that round. All functions
- * are pure.
+ * Side 0 is the player, side 1 the computer. The computer's plan is made at the lock, but from the
+ * snapshot taken when the round started (`roundStart`: both sides as they stood then), so it never
+ * knows the player's plan of that round (`ai.ts`). All functions are pure.
  */
 
 export const DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
@@ -100,8 +100,8 @@ export interface HoldState {
   phase: Phase;
   world: World;
   sides: [SideState, SideState];
-  /** The computer's plan for this round, made at its start (applied at the lock; not shown). */
-  aiPlan: PlanCommand[];
+  /** Both sides as the round started: all the computer may plan from (its plan is made at the lock). */
+  roundStart: { world: World; sides: [SideState, SideState] };
   /** Credits each side left unspent at the lock of this round (interest base). */
   unspent: [number, number];
   run: LaneRun | null;
@@ -123,8 +123,8 @@ export const capacityOf = (side: Pick<SideState, 'workshops'>): number => BASE_C
 export const extractorsOf = (s: HoldState, side: number): number => s.world.entities.filter((e) => e.side === side && e.kind === 'extractor').length;
 export const incomeOf = (s: HoldState, side: number): number => ROUND_INCOME + EXTRACTOR_INCOME * extractorsOf(s, side);
 
-/** A new game; `plan` is the computer's planner (rounds start with its plan). */
-export function newGame(seed: number, difficulty: Difficulty, plan: Planner, mapId: string = MAPS[0]!.id): HoldState {
+/** A new game. */
+export function newGame(seed: number, difficulty: Difficulty, mapId: string = MAPS[0]!.id): HoldState {
   const map = mapById(mapId);
   if (!map) throw new RangeError(`Unknown map ${mapId}`);
   const world = createWorld({ map: { w: map.w, h: map.h, terrain: map.rows.join('') }, sides: 2, entities: [], seed }, TD_RULESET);
@@ -138,12 +138,11 @@ export function newGame(seed: number, difficulty: Difficulty, plan: Planner, map
     phase: 'plan',
     world,
     sides: [newSide(), newSide()],
-    aiPlan: [],
+    roundStart: { world: structuredClone(world), sides: [newSide(), newSide()] },
     unspent: [0, 0],
     run: null,
     log: [{ player: [], ai: [] }]
   };
-  s.aiPlan = plan(s);
   return s;
 }
 
@@ -220,13 +219,16 @@ export function applyPlan(s: HoldState, side: number, cmd: PlanCommand): HoldSta
   return n;
 }
 
-/** Lock the round: the computer's plan is carried out, then both waves set off together. */
-export function lockRound(s: HoldState): HoldState {
+/**
+ * Lock the round: the computer plans from the round's start (`plan` never sees the player's plan of
+ * this round), its plan is carried out, then both waves set off together.
+ */
+export function lockRound(s: HoldState, plan: Planner): HoldState {
   if (s.phase !== 'plan') return s;
+  const seen: HoldState = { ...s, world: s.roundStart.world, sides: s.roundStart.sides };
   let n = s;
-  for (const cmd of s.aiPlan) n = applyPlan(n, 1, cmd);
+  for (const cmd of plan(seen)) n = applyPlan(n, 1, cmd);
   n = structuredClone(n);
-  n.aiPlan = [];
   n.unspent = [n.sides[0].credits, n.sides[1].credits];
   const pending: PendingSpawn[] = [];
   n.sides.forEach((side, i) => {
@@ -248,8 +250,8 @@ export interface BattleStep {
   leaks: Leak[];
 }
 
-/** Advance the battle by `ticks` ticks (or to its end); `plan` makes the computer's next plan. */
-export function stepBattle(state: HoldState, ticks: number, plan: Planner): BattleStep {
+/** Advance the battle by `ticks` ticks (or to its end). */
+export function stepBattle(state: HoldState, ticks: number): BattleStep {
   if (state.phase !== 'battle' || !state.run) return { state, events: [], leaks: [] };
   const s = structuredClone(state);
   const events: SimEvent[] = [];
@@ -281,12 +283,12 @@ export function stepBattle(state: HoldState, ticks: number, plan: Planner): Batt
       for (const p of s.run.pending) take(s, [{ id: 0, kind: p.kind, hp: archetypeOf(TD_RULESET, p.kind)?.hp ?? 1, side: p.side ?? 1 }], leaks);
       s.run.pending = [];
     }
-    if (s.run!.pending.length === 0 && s.run!.walkers.length === 0 && s.world.projectiles.length === 0) endRound(s, plan);
+    if (s.run!.pending.length === 0 && s.run!.walkers.length === 0 && s.world.projectiles.length === 0) endRound(s);
   }
   return { state: s, events, leaks };
 }
 
-export const resolveBattle = (state: HoldState, plan: Planner): BattleStep => stepBattle(state, MAX_BATTLE_TICKS + 1, plan);
+export const resolveBattle = (state: HoldState): BattleStep => stepBattle(state, MAX_BATTLE_TICKS + 1);
 
 /** Units that got through cost the side they attacked core integrity by their threat. */
 function take(s: HoldState, got: readonly Leak[], out: Leak[]): void {
@@ -298,7 +300,7 @@ function take(s: HoldState, got: readonly Leak[], out: Leak[]): void {
   }
 }
 
-function endRound(s: HoldState, plan: Planner): void {
+function endRound(s: HoldState): void {
   s.run = null;
   for (const e of s.world.entities) {
     e.cooldown = 0;
@@ -319,7 +321,7 @@ function endRound(s: HoldState, plan: Planner): void {
   s.round++;
   s.phase = 'plan';
   s.log.push({ player: [], ai: [] });
-  s.aiPlan = plan(s);
+  s.roundStart = { world: structuredClone(s.world), sides: structuredClone(s.sides) };
 }
 
 /** Refund of a structure (towers and extractors) right now. */
@@ -384,7 +386,12 @@ export function isValidState(v: unknown): v is HoldState {
   const world = v.world;
   if (world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.rows.join('')) return false;
   if (!Array.isArray(v.sides) || v.sides.length !== 2 || !v.sides.every((side, i) => isValidSide(side, { world, map }, i))) return false;
-  if (!isArrayOf(v.aiPlan, isPlanCommand) || v.aiPlan.length > 200) return false;
+  // The round's start: the same map and valid sides on it (the computer plans from it).
+  const start = v.roundStart;
+  if (!isRecord(start) || !isValidWorld(start.world, TD_RULESET) || start.world.sides !== 2 || start.world.map.terrain !== world.map.terrain) return false;
+  const startWorld = start.world;
+  if (startWorld.entities.some((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind)) || startWorld.projectiles.length > 0) return false;
+  if (!Array.isArray(start.sides) || start.sides.length !== 2 || !start.sides.every((side, i) => isValidSide(side, { world: startWorld, map }, i))) return false;
   if (!isArrayOf(v.unspent, (x): x is number => isInt(x, 0, 1_000_000)) || v.unspent.length !== 2) return false;
   if (!isArrayOf(v.log, (e): e is HoldState['log'][number] => isRecord(e) && isArrayOf(e.player, isPlanCommand) && isArrayOf(e.ai, isPlanCommand)) || v.log.length !== (v.round as number) + 1) return false;
   const units = world.entities.filter((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind));

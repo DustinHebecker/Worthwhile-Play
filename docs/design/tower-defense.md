@@ -582,7 +582,7 @@ Owner, 2026-11-01: start the hybrid with VS Small. It is a game of its own, `pac
   - **the attack wave**: units from a shop (Walker 20, Runner 25, Swarm unit 6, Brute 90, Glider 45, Raider 60; the Siege crawler is not for sale), up to the capacity of 8 units;
   - **Workshops** (120 credits, +4 capacity, at most 3).
 - **Economy:** 300 credits at the start, 100 per round plus extractors, the defender's bounty for every unit destroyed, and **10 % interest** on what was unspent at the lock (as in TD). Core integrity starts at 30; a unit that gets through costs its threat.
-- **Fairness and information:** the computer plans at the start of each round (state field `aiPlan`, not shown) from what either side could see then: both sides' structures and the waves both sides sent last round. It never sees the player's plan of the round; its new structures appear at the lock. It uses the same rules and prices.
+- **Fairness and information:** the state keeps a snapshot of both sides as the round started (`roundStart`). The computer plans at the lock, but only from that snapshot: both sides' structures and the waves both sides sent last round. It never sees the player's plan of the round; its new structures appear at the lock. It uses the same rules and prices. (Planning at the lock rather than at round start keeps starting a game instant.)
 
 ### 16.2 Engine use
 

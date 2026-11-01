@@ -11,10 +11,10 @@ const LONG = 300_000;
 
 function match(player: Difficulty | 'passive', opponent: Difficulty): HoldState {
   const plan: Planner = (s) => planRound(s, 1, opponent);
-  let s = newGame(1, opponent, plan);
+  let s = newGame(1, opponent);
   while (s.phase === 'plan') {
     if (player !== 'passive') for (const cmd of planRound(s, 0, player)) s = applyPlan(s, 0, cmd);
-    s = resolveBattle(lockRound(s), plan).state;
+    s = resolveBattle(lockRound(s, plan)).state;
   }
   return s;
 }

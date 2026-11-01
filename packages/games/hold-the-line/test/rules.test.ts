@@ -36,7 +36,7 @@ import {
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const idle: Planner = () => [];
 const ai: Planner = (s) => planRound(s);
-const fresh = (plan: Planner = idle): HoldState => newGame(1, 'normal', plan);
+const fresh = (): HoldState => newGame(1, 'normal');
 
 /** Random legal plan commands for side 0 (deterministic per seed). */
 function randomPlan(s: HoldState, seed: number, n: number): HoldState {
@@ -87,17 +87,26 @@ describe('map', () => {
 });
 
 describe('planning', () => {
-  it('starts both sides equal and plans the computer at once', () => {
-    const s = newGame(5, 'normal', ai);
+  it('starts both sides equal; the computer plans at the lock from the round start only', () => {
+    const s = newGame(5, 'normal');
     expect(s.phase).toBe('plan');
     expect(s.sides.map((x) => [x.credits, x.core])).toEqual([
       [START_CREDITS, START_CORE],
       [START_CREDITS, START_CORE]
     ]);
-    expect(s.aiPlan.length).toBeGreaterThan(0);
-    // The computer's plan is not applied before the lock: nothing of it is on the map yet.
-    expect(s.world.entities).toHaveLength(0);
     expect(isValidState(clone(s))).toBe(true);
+    // The player builds; the planner sees the map as the round began, without that tower.
+    const planned = applyPlan(s, 0, { t: 'place', kind: 'gun', x: 2, y: 14 });
+    let seen: HoldState | undefined;
+    const locked = lockRound(planned, (view) => {
+      seen = view;
+      return planRound(view);
+    });
+    expect(seen!.world.entities).toHaveLength(0);
+    expect(seen!.sides[0].credits).toBe(START_CREDITS);
+    // Its plan is carried out at the lock and logged.
+    expect(locked.log[0]!.ai.length).toBeGreaterThan(0);
+    expect(locked.world.entities.some((e) => e.side === 1)).toBe(true);
   });
 
   it('buys and removes units within capacity and credits', () => {
@@ -138,7 +147,7 @@ describe('planning', () => {
   });
 
   it('accepts no plan command during the battle', () => {
-    const s = lockRound(fresh());
+    const s = lockRound(fresh(), idle);
     expect(s.phase).toBe('battle');
     expect(checkPlan(s, 0, { t: 'buy', kind: 'walker' })).toBe('phase');
   });
@@ -148,7 +157,7 @@ describe('battle', () => {
   it('an undefended side loses core by the threat of every unit that reaches it; the attacker loses nothing', () => {
     let s = fresh();
     for (let i = 0; i < 4; i++) s = applyPlan(s, 0, { t: 'buy', kind: 'walker' });
-    const end = resolveBattle(lockRound(s), idle).state;
+    const end = resolveBattle(lockRound(s, idle)).state;
     expect(end.sides[1].core).toBe(START_CORE - 4);
     expect(end.sides[0].core).toBe(START_CORE);
     expect(end.sides[0].stats.leaked).toBe(4);
@@ -159,8 +168,8 @@ describe('battle', () => {
     s = applyPlan(s, 0, { t: 'place', kind: 'gun', x: 5, y: 12 });
     s = applyPlan(s, 0, { t: 'place', kind: 'gun', x: 5, y: 10 });
     s = applyPlan(s, 1, { t: 'buy', kind: 'walker' });
-    const locked = lockRound(s);
-    const end = resolveBattle(locked, idle).state;
+    const locked = lockRound(s, idle);
+    const end = resolveBattle(locked).state;
     expect(end.phase).toBe('plan');
     expect(end.round).toBe(1);
     const killed = end.sides[0].stats.killed;
@@ -175,7 +184,7 @@ describe('battle', () => {
     let s = fresh();
     for (let round = 0; round < ROUNDS && s.phase === 'plan'; round++) {
       s = applyPlan(s, 0, { t: 'buy', kind: 'walker' });
-      s = resolveBattle(lockRound(s), idle).state;
+      s = resolveBattle(lockRound(s, idle)).state;
     }
     expect(s.phase).toBe('won');
     expect(s.round).toBe(ROUNDS - 1);
@@ -183,14 +192,14 @@ describe('battle', () => {
     expect(isValidState(clone(s))).toBe(true);
     // Both silent: a draw.
     let quiet = fresh();
-    while (quiet.phase === 'plan') quiet = resolveBattle(lockRound(quiet), idle).state;
+    while (quiet.phase === 'plan') quiet = resolveBattle(lockRound(quiet, idle)).state;
     expect(quiet.phase).toBe('draw');
   });
 
   it('a fallen core ends the game after that battle', () => {
     let s = { ...fresh(), sides: [{ ...fresh().sides[0], credits: 5000, workshops: 3 }, { ...fresh().sides[1], core: 2 }] as HoldState['sides'] };
     for (let i = 0; i < 3; i++) s = applyPlan(s, 0, { t: 'buy', kind: 'walker' });
-    const end = resolveBattle(lockRound(s), idle).state;
+    const end = resolveBattle(lockRound(s, idle)).state;
     expect(end.sides[1].core).toBe(0);
     expect(end.phase).toBe('won');
   });
@@ -202,8 +211,8 @@ describe('properties', () => {
   it('determinism: the same plans give the same game', () => {
     fc.assert(
       fc.property(arb, ({ seed, build, n }) => {
-        const a = resolveBattle(lockRound(randomPlan(newGame(seed, 'normal', ai), build, n)), ai).state;
-        const b = resolveBattle(lockRound(randomPlan(newGame(seed, 'normal', ai), build, n)), ai).state;
+        const a = resolveBattle(lockRound(randomPlan(newGame(seed, 'normal'), build, n), ai)).state;
+        const b = resolveBattle(lockRound(randomPlan(newGame(seed, 'normal'), build, n), ai)).state;
         expect(worldHash(a.world)).toBe(worldHash(b.world));
         expect(a).toEqual(b);
       }),
@@ -214,10 +223,10 @@ describe('properties', () => {
   it('save and restore at any tick of a battle continues exactly; saves stay valid', () => {
     fc.assert(
       fc.property(arb, fc.integer({ min: 0, max: 300 }), ({ seed, build, n }, at) => {
-        const start = lockRound(randomPlan(newGame(seed, 'normal', ai), build, n));
-        const mid = stepBattle(start, at, ai).state;
+        const start = lockRound(randomPlan(newGame(seed, 'normal'), build, n), ai);
+        const mid = stepBattle(start, at).state;
         expect(isValidState(clone(mid))).toBe(true);
-        expect(resolveBattle(clone(mid), ai).state).toEqual(resolveBattle(mid, ai).state);
+        expect(resolveBattle(clone(mid)).state).toEqual(resolveBattle(mid).state);
       }),
       { numRuns: 8 }
     );
@@ -226,11 +235,11 @@ describe('properties', () => {
   it('credits never go negative and cores stay within range', () => {
     fc.assert(
       fc.property(arb, ({ seed, build, n }) => {
-        let s = newGame(seed, 'normal', ai);
+        let s = newGame(seed, 'normal');
         for (let r = 0; r < 3 && s.phase === 'plan'; r++) {
           s = randomPlan(s, build + r, n);
           for (const side of s.sides) expect(side.credits).toBeGreaterThanOrEqual(0);
-          s = resolveBattle(lockRound(s), ai).state;
+          s = resolveBattle(lockRound(s, ai)).state;
           for (const side of s.sides) {
             expect(side.core).toBeGreaterThanOrEqual(0);
             expect(side.core).toBeLessThanOrEqual(START_CORE);
@@ -244,14 +253,14 @@ describe('properties', () => {
   it('the computer never issues a refused command', () => {
     fc.assert(
       fc.property(arb, ({ seed, build, n }) => {
-        let s = newGame(seed, 'hard', ai);
+        let s = newGame(seed, 'hard');
         for (let r = 0; r < 3 && s.phase === 'plan'; r++) {
           let t = s;
-          for (const cmd of s.aiPlan) {
+          for (const cmd of planRound({ ...s, world: s.roundStart.world, sides: s.roundStart.sides })) {
             expect(checkPlan(t, 1, cmd), JSON.stringify(cmd)).toBeNull();
             t = applyPlan(t, 1, cmd);
           }
-          s = resolveBattle(lockRound(randomPlan(s, build + r, n)), ai).state;
+          s = resolveBattle(lockRound(randomPlan(s, build + r, n), ai)).state;
         }
       }),
       { numRuns: 4 }
@@ -277,7 +286,7 @@ describe('properties', () => {
       (t) => (t.sides[0].wave = ['crawler']),
       (t) => (t.log = []),
       (t) => (t.mode = 'vs-large' as never),
-      (t) => (t.aiPlan = [{ t: 'nope' }] as never)
+      (t) => (t.roundStart = { world: t.world, sides: [t.sides[0], { ...t.sides[1], core: -1 }] } as never)
     ];
     for (const tamper of bad) {
       const t = clone(s);
