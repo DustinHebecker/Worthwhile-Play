@@ -676,3 +676,18 @@ A Hard planner that also looked one round ahead (the next force is known) did wo
 ### 17.3 Next
 
 External Large (mobile defenders meet the outside force before the split) needs unit-versus-unit combat on a shared approach; VS Large needs the same between the two sides' waves.
+
+---
+
+## 18. Hold the Line, revision after the owner's playtest (2026-11-01) — decided, not yet built
+
+Owner playtest of VS Small and the owner's answers (2026-11-01):
+
+1. **Duel: automatic waves from production and research (decided).** You build **production buildings** on your own pads (e.g. Barracks → Walkers, Garage → Runners/Brutes, Hangar → Gliders); each sends its units automatically every round. A **research** building unlocks stronger tiers (e.g. Walker → Shield bearer, Brute → Siege crawler) and upgrades (+health, +speed). Buying the wave per round (the VS Small shop as built, § 16) stays only as a **game option**.
+2. **Endless is the default (decided).** The game ends when a core falls; you win by bringing the opponent's core down, not on points. Attackers get automatically stronger every round, so every game ends. "10 rounds on points" stays as the short-game option.
+3. **Outside force (§ 17) is the intended mode (confirmed)**, extended:
+   - **Endless** here too (the force keeps growing until a core falls).
+   - **Solo**: alone against the outside force, like Tower Defense, without an opponent.
+   - **Produced units help**: your production buildings send defenders that move out on the road and fight the outside force every round. This needs unit-versus-unit combat on the road (the "External Large" step of § 13.2).
+
+Order of work: Tower Defense polish from the same playtest first (smooth movement and better unit pictures, which Hold the Line shares; more waves with a gentler ramp; the card picture), then Duel with production and research and Endless, then Outside force with Solo, Endless and defenders.
