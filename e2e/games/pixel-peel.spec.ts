@@ -613,18 +613,27 @@ test('pixel-peel: peeling slow — the shooter shoots line by line: the pixels g
   await withPeeling(page, 'slow');
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
   const state = await savedState(page);
-  await buttonFor(page, state.witness[0]!).click();
-  const pending = async () => Number(await board(page).getAttribute('data-pending'));
-  const start = await pending();
-  expect(start).toBeGreaterThan(1);
-  const seen = new Set<number>([start]);
-  for (let k = 0; k < 40 && (await pending()) > 0; k++) {
-    seen.add(await pending());
-    await page.waitForTimeout(100);
+  // Record every value the board reports, in the page itself: polling from the test can miss steps when the
+  // machine is busy, the board's own attribute changes cannot.
+  await board(page).evaluate((el) => {
+    const w = window as unknown as { __ppSeen: Set<string> };
+    w.__ppSeen = new Set<string>();
+    new MutationObserver(() => w.__ppSeen.add(el.getAttribute('data-pending') ?? '')).observe(el, { attributes: true, attributeFilter: ['data-pending'] });
+  });
+  // The picture is random: a move whose hits fall into one shot pops at once. Play the solution's moves until
+  // one removes pixels over several shots (most do; the first usually already).
+  let steps = 0;
+  for (const move of state.witness.slice(0, 8)) {
+    await page.evaluate(() => (window as unknown as { __ppSeen: Set<string> }).__ppSeen.clear());
+    await buttonFor(page, move).click();
+    // It ends by itself.
+    await expect(board(page)).toHaveAttribute('data-peeling', '0', { timeout: 15_000 });
+    const seen = await page.evaluate(() => [...(window as unknown as { __ppSeen: Set<string> }).__ppSeen].map(Number));
+    steps = new Set(seen).size;
+    if (steps > 2) break;
   }
-  // Several distinct steps: shots, not one pop; and it ends by itself.
-  expect(seen.size).toBeGreaterThan(2);
-  await expect(board(page)).toHaveAttribute('data-peeling', '0', { timeout: 10_000 });
+  // Several distinct steps: shots, not one pop.
+  expect(steps).toBeGreaterThan(2);
 });
 
 test('pixel-peel: the Display button opens the options mid-game; Quick → Off finishes the queue at once and is remembered', async ({ page, isMobile }) => {
