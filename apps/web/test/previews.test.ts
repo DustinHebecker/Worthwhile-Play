@@ -123,7 +123,7 @@ describe('game previews on the home page', () => {
       expect(webpSize(readFileSync(join(PUBLIC, 'logo.png')))).toBeUndefined();
     });
 
-    it('the photo games are Relay Command and Lootlings', () => expect([...PHOTOS].sort()).toEqual(['card-quest', 'relay-command']));
+    it('the photo games are Relay Command, Lootlings and Tower Defense', () => expect([...PHOTOS].sort()).toEqual(['card-quest', 'relay-command', 'tower-defense']));
 
     it.each([...PHOTOS])('%s: a registered game, without a drawing of its own', (id) => {
       expect(ids).toContain(id);
