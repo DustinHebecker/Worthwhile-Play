@@ -362,6 +362,9 @@ describe('E2: auras', () => {
     expect(effects.get(1)?.heal?.by).toBe(2);
     expect(effects.get(2)?.heal?.by).toBe(1);
     expect(effects.has(4)).toBe(false);
+    // The same in the other entity order: a weaker aura met later never replaces a stronger one.
+    const reversed = auraEffects([ent(2, 'repair-big', 1), ent(1, 'repair', 0), ent(3, 'gun', 2)], archOf, () => true);
+    expect(reversed.get(3)?.heal?.by).toBe(2);
     const same = auraEffects([ent(5, 'repair', 0), ent(3, 'gun', 1), ent(4, 'repair', 2)], archOf, () => true);
     expect(same.get(3)?.heal?.by).toBe(4);
     const tie = auraEffects([ent(1, 'repair', 0), ent(3, 'gun', 1), { ...ent(2, 'repair', 2), kind: 'r10' }], (e) => (e.kind === 'r10' ? archetype('r10', { aura: { radius: 2, heal: { hp: 10, every: 4 } } }) : archOf(e)), () => true);
