@@ -2,6 +2,7 @@ import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@
 import { DEADLOCK_TICKS, STALL_TICKS, UNREACHABLE_TICKS } from './sim';
 import { archetypeOf, canBeNeutral, isValidDoctrine, MAX_SIDES, needsDeploy } from './world';
 import { FRAMES } from './grid';
+import { MAX_HASTE } from './effects';
 import { MAX_QUEUE, MAX_SUPPLY, NEUTRAL, STATUS_KINDS, type Deposit, type Entity, type Frame, type Order, type Projectile, type QueueItem, type Report, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
@@ -47,7 +48,23 @@ const isStandingOrder = (v: unknown, w: number, h: number): v is Order => isVali
 /** One-shot economy commands: carried out at once, the unit's standing order stays. */
 export const isOneShotOrder = (o: Order): boolean => o.type === 'produce' || o.type === 'build' || o.type === 'repair' || o.type === 'sell' || o.type === 'launch';
 
-const isStatus = (v: unknown): v is Status => isRecord(v) && isOneOf(v.kind, STATUS_KINDS) && isInt(v.ticks, 1, 10_000);
+/** A status; `marked` carries its percentage (`amount`, 0–1000), the others none. */
+const isStatus = (v: unknown): v is Status =>
+  isRecord(v) && isOneOf(v.kind, STATUS_KINDS) && isInt(v.ticks, 1, 10_000) && (v.kind === 'marked' ? isInt(v.amount, 0, 1000) : v.amount === undefined);
+
+/**
+ * Tower Defense extension fields: `shield` (0 up to the archetype's shield) and `shieldAt` (a past
+ * tick) only on shielded archetypes, `haste` (0–MAX_HASTE) on anything (an aura may reach it). Without a
+ * ruleset only their ranges are checked.
+ */
+function validExtensionFields(e: Record<string, unknown>, ruleset: Ruleset | undefined, tick: number): boolean {
+  if (e.haste !== undefined && !isInt(e.haste, 0, MAX_HASTE)) return false;
+  if (e.shield === undefined && e.shieldAt === undefined) return true;
+  const spec = ruleset ? archetypeOf(ruleset, e.kind as string)?.shield : undefined;
+  if (ruleset && !spec) return false;
+  if (e.shield !== undefined && !isInt(e.shield, 0, spec?.hp ?? 1_000_000)) return false;
+  return e.shieldAt === undefined || isInt(e.shieldAt, 0, tick);
+}
 
 /**
  * Deploy progress is only meaningful on units that need deploying, at most one turn of ticks,
@@ -108,6 +125,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000))) &&
     (e.deploy === undefined || validDeploy(e, ruleset)) &&
     validDroneFields(e, ruleset) &&
+    validExtensionFields(e, ruleset, tick) &&
     (e.doctrine === undefined || isValidDoctrine(e.doctrine)) &&
     (e.hitAt === undefined || isInt(e.hitAt, 0, tick)) &&
     (e.bumps === undefined || isInt(e.bumps, 0, DEADLOCK_TICKS)) &&

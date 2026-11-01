@@ -4,6 +4,7 @@ import { depositAt, isReady, repairPrice } from './economy';
 import { MAX_QUEUE } from './types';
 import { computeNetwork, isCommandable, type Network } from './network';
 import { initialIntel, isSpotted, observedCells } from './vision';
+import { invalidExtensions } from './effects';
 import { LOST_CONTACT, NEUTRAL, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Deposit, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
@@ -13,6 +14,8 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
     throw new RangeError('Invalid map dimensions.');
   }
   for (const ch of map.terrain) if (!Object.hasOwn(ruleset.terrain, ch)) throw new RangeError(`Unknown terrain '${ch}'.`);
+  const malformed = invalidExtensions(ruleset);
+  if (malformed.length > 0) throw new RangeError(`Malformed archetype extension in '${malformed.join("', '")}'.`);
   const occupied = new Set<string>();
   const entities: Entity[] = scenario.entities.map((spec, i) => {
     const arch = archetypeOf(ruleset, spec.kind);
@@ -77,7 +80,7 @@ export const hostile = (world: Pick<World, 'teams'>, a: number, b: number): bool
   a !== b && (a === NEUTRAL || b === NEUTRAL || teamOf(world, a) !== teamOf(world, b));
 
 export function spawn(id: number, side: number, arch: Archetype, x: number, y: number, order: Order = { type: 'hold' }): Entity {
-  return { id, side, kind: arch.id, x, y, hp: arch.hp, mp: 0, cooldown: 0, order, status: [], beam: null };
+  return { id, side, kind: arch.id, x, y, hp: arch.hp, mp: 0, cooldown: 0, order, status: [], beam: null, ...(arch.shield && { shield: arch.shield.hp }) };
 }
 
 /**
