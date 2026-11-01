@@ -1,7 +1,7 @@
 import { bcp47Tag, normalizeSeed, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
-import { archetypeOf, type SimEvent } from '@wp/strategy-engine';
+import { archetypeOf, type Entity, type SimEvent } from '@wp/strategy-engine';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
-import { drawFrame, drawTerrain, readPalette, type Palette } from '@wp/td-core';
+import { drawFrame, drawTerrain, Motion, readPalette, type Palette } from '@wp/td-core';
 import { BASE_TOWERS, TICKS_PER_SECOND, TD_RULESET, TOWERS, type EnemyKind } from '@wp/td-core';
 import {
   applyCommand,
@@ -51,8 +51,9 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   let lastTime = 0;
   let acc = 0;
   let sinceSave = 0;
-  let prev = new Map<number, readonly [number, number]>();
-  let beams: [number, number, number, number][] = [];
+  const motion = new Motion();
+  let hits = new Set<number>();
+  let beams: [number, number][] = [];
   let blasts: [number, number, number][] = [];
   let palette: Palette | null = null;
   let disposeKeyboard: () => void = () => {};
@@ -321,12 +322,14 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     palette ??= readPalette(container);
-    const alpha = context.reducedMotion || !playing ? 1 : Math.min(1, acc);
+    // Units glide over each step (Motion); in reduced motion they stand on their cells.
+    const now = state.world.tick + (playing ? Math.min(1, acc) : 0);
+    const place = context.reducedMotion ? undefined : (e: Entity) => motion.position(e.id, e.x, e.y, now);
     const map = mapOf(state);
     const entries = map.routes.filter((r) => r.layer === 'ground').map((r) => r.points[0]!);
     const [gx, gy] = map.routes[0]!.points.at(-1)!;
     const goals = [{ x: gx, y: gy, side: 0 }];
-    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goals, hpMax, splashOf }, terrainLayer(width, dpr, palette));
+    drawFrame(g, width, palette, { world: state.world, place, beams, hits, blasts, selected, entries, goals, hpMax, splashOf }, terrainLayer(width, dpr, palette));
   };
 
   /** The terrain drawn once per map, size and theme (the strategy terrain renderer is detailed). */
@@ -363,23 +366,26 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   const collect = (events: readonly SimEvent[]): void => {
     beams = [];
     blasts = [];
+    hits = new Set();
+    motion.update(events);
     const lastTick = events.at(-1)?.tick;
     for (const e of events) {
       if (e.tick !== lastTick) continue;
       if (e.t === 'fire') {
         const shooter = state.world.entities.find((x) => x.id === e.id);
         const target = state.world.entities.find((x) => x.id === e.target);
-        if (shooter && target && archetypeOf(TD_RULESET, shooter.kind)?.weapon?.delivery === 'beam') beams.push([shooter.x, shooter.y, target.x, target.y]);
+        if (shooter && target && archetypeOf(TD_RULESET, shooter.kind)?.weapon?.delivery === 'beam') beams.push([shooter.id, target.id]);
       } else if (e.t === 'land') blasts.push([e.x, e.y, 0]);
+      else if (e.t === 'hit') hits.add(e.id);
     }
   };
 
   const advance = (ticks: number): void => {
     const before = state;
-    prev = new Map(before.world.entities.map((e) => [e.id, [e.x, e.y] as const]));
     const result = ticks > 1_000 ? resolveWave(before) : stepWave(before, ticks);
     state = result.state;
     collect(result.events);
+    motion.prune(new Set(state.world.entities.map((e) => e.id)));
     sinceSave += ticks;
     if (state.phase !== 'wave') {
       onWaveOver(before);
@@ -398,7 +404,8 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     sinceSave = 0;
     beams = [];
     blasts = [];
-    prev = new Map();
+    motion.clear();
+    hits = new Set();
     acc = 0;
     const killed = state.stats.killed - before.stats.killed;
     const leaked = state.stats.leaked - before.stats.leaked;
@@ -539,7 +546,8 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     state = next;
     playing = false;
     selected = null;
-    prev = new Map();
+    motion.clear();
+    hits = new Set();
     beams = [];
     blasts = [];
     status.textContent = '';

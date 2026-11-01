@@ -1,6 +1,8 @@
 import type { Entity, World } from '@wp/strategy-engine';
 import { drawIcon, drawTerrainMap, type TerrainColours } from '@wp/strategy-art';
+import type { Placed } from './motion';
 import { isStructureKind, TOWERS, type Family } from './ruleset';
+import { drawUnit } from './units';
 
 /**
  * Canvas painting of the map (view only, floats allowed), in the look of the strategy game
@@ -99,11 +101,15 @@ export const ENEMY_ICON: Readonly<Record<string, readonly [string, number]>> = {
 export interface Frame {
   world: World;
   /** Positions before the last step (for interpolation), by entity id. */
-  prev: ReadonlyMap<number, readonly [number, number]>;
-  /** 0..1 between the previous and the current tick. */
-  alpha: number;
-  /** Beams fired in the last tick: shooter → target cells. */
-  beams: readonly (readonly [number, number, number, number])[];
+  /**
+   * Where to draw a moving unit (cells, fractional) and how far through its step it is (0..1),
+   * e.g. from `Motion`; absent: on its cell.
+   */
+  place?: ((e: Entity) => Placed) | undefined;
+  /** Beams fired in the last tick: shooter id → target id (drawn between where both are drawn). */
+  beams: readonly (readonly [number, number])[];
+  /** Units hit in the last tick (a short flash). */
+  hits?: ReadonlySet<number>;
   /** Shells that landed in the last tick. */
   blasts: readonly (readonly [number, number, number])[];
   selected: { x: number; y: number } | null;
@@ -170,11 +176,12 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     }
   }
 
+  const placeOf = (e: Entity): Placed => f.place?.(e) ?? { x: e.x, y: e.y, progress: 1, dx: 0, dy: 0 };
   const pos = (e: Entity): [number, number] => {
-    const p = f.prev.get(e.id);
-    const [px, py] = p ?? [e.x, e.y];
-    return [(px + (e.x - px) * f.alpha + 0.5) * cell, (py + (e.y - py) * f.alpha + 0.5) * cell];
+    const p = placeOf(e);
+    return [(p.x + 0.5) * cell, (p.y + 0.5) * cell];
   };
+  const byId = new Map(f.world.entities.map((e) => [e.id, e]));
 
   // Incoming shells: a dashed ring on the landing cell, as large as the blast.
   g.strokeStyle = palette.ink;
@@ -229,10 +236,15 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
   // Beams.
   g.lineWidth = Math.max(2, cell * 0.05);
   g.strokeStyle = palette.focus;
-  for (const [sx, sy, tx, ty] of f.beams) {
+  for (const [from, to] of f.beams) {
+    const a = byId.get(from);
+    const b = byId.get(to);
+    if (!a || !b) continue;
+    const [sx, sy] = pos(a);
+    const [tx, ty] = pos(b);
     g.beginPath();
-    g.moveTo((sx + 0.5) * cell, (sy + 0.5) * cell);
-    g.lineTo((tx + 0.5) * cell, (ty + 0.5) * cell);
+    g.moveTo(sx, sy);
+    g.lineTo(tx, ty);
     g.stroke();
   }
 
@@ -242,10 +254,16 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
   const unitColour = (side: number) => (f.neutralUnits ? palette.ink : colourOf(side));
   for (const e of f.world.entities) {
     if (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)) continue;
-    const [cx, cy] = pos(e);
+    const [cx, by] = pos(e);
+    // A small hop per step while it moves (no hop in reduced motion: then nothing glides either).
+    const placed = placeOf(e);
+    const { progress } = placed;
+    const cy = by - (progress < 1 ? Math.sin(progress * Math.PI) * cell * 0.06 : 0);
     const [icon, size] = ENEMY_ICON[e.kind] ?? ['rifles', 0.8];
     const s = cell * size;
-    if (!drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, unitStyle(e.side))) {
+    const facing: 1 | -1 = placed.dx < 0 ? -1 : 1;
+    const drawn = drawUnit(g, e.kind, cx, cy, s, { colour: unitColour(e.side), ink: palette.ink, surface: palette.surface, facing, phase: progress, moving: progress < 1 });
+    if (!drawn && !drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, unitStyle(e.side))) {
       g.beginPath();
       g.arc(cx, cy, s * 0.3, 0, TAU);
       g.fillStyle = unitColour(e.side);
@@ -303,6 +321,18 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.lineTo(cx + cell * 0.3, cy + cell * 0.3);
       g.moveTo(cx + cell * 0.3, cy - cell * 0.3);
       g.lineTo(cx - cell * 0.3, cy + cell * 0.3);
+      g.stroke();
+    }
+    if (f.hits?.has(e.id)) {
+      // Hit: a short spark of four strokes around the unit.
+      g.strokeStyle = palette.focus;
+      g.lineWidth = 2;
+      g.beginPath();
+      for (let i = 0; i < 4; i++) {
+        const a = (i * TAU) / 4 + Math.PI / 4;
+        g.moveTo(cx + Math.cos(a) * s * 0.35, cy + Math.sin(a) * s * 0.35);
+        g.lineTo(cx + Math.cos(a) * s * 0.55, cy + Math.sin(a) * s * 0.55);
+      }
       g.stroke();
     }
     const max = f.hpMax(e.kind);

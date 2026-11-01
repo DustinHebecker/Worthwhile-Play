@@ -1,6 +1,6 @@
 import { bcp47Tag, normalizeSeed, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
-import { archetypeOf, type SimEvent } from '@wp/strategy-engine';
-import { BASE_TOWERS, drawFrame, drawTerrain, readPalette, TD_RULESET, TICKS_PER_SECOND, TOWER_PRIORITIES, TOWERS, type EnemyKind, type Palette, type TowerPriority } from '@wp/td-core';
+import { archetypeOf, type Entity, type SimEvent } from '@wp/strategy-engine';
+import { BASE_TOWERS, drawFrame, drawTerrain, Motion, readPalette, TD_RULESET, TICKS_PER_SECOND, TOWER_PRIORITIES, TOWERS, type EnemyKind, type Palette, type TowerPriority } from '@wp/td-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import { planRound } from './ai';
 import { mapForMode, ownPad } from './maps';
@@ -59,8 +59,9 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   let lastTime = 0;
   let acc = 0;
   let sinceSave = 0;
-  let prev = new Map<number, readonly [number, number]>();
-  let beams: [number, number, number, number][] = [];
+  const motion = new Motion();
+  let hits = new Set<number>();
+  let beams: [number, number][] = [];
   let blasts: [number, number, number][] = [];
   let palette: Palette | null = null;
   let disposeKeyboard: () => void = () => {};
@@ -350,14 +351,16 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     palette ??= readPalette(container);
-    const alpha = context.reducedMotion || !playing ? 1 : Math.min(1, acc);
+    // Units glide over each step (Motion); in reduced motion they stand on their cells.
+    const now = state.world.tick + (playing ? Math.min(1, acc) : 0);
+    const place = context.reducedMotion ? undefined : (e: Entity) => motion.position(e.id, e.x, e.y, now);
     const m = map();
     const entries = m.lanes.map((r) => r.points[0]!);
     const goals = m.lanes.map((r, side) => {
       const [x, y] = r.points.at(-1)!;
       return { x, y, side: 1 - side };
     });
-    drawFrame(g, width, palette, { world: state.world, prev, alpha, beams, blasts, selected, entries, goals, viewer: PLAYER, split: m.split, neutralUnits: external(), hpMax, splashOf }, terrainLayer(width, dpr, palette));
+    drawFrame(g, width, palette, { world: state.world, place, beams, hits, blasts, selected, entries, goals, viewer: PLAYER, split: m.split, neutralUnits: external(), hpMax, splashOf }, terrainLayer(width, dpr, palette));
   };
 
   let terrainKey = '';
@@ -394,23 +397,26 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const collect = (events: readonly SimEvent[]): void => {
     beams = [];
     blasts = [];
+    hits = new Set();
+    motion.update(events);
     const lastTick = events.at(-1)?.tick;
     for (const e of events) {
       if (e.tick !== lastTick) continue;
       if (e.t === 'fire') {
         const shooter = state.world.entities.find((x) => x.id === e.id);
         const target = state.world.entities.find((x) => x.id === e.target);
-        if (shooter && target && archetypeOf(TD_RULESET, shooter.kind)?.weapon?.delivery === 'beam') beams.push([shooter.x, shooter.y, target.x, target.y]);
+        if (shooter && target && archetypeOf(TD_RULESET, shooter.kind)?.weapon?.delivery === 'beam') beams.push([shooter.id, target.id]);
       } else if (e.t === 'land') blasts.push([e.x, e.y, 0]);
+      else if (e.t === 'hit') hits.add(e.id);
     }
   };
 
   const advance = (ticks: number): void => {
     const before = state;
-    prev = new Map(before.world.entities.map((e) => [e.id, [e.x, e.y] as const]));
     const result = ticks > 1_000 ? resolveBattle(before) : stepBattle(before, ticks);
     state = result.state;
     collect(result.events);
+    motion.prune(new Set(state.world.entities.map((e) => e.id)));
     sinceSave += ticks;
     if (state.phase !== 'battle') return onBattleOver(before);
     if (sinceSave >= SAVE_EVERY) {
@@ -426,7 +432,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     sinceSave = 0;
     beams = [];
     blasts = [];
-    prev = new Map();
+    motion.clear();
+    hits = new Set();
     acc = 0;
     if (state.phase === 'plan') {
       status.textContent = t(external() ? 'status.roundExternal' : 'status.round', {
@@ -633,7 +640,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     state = next;
     playing = false;
     selected = null;
-    prev = new Map();
+    motion.clear();
+    hits = new Set();
     beams = [];
     blasts = [];
     status.textContent = '';
