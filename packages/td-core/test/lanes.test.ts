@@ -633,5 +633,48 @@ describe('defenders on the lanes, in detail', () => {
     }
     expect(entered).toBe(true);
   });
+
+  it('next to a spawn cell the force still needs on its layer, a defender holds (no jitter); not for another layer or with nothing pending', () => {
+    const orderAt = (kind: string, x: number, y: number, pending: LaneRun['pending']) => {
+      const w = world();
+      const d = put(w, kind, 0, x, y);
+      // Walking route 2 (or 3 when flying) towards (2, 0); at (2, 2) it is three cells from the end.
+      const out = tickLanes(w, { tick: 1, pending, walkers: [{ id: d.id, route: kind === 'skimmer' ? 3 : 2, leg: 1 }] }, ROUTES);
+      return out.world.entities.find((e) => e.id === d.id)!.order.type;
+    };
+    const later = (kind: string, route: number): LaneRun['pending'] => [{ at: 100, kind: kind as never, route, side: 1 }];
+    // An entry at (2, 7) (route 3 starts there; far from the end of the defender's road at (2, 0)).
+    // (3, 6) is next to it, off the road: heading on, it could be stepped onto the entry.
+    expect(orderAt('skimmer', 3, 6, [])).toBe('move');
+    expect(orderAt('skimmer', 3, 6, later('glider', 3))).toBe('hold');
+    // Another layer's entry does not count.
+    expect(orderAt('skimmer', 3, 6, later('walker', 2))).toBe('move');
+    // Two cells off it goes on.
+    expect(orderAt('skimmer', 4, 5, later('glider', 3))).toBe('move');
+  });
+
+  it('set down from an entry, a ground defender goes onto its own road first, and its moves are reset', () => {
+    // Two parallel roads: route 0/2 down column 2, a second road down column 4 (same entry row).
+    const rows = ['bb=b=', 'bb=b=', 'bb===', 'bb=b=', 'bb=b=', 'bb=b=', 'bb=b=', 'bb=b='];
+    const routes: Route[] = [...ROUTES, { layer: 'ground', points: [[4, 0], [4, 7]] }, { layer: 'ground', points: [[4, 7], [4, 0]] }];
+    const make = () => createWorld({ map: { w: 5, h: 8, terrain: rows.join('') }, sides: 2, entities: [], seed: 1 }, TD_RULESET);
+    // A defender of route 5 (column 4, upwards) stands on the entry (2, 0) of route 0; (3, 1) is no road,
+    // (2, 1) is the nearest road cell but not its own: it goes to (4, 1)... unless that is taken.
+    const run1 = (taken: [number, number][]) => {
+      const w = make();
+      const d = put(w, 'picket', 0, 2, 0);
+      d.mp = 5;
+      for (const [x, y] of taken) put(w, 'picket', 0, x, y);
+      const out = tickLanes(w, { tick: 0, pending: [{ at: 0, kind: 'walker', route: 0, side: 1 }], walkers: [{ id: d.id, route: 5, leg: 1 }] }, routes);
+      const e = out.world.entities.find((x) => x.id === d.id)!;
+      return { at: [e.x, e.y], mp: e.mp };
+    };
+    // Its own road is column 4: the nearest free cell of it, two rings out, beats (2, 1) one ring out.
+    expect(run1([]).at).toEqual([4, 0]);
+    expect(run1([]).mp).toBe(0);
+    // All of its own road near by taken? Then any road.
+    const all = Array.from({ length: 8 }, (_, y) => [4, y] as [number, number]).concat([[3, 2]]);
+    expect(run1(all).at).toEqual([2, 1]);
+  });
 });
 

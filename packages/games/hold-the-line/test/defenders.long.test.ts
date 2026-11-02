@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { isDefenderKind } from '@wp/td-core';
+import { archetypeOf } from '@wp/strategy-engine';
+import { isDefenderKind, TD_RULESET } from '@wp/td-core';
 import { CROSSING, ownPad } from '../src/maps';
-import { applyPlan, defendersOf, isValidState, lockRound, MAX_BATTLE_TICKS, MAX_PRODUCERS, newGame, RESEARCH_IDS, stepBattle, type HoldState } from '../src/rules';
+import { applyPlan, defendersOf, isValidState, lockRound, MAX_BATTLE_TICKS, MAX_PRODUCERS, newGame, RESEARCH_IDS, routesOf, stepBattle, type HoldState } from '../src/rules';
 
 /**
  * No stall (design § 18.3, orchestrator's condition 3): whatever buildings and research both sides
@@ -124,5 +125,23 @@ describe('defenders never stall a battle', () => {
       expect(ticksOf(s, 1)).toBeLessThanOrEqual(2000);
     }
   }, 1_800_000);
+
+  it('no jitter at the entries: a defender is never found on a spawn cell the force still needs on its layer (follow-up to PR #111, M)', () => {
+    const routes = routesOf(CROSSING);
+    const layer = (kind: string) => archetypeOf(TD_RULESET, kind)!.layer;
+    // The reviewer's case (only the far side builds) and both sides alike; before: 186 and 53 set-downs.
+    for (const both of [false, true]) {
+      const hangars = Array(10).fill(HANGAR);
+      const s = setup(21, [both ? hangars : [], hangars], [both ? ['hangars'] : [], ['hangars']], false, true);
+      let t = lockRound(s, () => []);
+      let found = 0;
+      while (t.phase === 'battle') {
+        const entries = new Set(t.run!.pending.map((p) => `${layer(p.kind)}:${routes[p.route]!.points[0]!.join(',')}`));
+        found += t.world.entities.filter((e) => isDefenderKind(e.kind) && entries.has(`${layer(e.kind)}:${e.x},${e.y}`)).length;
+        t = stepBattle(t, 1).state;
+      }
+      expect(found, both ? 'both sides' : 'far side').toBe(0);
+    }
+  }, 900_000);
 });
 
