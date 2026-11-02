@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { archetypeOf } from '@wp/strategy-engine';
-import { BASE_TOWERS, ENEMIES, TD_RULESET, TOWERS, type EnemyKind } from '@wp/td-core';
-import { attackOrder, defenceShare, defenceSims, expectedWave, leakage, padsNear, planRound, probeOrder, PROBE_SIMS, PROFILES, WORK_BUDGET, type Meter } from '../src/ai';
-import { DUEL, ownPad } from '../src/maps';
-import { applyPlan, checkPlan, externalWave, EXTRACTOR_PRICE, newGame, SHOP, START_CREDITS, UNIT_PRICES, type HoldState, type PlanCommand } from '../src/rules';
+import { BASE_TOWERS, ENEMIES, TD_RULESET, tickLanes, TOWERS, type EnemyKind, type LaneRun } from '@wp/td-core';
+import { attackOrder, defenceShare, defenceSims, expectedWave, leakage, LEAKAGE_TICKS, padsNear, planRound, probeOrder, PROBE_SIMS, PROFILES, WORK_BUDGET, type Meter } from '../src/ai';
+import { CROSSING, DUEL, ownPad } from '../src/maps';
+import { applyPlan, checkPlan, externalWave, EXTRACTOR_PRICE, mapOf, newGame, SHOP, START_CREDITS, UNIT_PRICES, type HoldState, type PlanCommand } from '../src/rules';
 
 /** Fast unit tests of the computer opponent; its strength is measured in ai.long.test.ts. */
 const fresh = (difficulty: 'easy' | 'normal' | 'hard' = 'normal'): HoldState => newGame(1, difficulty);
@@ -447,3 +447,44 @@ describe('planner budgets', () => {
     expect(probeOrder(s, 1, 0, { used: WORK_BUDGET })).toEqual([SHOP[0]]);
   });
 });
+
+describe('leakage at the simulation cap (review of PR #104, L4)', () => {
+  const s = newGame(1, 'normal', 'crossing');
+  const threat = (wave: readonly EnemyKind[]) => wave.reduce((n, k) => n + ENEMIES[k].threat, 0);
+
+  it('a wave too long for the cap counts in full when nothing stops it: those on the road and those still to come', () => {
+    // 240 units take far more than LEAKAGE_TICKS to send (8 ticks apart), so many are on the road or unsent at the cap.
+    const wave = Array.from({ length: 240 }, (_, i): EnemyKind => (i % 2 === 0 ? 'brute' : 'walker'));
+    expect(240 * 8).toBeGreaterThan(LEAKAGE_TICKS);
+    expect(leakage(s.world, s, 0, wave)).toBeCloseTo(threat(wave), 9);
+  });
+
+  it('units on the road at the cap count by their own kind and health', () => {
+    // A defence that damages some units: the result lies between nothing through and everything through,
+    // and differs from the same count of one kind only.
+    let t = s;
+    for (const [x, y] of padsNear(t, 0, CROSSING.lanes[1]!, 3).slice(0, 4)) t = applyPlan(t, 0, { t: 'place', kind: 'gun', x, y });
+    const wave = Array.from({ length: 240 }, (_, i): EnemyKind => (i % 2 === 0 ? 'brute' : 'walker'));
+    const loss = leakage(t.world, t, 0, wave);
+    expect(loss).toBeGreaterThan(0);
+    expect(loss).toBeLessThan(threat(wave));
+    const brutes = leakage(t.world, t, 0, Array.from({ length: 240 }, (): EnemyKind => 'brute'));
+    expect(brutes).not.toBeCloseTo(loss, 3);
+  });
+
+  it('the longest Duel wave (60 units) empties an undefended road in well under half the cap', () => {
+    // Slowing towers act only on the walk (192 of these ticks), not on sending: the cap stays out of reach.
+    const d = newGame(1, 'normal');
+    let w = structuredClone(d.world);
+    let run: LaneRun = { tick: 0, pending: Array.from({ length: 60 }, (_, i) => ({ at: 8 * i, kind: 'brute' as const, route: 0, side: 0 })), walkers: [] };
+    let ticks = 0;
+    while (run.pending.length > 0 || run.walkers.length > 0) {
+      const step = tickLanes(w, run, [mapOf(d).lanes[1]!], true);
+      [w, run] = [step.world, step.run];
+      ticks++;
+    }
+    expect(ticks).toBeLessThan(LEAKAGE_TICKS / 2);
+    expect(leakage(d.world, d, 1, Array.from({ length: 60 }, (): EnemyKind => 'brute'))).toBe(threat(Array.from({ length: 60 }, (): EnemyKind => 'brute')));
+  });
+});
+
