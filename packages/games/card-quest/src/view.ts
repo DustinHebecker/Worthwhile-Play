@@ -132,7 +132,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const title = r.by === null ? t('reveal.open', { card: name(r.card) }) : t('reveal.curse', { name: seatName(r.by), card: name(r.card) });
     return h(
       'section',
-      { class: 'cq-reveal cq-detail', 'data-testid': 'reveal', 'data-type': defOf(r.card).type, 'aria-labelledby': 'cq-reveal-title' },
+      { class: 'cq-reveal cq-detail', 'data-testid': 'reveal', 'data-card': r.card, 'data-type': defOf(r.card).type, 'aria-labelledby': 'cq-reveal-title' },
       h('h3', { id: 'cq-reveal-title' }, title),
       bigPic(r.card),
       h('p', { class: 'cq-tile-type' }, type),
@@ -394,12 +394,33 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     }
   }
 
-  /** Loads the pictures of the game's worlds and redraws once they are there (pictograms meanwhile). */
+  /** Loads the pictures of the game's worlds and shows them once they are there (pictograms meanwhile). */
   function ensurePictures(): void {
     if (illustrationsLoaded(state.settings.worlds)) return;
     void loadIllustrations(state.settings.worlds).then(() => {
-      if (!disposed && illustrationsLoaded(state.settings.worlds)) render();
+      if (!disposed && illustrationsLoaded(state.settings.worlds)) showPictures();
     });
+  }
+
+  /**
+   * Puts pictures that arrived after the last redraw into place without redrawing: a full redraw replaced every
+   * control, and one that happened between pressing and releasing a key or button swallowed that press.
+   */
+  function showPictures(): void {
+    for (const el of main.querySelectorAll<HTMLElement>('.cq-tile[data-card]')) {
+      const old = el.querySelector(':scope > .cq-art');
+      if (old && !old.classList.contains('cq-art-il')) old.replaceWith(pic(el.dataset.card!));
+    }
+    for (const el of main.querySelectorAll<HTMLElement>('.cq-detail[data-card]')) {
+      if (el.querySelector('[data-testid="detail-pic"]')) continue;
+      const big = bigPic(el.dataset.card!);
+      if (!big) continue;
+      // The card detail shows the large picture on top instead of the small one; a revealed card below its title.
+      el.querySelector(':scope > .cq-detail-head > .cq-art')?.remove();
+      const title = el.querySelector(':scope > h3');
+      if (title) title.after(big);
+      else el.prepend(big);
+    }
   }
 
   function render(): void {
@@ -831,7 +852,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const ups = upgradesOf(me, card);
     return h(
       'section',
-      { class: 'cq-detail', id: 'cq-detail', 'data-type': defOf(card).type, tabindex: '-1', 'data-testid': 'detail', 'aria-labelledby': 'cq-detail-title' },
+      { class: 'cq-detail', id: 'cq-detail', 'data-card': card, 'data-type': defOf(card).type, tabindex: '-1', 'data-testid': 'detail', 'aria-labelledby': 'cq-detail-title' },
       big,
       h('div', { class: 'cq-detail-head' }, big ? null : pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
       h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
