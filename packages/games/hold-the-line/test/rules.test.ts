@@ -16,6 +16,7 @@ import {
   interestOf,
   isValidState,
   lockRound,
+  MAX_PLAN_COMMANDS,
   seenBy,
   MAX_WORKSHOPS,
   newGame,
@@ -177,8 +178,9 @@ describe('battle', () => {
     expect(end.sides[1].wave).toEqual([]);
   });
 
-  it('the game ends after the last round or when a core falls; the higher core wins', () => {
-    let s = fresh();
+  it('a short game ends after its last round or when a core falls; the higher core wins', () => {
+    const short = () => newGame(1, 'normal', 'duel', { length: 'rounds' });
+    let s = short();
     for (let round = 0; round < ROUNDS && s.phase === 'plan'; round++) {
       s = applyPlan(s, 0, { t: 'buy', kind: 'walker' });
       s = resolveBattle(lockRound(s, idle)).state;
@@ -188,7 +190,7 @@ describe('battle', () => {
     expect(s.sides[1].core).toBe(START_CORE - ROUNDS);
     expect(isValidState(clone(s))).toBe(true);
     // Both silent: a draw.
-    let quiet = fresh();
+    let quiet = short();
     while (quiet.phase === 'plan') quiet = resolveBattle(lockRound(quiet, idle)).state;
     expect(quiet.phase).toBe('draw');
   });
@@ -321,9 +323,11 @@ describe('properties', () => {
       tamper(t);
       expect(isValidState(t)).toBe(false);
     }
-    // A finished game at the last round with equal cores is a draw, and valid.
-    const end = { ...clone(s), round: ROUNDS - 1, phase: 'draw' as const, log: Array.from({ length: ROUNDS }, () => ({ player: [], ai: [] })) };
+    // A finished short game at the last round with equal cores is a draw, and valid; an endless one
+    // cannot have ended there with both cores standing.
+    const end = { ...clone(s), length: 'rounds' as const, round: ROUNDS - 1, phase: 'draw' as const, log: Array.from({ length: ROUNDS }, () => ({ player: [], ai: [] })) };
     expect(isValidState(end)).toBe(true);
+    expect(isValidState({ ...end, length: 'endless' })).toBe(false);
   });
 
   it('isValidState never throws and rejects junk and tampered saves', () => {
@@ -399,3 +403,17 @@ describe('what the computer sees', () => {
     expect(seenLog).toEqual([{ player: [], ai: [] }]);
   });
 });
+
+describe('the plan log stays within what a save may hold (review of PR #107)', () => {
+  it('after MAX_PLAN_COMMANDS commands in a round, a side can give no more until the next round', () => {
+    let s = newGame(1, 'normal', 'duel', { length: 'rounds' });
+    for (let i = 0; i < MAX_PLAN_COMMANDS / 2; i++) s = applyPlan(applyPlan(s, 0, { t: 'buy', kind: 'walker' }), 0, { t: 'unbuy', index: 0 });
+    expect(s.log[0]!.player).toHaveLength(MAX_PLAN_COMMANDS);
+    expect(checkPlan(s, 0, { t: 'buy', kind: 'walker' })).toBe('log-full');
+    expect(applyPlan(s, 0, { t: 'buy', kind: 'walker' })).toBe(s);
+    expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    // The other side is not affected.
+    expect(checkPlan(s, 1, { t: 'buy', kind: 'walker' })).toBeNull();
+  });
+});
+

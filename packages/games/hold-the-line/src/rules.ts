@@ -31,7 +31,9 @@ import { mapById, mapForMode, ownPad, type DuelMap } from './maps';
  * units; an outside force comes every round and splits evenly towards both cores, and whatever gets
  * through (on either side) strengthens its next wave. In both modes: PLAN (both sides, no clock) → LOCK → BATTLE:
  * both waves run at the same time on their own lanes and never meet; units that get through cost the
- * defender core integrity. After ROUNDS rounds the side with more core left wins.
+ * defender core integrity. The short game ends after ROUNDS rounds (the side with more core left
+ * wins); the endless game ends when a core falls, and the wear-down from round WEAR_FROM + 1 makes
+ * that happen by round MAX_ROUNDS at the latest, whatever the defence.
  *
  * Side 0 is the player, side 1 the computer. The computer's plan is made at the lock, but from the
  * snapshot taken when the round started (`roundStart`: both sides as they stood then), so it never
@@ -45,7 +47,22 @@ export const DEFAULT_DIFFICULTY: Difficulty = 'normal';
 export const MODES = ['vs-small', 'external-small'] as const;
 export type Mode = (typeof MODES)[number];
 
+/** Length of a game (owner 2026-11-01: endless by default; ten rounds on points as the short game). */
+export const LENGTHS = ['endless', 'rounds'] as const;
+export type Length = (typeof LENGTHS)[number];
+export const DEFAULT_LENGTH: Length = 'endless';
+/** Rounds of the short game. */
 export const ROUNDS = 10;
+/**
+ * Endless: from this round (counted from 0) on, every standing core wears down at the end of the round,
+ * by 1 more each round (1, 2, 3, …), on top of what gets through. However strong a defence is, the
+ * cores fall within a known number of rounds (review of PR #107: the waves alone could be held forever).
+ */
+export const WEAR_FROM = 39;
+/** Most rounds a game can last: by then the wear-down alone has taken more than a full core. */
+export const MAX_ROUNDS = 47;
+/** Credits a side can hold (more is not kept; bounds what a save may hold). */
+export const MAX_CREDITS = 1_000_000;
 export const START_CORE = 30;
 export const START_CREDITS = 300;
 export const ROUND_INCOME = 100;
@@ -81,7 +98,60 @@ export const MAX_PRESSURE = 12;
 /** External Small pays this share of the bounty (its waves are large; full bounties outgrew them). */
 export const EXTERNAL_BOUNTY_PERCENT = 50;
 /** Longest wave a side can send or face (bounds what a save may hold). */
-export const MAX_WAVE = 64;
+export const MAX_WAVE = 120;
+/** The outside force without the extra Walkers for what got through. */
+const FORCE_LIMIT = MAX_WAVE - MAX_PRESSURE;
+
+/**
+ * Endless: the outside force after the table's last round (k = 1, 2, …). Every round adds two Brutes,
+ * a Shield bearer, a Raider, a Glider and a Siege crawler. Past the size limit the lightest units
+ * give way first (Gliders, then Shield bearers, Raiders, Brutes; never Siege crawlers), so every round
+ * is stronger than the one before: each brings one more Siege crawler in place of a lighter unit.
+ */
+function lateForce(k: number): (readonly [EnemyKind, number])[] {
+  const row: [EnemyKind, number][] = [
+    ['brute', 14 + 2 * k],
+    ['shielder', 10 + k],
+    ['raider', 6 + k],
+    ['glider', 8 + k],
+    ['crawler', k]
+  ];
+  let excess = row.reduce((n, [, c]) => n + c, 0) - FORCE_LIMIT;
+  for (const kind of LIGHTEST_FIRST) {
+    const entry = row.find(([k2]) => k2 === kind)!;
+    const cut = Math.min(entry[1], Math.max(0, excess));
+    entry[1] -= cut;
+    excess -= cut;
+  }
+  return row.filter(([, c]) => c > 0);
+}
+/** The order in which units give way when the late force outgrows its limit. */
+const LIGHTEST_FIRST: readonly EnemyKind[] = ['glider', 'shielder', 'raider', 'brute'];
+
+/**
+ * Endless, VS Small: the levy, free units every side sends on top of what it bought, more each round
+ * (so a game between two careful sides still ends): a Walker every second round, from round 12 one
+ * more per round, every fourth of them a Brute. Once it reaches MAX_LEVY units it grows heavier
+ * instead: every round two more of its Walkers (from the back) become Brutes.
+ */
+export function levyOf(s: Pick<HoldState, 'mode' | 'round' | 'length'>): EnemyKind[] {
+  if (s.mode !== 'vs-small' || (s.length ?? 'rounds') !== 'endless') return [];
+  const n = Math.max(0, Math.min(MAX_LEVY, Math.floor(s.round / 2) + Math.max(0, s.round - 11)));
+  const levy: EnemyKind[] = Array.from({ length: n }, (_, i) => (i % 4 === 3 ? 'brute' : 'walker'));
+  let heavier = n < MAX_LEVY ? 0 : 2 * (s.round - LEVY_FULL);
+  for (let i = n - 1; i >= 0 && heavier > 0; i--) {
+    if (levy[i] !== 'walker') continue;
+    levy[i] = 'brute';
+    heavier--;
+  }
+  return levy;
+}
+export const MAX_LEVY = 40;
+/** The first round with a full levy. */
+const LEVY_FULL = 34;
+
+/** Endless: what every standing core loses at the end of this round to the wear-down (0 before WEAR_FROM). */
+export const wearOf = (s: Pick<HoldState, 'round' | 'length'>): number => ((s.length ?? 'rounds') === 'endless' ? Math.max(0, s.round - WEAR_FROM + 1) : 0);
 
 /** What a unit of the attack wave costs (the Siege crawler is not for sale). */
 export const UNIT_PRICES: Readonly<Partial<Record<EnemyKind, number>>> = { walker: 20, runner: 25, swarm: 6, brute: 90, glider: 45, raider: 60 };
@@ -111,7 +181,9 @@ export type PlanCommand =
   | { t: 'unbuy'; index: number }
   | { t: 'workshop' };
 
-export type Refusal = 'phase' | BuildRefusal | 'capacity' | 'not-for-sale' | 'no-unit' | 'workshops' | 'mode';
+export type Refusal = 'phase' | BuildRefusal | 'capacity' | 'not-for-sale' | 'no-unit' | 'workshops' | 'mode' | 'log-full';
+/** Commands a side can give in one round (bounds the log a save holds; far above any real plan). */
+export const MAX_PLAN_COMMANDS = 1000;
 
 export type Phase = 'plan' | 'battle' | 'won' | 'lost' | 'draw';
 
@@ -134,7 +206,14 @@ export interface HoldState {
   log: { player: PlanCommand[]; ai: PlanCommand[] }[];
   /** External Small: units that got through last round, on both sides (they strengthen this round's force). */
   pressure?: number;
+  /** Endless or ten rounds (absent in saves from before the choice: ten rounds). */
+  length?: Length;
+  /** External Small alone against the force: no opponent (side 1 only stands in for the other road's end). */
+  solo?: boolean;
 }
+
+/** The last round of a game (endless: the safety bound). */
+export const lastRound = (s: Pick<HoldState, 'length'>): number => ((s.length ?? 'rounds') === 'endless' ? MAX_ROUNDS - 1 : ROUNDS - 1);
 
 export type Planner = (state: HoldState) => PlanCommand[];
 
@@ -154,13 +233,21 @@ export const incomeOf = (s: HoldState, side: number): number => ROUND_INCOME + E
 export function externalWave(s: Pick<HoldState, 'mode' | 'round' | 'pressure'>): EnemyKind[] {
   if (s.mode !== 'external-small') return [];
   const wave: EnemyKind[] = [];
-  for (const [kind, n] of EXTERNAL_WAVES[Math.min(s.round, EXTERNAL_WAVES.length - 1)]!) for (let i = 0; i < n; i++) wave.push(kind);
+  const row = s.round < EXTERNAL_WAVES.length ? EXTERNAL_WAVES[s.round]! : lateForce(s.round - EXTERNAL_WAVES.length + 1);
+  for (const [kind, n] of row) for (let i = 0; i < n; i++) wave.push(kind);
   for (let i = 0; i < Math.min(MAX_PRESSURE, s.pressure ?? 0); i++) wave.push('walker');
   return wave;
 }
 
 /** A new game; the map decides the mode (`mapForMode` gives each mode's map). */
-export function newGame(seed: number, difficulty: Difficulty, mapId: string = mapForMode('vs-small').id): HoldState {
+export interface GameOptions {
+  /** Endless (default) or ten rounds on points. */
+  length?: Length;
+  /** External Small only: alone against the outside force, without an opponent. */
+  solo?: boolean;
+}
+
+export function newGame(seed: number, difficulty: Difficulty, mapId: string = mapForMode('vs-small').id, options: GameOptions = {}): HoldState {
   const map = mapById(mapId);
   if (!map) throw new RangeError(`Unknown map ${mapId}`);
   const world = createWorld({ map: { w: map.w, h: map.h, terrain: map.rows.join('') }, sides: 2, entities: [], seed }, TD_RULESET);
@@ -178,7 +265,9 @@ export function newGame(seed: number, difficulty: Difficulty, mapId: string = ma
     unspent: [0, 0],
     run: null,
     log: [{ player: [], ai: [] }],
-    ...(map.mode === 'external-small' && { pressure: 0 })
+    ...(map.mode === 'external-small' && { pressure: 0 }),
+    length: options.length ?? DEFAULT_LENGTH,
+    ...(options.solo && map.mode === 'external-small' && { solo: true })
   };
   return s;
 }
@@ -186,6 +275,9 @@ export function newGame(seed: number, difficulty: Difficulty, mapId: string = ma
 /** Why `side` cannot do `cmd` now, or null. Never throws. */
 export function checkPlan(s: HoldState, side: number, cmd: PlanCommand): Refusal | null {
   if (s.phase !== 'plan') return 'phase';
+  // Buying and removing the same unit over and over must not outgrow what a save may hold.
+  const logged = s.log[s.round];
+  if (logged && (side === 0 ? logged.player : logged.ai).length >= MAX_PLAN_COMMANDS) return 'log-full';
   const own = s.sides[side]!;
   const map = mapOf(s);
   // External Small: the waves come from outside; nobody buys units or workshops.
@@ -248,7 +340,7 @@ export function applyPlan(s: HoldState, side: number, cmd: PlanCommand): HoldSta
       // A tower command; a sale also covers extractors (refund like any structure).
       const built = applyBuild(n.world, own, side, cmd);
       n.world = built.world;
-      own.credits = built.account.credits;
+      own.credits = Math.min(MAX_CREDITS, built.account.credits);
       own.towers = built.account.towers;
       own.stats.spent += built.spent;
     }
@@ -272,7 +364,8 @@ export function lockRound(s: HoldState, plan: Planner): HoldState {
   // this round have taken other ids by now, so those ids are translated when the plan is applied.
   const ids = new Map<number, number>();
   let n = s;
-  for (const cmd of plan(seen)) {
+  // Alone against the outside force: nobody plans for the other side.
+  for (const cmd of s.solo ? [] : plan(seen)) {
     const real = 'id' in cmd ? { ...cmd, id: ids.get(cmd.id) ?? cmd.id } : cmd;
     const [shadowId, realId] = [seen.world.nextId, n.world.nextId];
     seen = applyPlan(seen, 1, cmd);
@@ -280,7 +373,11 @@ export function lockRound(s: HoldState, plan: Planner): HoldState {
     if (cmd.t === 'place' || cmd.t === 'extractor') ids.set(shadowId, realId);
   }
   n = structuredClone(n);
-  if (n.mode === 'external-small') for (const side of n.sides) side.wave = externalWave(n);
+  if (n.mode === 'external-small') {
+    // Both sides face the same force; alone, only the half that comes for you sets off.
+    n.sides[1].wave = externalWave(n);
+    n.sides[0].wave = n.solo ? [] : externalWave(n);
+  } else for (const side of n.sides) side.wave = [...side.wave, ...levyOf(n)];
   n.unspent = [n.sides[0].credits, n.sides[1].credits];
   for (const side of n.sides) side.towers = settleAccount(side).towers;
   n.run = { tick: 0, pending: scheduleOf(n.sides), walkers: [] };
@@ -325,7 +422,8 @@ export function stepBattle(state: HoldState, ticks: number): BattleStep {
       if (isEnemyKind(e.kind)) {
         // The defender (the other side) earns the bounty (half of it against the large outside force).
         const defender = s.sides[1 - e.side]!;
-        defender.credits += s.mode === 'external-small' ? Math.floor((ENEMIES[e.kind].bounty * EXTERNAL_BOUNTY_PERCENT) / 100) : ENEMIES[e.kind].bounty;
+        const bounty = s.mode === 'external-small' ? Math.floor((ENEMIES[e.kind].bounty * EXTERNAL_BOUNTY_PERCENT) / 100) : ENEMIES[e.kind].bounty;
+        defender.credits = Math.min(MAX_CREDITS, defender.credits + bounty);
         defender.stats.killed++;
       } else {
         const owner = s.sides[e.side]!;
@@ -364,9 +462,28 @@ function endRound(s: HoldState): void {
     e.beam = null;
     e.status = [];
   }
+  // Endless: the wear-down (alone, the other side is never attacked and does not wear down either).
+  // A core that fell in battle decides the game: then nothing wears down. When the wear-down empties
+  // both cores, the side that had more before it keeps 1, so the better defence still wins (review of
+  // PR #107, B2); equal cores make a draw.
+  const fellInBattle = s.sides[0].core === 0 || (!s.solo && s.sides[1].core === 0);
+  if (!fellInBattle) {
+    const wear = wearOf(s);
+    const before = s.sides.map((side) => side.core);
+    s.sides.forEach((side, i) => {
+      if (!(s.solo && i === 1)) side.core = Math.max(0, side.core - wear);
+    });
+    if (!s.solo && s.sides[0].core === 0 && s.sides[1].core === 0 && before[0] !== before[1]) s.sides[before[0]! > before[1]! ? 0 : 1].core = 1;
+  }
   const [a, b] = [s.sides[0].core, s.sides[1].core];
-  const last = s.round >= ROUNDS - 1;
-  if (a === 0 || b === 0 || last) {
+  const last = s.round >= lastRound(s);
+  if (s.solo) {
+    // Alone: you win by holding to the end of a short game; in an endless one you hold as long as you can.
+    if (a === 0 || last) {
+      s.phase = a > 0 ? 'won' : 'lost';
+      return;
+    }
+  } else if (a === 0 || b === 0 || last) {
     s.phase = a > b ? 'won' : a < b ? 'lost' : 'draw';
     return;
   }
@@ -375,7 +492,8 @@ function endRound(s: HoldState): void {
     s.pressure = through(s.sides) - through(s.roundStart.sides);
   }
   s.sides.forEach((side, i) => {
-    side.credits += incomeOf(s, i) + interestOf(s.unspent[i as 0 | 1]);
+    // Alone, the other side only stands in for the far end of the road: it earns nothing.
+    if (!(s.solo && i === 1)) side.credits = Math.min(MAX_CREDITS, side.credits + incomeOf(s, i) + interestOf(s.unspent[i as 0 | 1]));
     side.lastWave = side.wave;
     side.wave = [];
   });
@@ -423,13 +541,20 @@ export function isPlanCommand(v: unknown): v is PlanCommand {
   }
 }
 
+/**
+ * Bound of the running totals in `stats`. Within a round a side spends at most what it holds plus what
+ * it gets back from sales (each at most MAX_CREDITS), so `spent` stays below 2 × MAX_CREDITS per round;
+ * kills and leaks are a few hundred per round at most.
+ */
+const MAX_STAT = 2 * MAX_CREDITS * MAX_ROUNDS;
+
 function isValidSide(v: unknown, s: { world: World; map: DuelMap }, index: number): v is SideState {
   const external = s.map.mode === 'external-small';
-  if (!isRecord(v) || !isInt(v.credits, 0, 1_000_000) || !isInt(v.core, 0, START_CORE) || !isInt(v.workshops, 0, external ? 0 : MAX_WORKSHOPS)) return false;
-  const most = external ? MAX_WAVE : BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY;
+  if (!isRecord(v) || !isInt(v.credits, 0, MAX_CREDITS) || !isInt(v.core, 0, START_CORE) || !isInt(v.workshops, 0, external ? 0 : MAX_WORKSHOPS)) return false;
+  const most = external ? MAX_WAVE : BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY + MAX_LEVY;
   if (!isArrayOf(v.wave, isKind) || v.wave.length > most || (!external && v.wave.some((k) => UNIT_PRICES[k] === undefined))) return false;
   if (!isArrayOf(v.lastWave, isKind) || v.lastWave.length > most) return false;
-  if (!isRecord(v.stats) || !['killed', 'leaked', 'spent'].every((k) => isInt((v.stats as Record<string, unknown>)[k], -1_000_000, 1_000_000))) return false;
+  if (!isRecord(v.stats) || !['killed', 'leaked', 'spent'].every((k) => isInt((v.stats as Record<string, unknown>)[k], -MAX_STAT, MAX_STAT))) return false;
   const owned = s.world.entities.filter((e) => e.side === index && (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)));
   if (owned.some((e) => !ownPad(s.map, index, e.x, e.y))) return false;
   return (
@@ -441,37 +566,63 @@ function isValidSide(v: unknown, s: { world: World; map: DuelMap }, index: numbe
 }
 
 export function isValidState(v: unknown): v is HoldState {
+  // Never throws, also on hand-made input (sparse arrays, getters): anything unexpected is invalid.
+  try {
+    return checkState(v);
+  } catch {
+    return false;
+  }
+}
+
+function checkState(v: unknown): v is HoldState {
   if (!isRecord(v) || v.v !== 1 || typeof v.mapId !== 'string') return false;
   const map = mapById(v.mapId);
   if (!map || v.mode !== map.mode) return false;
-  // External Small keeps the pressure; VS Small has none.
-  if (map.mode === 'external-small' ? !isInt(v.pressure, 0, 1000) : v.pressure !== undefined) return false;
-  if (!(DIFFICULTIES as readonly unknown[]).includes(v.difficulty) || !isInt(v.seed, 0, 0xffffffff) || !isInt(v.round, 0, ROUNDS - 1)) return false;
+  // Endless or ten rounds (absent: a save from before the choice); alone only against the outside force.
+  if (v.length !== undefined && !(LENGTHS as readonly unknown[]).includes(v.length)) return false;
+  if (v.solo !== undefined && (v.solo !== true || map.mode !== 'external-small')) return false;
+  const solo = v.solo === true;
+  const last = lastRound(v as Pick<HoldState, 'length'>);
+  // External Small keeps the pressure (none before the first battle; at most both waves got through); VS Small has none.
+  // (alone, only one wave can get through).
+  if (map.mode === 'external-small' ? !isInt(v.pressure, 0, v.round === 0 ? 0 : (solo ? 1 : 2) * MAX_WAVE) : v.pressure !== undefined) return false;
+  if (!(DIFFICULTIES as readonly unknown[]).includes(v.difficulty) || !isInt(v.seed, 0, 0xffffffff) || !isInt(v.round, 0, last)) return false;
   if (!['plan', 'battle', 'won', 'lost', 'draw'].includes(v.phase as string)) return false;
   if (!isValidWorld(v.world, TD_RULESET) || v.world.sides !== 2) return false;
   const world = v.world;
   if (world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.rows.join('')) return false;
-  if (!Array.isArray(v.sides) || v.sides.length !== 2 || !v.sides.every((side, i) => isValidSide(side, { world, map }, i))) return false;
+  if (!Array.isArray(v.sides) || v.sides.length !== 2 || !Array.from(v.sides).every((side, i) => isValidSide(side, { world, map }, i))) return false;
   // The round's start: the same map and valid sides on it (the computer plans from it).
   const start = v.roundStart;
   if (!isRecord(start) || !isValidWorld(start.world, TD_RULESET) || start.world.sides !== 2 || start.world.map.terrain !== world.map.terrain) return false;
   const startWorld = start.world;
   if (startWorld.entities.some((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind)) || startWorld.projectiles.length > 0) return false;
-  if (!Array.isArray(start.sides) || start.sides.length !== 2 || !start.sides.every((side, i) => isValidSide(side, { world: startWorld, map }, i))) return false;
-  if (!isArrayOf(v.unspent, (x): x is number => isInt(x, 0, 1_000_000)) || v.unspent.length !== 2) return false;
-  const isPlanList = (l: unknown): l is PlanCommand[] => isArrayOf(l, isPlanCommand) && l.length <= 1000;
+  if (!Array.isArray(start.sides) || start.sides.length !== 2 || !Array.from(start.sides).every((side, i) => isValidSide(side, { world: startWorld, map }, i))) return false;
+  if (!isArrayOf(v.unspent, (x): x is number => isInt(x, 0, MAX_CREDITS)) || v.unspent.length !== 2) return false;
+  const isPlanList = (l: unknown): l is PlanCommand[] => isArrayOf(l, isPlanCommand) && l.length <= MAX_PLAN_COMMANDS;
   if (!isArrayOf(v.log, (e): e is HoldState['log'][number] => isRecord(e) && isPlanList(e.player) && isPlanList(e.ai)) || v.log.length !== (v.round as number) + 1) return false;
   const units = world.entities.filter((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind));
   if (units.some((e) => !isEnemyKind(e.kind))) return false;
   const [own, foe] = v.sides as [SideState, SideState];
-  // Results match the cores; a game in progress has both cores standing.
-  if (v.phase === 'won' && !(own.core > foe.core)) return false;
-  if (v.phase === 'lost' && !(own.core < foe.core)) return false;
-  if (v.phase === 'draw' && own.core !== foe.core) return false;
-  if ((v.phase === 'won' || v.phase === 'lost' || v.phase === 'draw') && v.round !== ROUNDS - 1 && Math.min(own.core, foe.core) > 0) return false;
+  // Results match the cores; a game in progress has its cores standing. Alone, only your core counts:
+  // the other side is never attacked.
+  const over = v.phase === 'won' || v.phase === 'lost' || v.phase === 'draw';
+  const fallen = solo ? own.core === 0 : Math.min(own.core, foe.core) === 0;
+  if (solo) {
+    // The other side only stands in for the far end of the road: untouched, never building or earning.
+    const idleFoe = (side: SideState) => side.credits === START_CREDITS && side.workshops === 0 && side.towers.length === 0 && side.stats.killed === 0 && side.stats.spent === 0;
+    if (!idleFoe(foe) || !idleFoe((start.sides as SideState[])[1]!) || world.entities.some((e) => e.side === 1 && !isEnemyKind(e.kind))) return false;
+    if ((v.log as HoldState['log']).some((e) => e.ai.length > 0) || (v.unspent as number[])[1]! > START_CREDITS) return false;
+    if (foe.core !== START_CORE || v.phase === 'draw' || (v.phase === 'won' && own.core === 0) || (v.phase === 'lost' && own.core > 0)) return false;
+  } else {
+    if (v.phase === 'won' && !(own.core > foe.core)) return false;
+    if (v.phase === 'lost' && !(own.core < foe.core)) return false;
+    if (v.phase === 'draw' && own.core !== foe.core) return false;
+  }
+  if (over && v.round !== last && !fallen) return false;
   // A battle runs on after a core reaches 0 (until its units are gone), and is saved meanwhile; a
-  // plan phase only follows a round in which both cores held.
-  if (v.phase === 'plan' && Math.min(own.core, foe.core) === 0) return false;
+  // plan phase only follows a round in which the cores held.
+  if (v.phase === 'plan' && fallen) return false;
   if (v.phase === 'plan') {
     // While planning, the computer has done nothing yet: it stands exactly as the round began.
     const startSides = start.sides as [SideState, SideState];
@@ -489,10 +640,14 @@ export function isValidState(v: unknown): v is HoldState {
     if (new Set(run.walkers.map((x) => x.id)).size !== run.walkers.length) return false;
     // What is still to come is the tail of each side's bought wave, in order; what runs is of the bought kinds.
     const sides = v.sides as SideState[];
-    // External Small: both sides face exactly this round's outside force.
+    // External Small: both sides face exactly this round's outside force (alone: only you).
     if (map.mode === 'external-small') {
-      const expected = JSON.stringify(externalWave(v as unknown as HoldState));
-      if (sides.some((side) => JSON.stringify(side.wave) !== expected)) return false;
+      const force = JSON.stringify(externalWave(v as unknown as HoldState));
+      if (JSON.stringify(sides[1]!.wave) !== force || JSON.stringify(sides[0]!.wave) !== (solo ? '[]' : force)) return false;
+    } else {
+      // VS Small: what a side bought, then this round's levy (endless).
+      const levy = levyOf(v as unknown as HoldState);
+      if (sides.some((side) => JSON.stringify(side.wave.slice(side.wave.length - levy.length)) !== JSON.stringify(levy))) return false;
     }
     for (const [i, side] of sides.entries()) {
       const schedule = scheduleOf([i === 0 ? side : { wave: [] }, i === 1 ? side : { wave: [] }]);
