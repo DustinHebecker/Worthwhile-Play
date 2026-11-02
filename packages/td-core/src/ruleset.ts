@@ -236,13 +236,14 @@ export const isEnemyKind = (kind: string): kind is EnemyKind => (ENEMY_KINDS as 
 export const isTowerKind = (kind: string): boolean => Object.hasOwn(TOWERS, kind);
 
 /**
- * Economy structures (strategy/TD hybrid): built on a pad like a tower, no weapon. An Extractor adds
- * income every round; it can be shot by armed units like any structure.
+ * Economy structures (strategy/TD hybrid): built on a pad like a tower, no weapon; armed units can
+ * shoot them like any structure. An Extractor adds income every round. Production buildings (Hold the
+ * Line, design § 18.2) send units every round: Drill yard (id `barracks`), Garage, Hangar; a Lab allows research.
  */
-export const STRUCTURES = ['extractor'] as const;
+export const STRUCTURES = ['extractor', 'barracks', 'garage', 'hangar', 'lab'] as const;
 export type StructureKind = (typeof STRUCTURES)[number];
 export const isStructureKind = (kind: string): kind is StructureKind => (STRUCTURES as readonly string[]).includes(kind);
-const STRUCTURE_ARCHETYPES: readonly Archetype[] = [{ ...tower('extractor', null), hp: 120 }];
+const STRUCTURE_ARCHETYPES: readonly Archetype[] = STRUCTURES.map((kind) => ({ ...tower(kind, null), hp: 120 }));
 
 export const TD_RULESET: Ruleset = {
   id: 'td-1',

@@ -1,6 +1,7 @@
 import type { Entity, World } from '@wp/strategy-engine';
 import { drawIcon, drawTerrainMap, type TerrainColours } from '@wp/strategy-art';
 import type { Placed } from './motion';
+import { drawBuilding } from './buildings';
 import { isStructureKind, TOWERS, type Family } from './ruleset';
 import { drawUnit } from './units';
 
@@ -223,11 +224,12 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     if (e.hp < max) bar(g, cx, cy - cell * 0.44, cell * 0.6, e.hp / max, colourOf(e.side), palette.muted);
   }
 
-  // Economy structures (hybrid): their strategy picture, no pips.
+  // Economy and production structures (hybrid): their own picture, no pips.
   for (const e of f.world.entities) {
     if (!isStructureKind(e.kind)) continue;
     const [cx, cy] = pos(e);
-    if (!drawIcon(g, e.kind, cx - cell / 2, cy - cell / 2, k, styleOf(e.side))) fallbackShape(g, cx, cy, cell * 0.25, colourOf(e.side), palette.surface);
+    const drawn = drawBuilding(g, e.kind, cx, cy, cell * 0.92, { colour: colourOf(e.side), ink: palette.ink, surface: palette.surface }) || drawIcon(g, e.kind, cx - cell / 2, cy - cell / 2, k, styleOf(e.side));
+    if (!drawn) fallbackShape(g, cx, cy, cell * 0.25, colourOf(e.side), palette.surface);
     const max = f.hpMax(e.kind);
     if (e.hp < max) bar(g, cx, cy - cell * 0.44, cell * 0.6, e.hp / max, colourOf(e.side), palette.muted);
   }

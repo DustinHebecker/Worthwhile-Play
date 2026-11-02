@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { planRound } from '../src/ai';
 import { applyPlan, isValidState, lockRound, MAX_CREDITS, MAX_ROUNDS, newGame, stepBattle, type GameOptions, type HoldState, type Planner } from '../src/rules';
 import { turtlePlan } from './turtle';
 
@@ -58,3 +59,26 @@ describe('every endless game ends, whatever the defence', () => {
     LONG
   );
 });
+
+describe('production against a full defence (review of PR #110)', () => {
+  it('Hard building and researching against a full-pad, max-credit defence still ends by round MAX_ROUNDS; every save valid', () => {
+    let s = newGame(5, 'hard', 'duel', { waves: 'production' });
+    s.sides[0].credits = MAX_CREDITS;
+    s.roundStart.sides[0].credits = MAX_CREDITS;
+    let researched = 0;
+    while (s.phase === 'plan') {
+      for (const cmd of turtlePlan(s, 0, MIXES[1]!)) s = applyPlan(s, 0, cmd);
+      expect(isValidState(clone(s))).toBe(true);
+      s = lockRound(s, (seen) => planRound(seen, 1, 'hard'));
+      while (s.phase === 'battle') {
+        s = stepBattle(s, 150).state;
+        expect(isValidState(clone(s)), `round ${s.round + 1}`).toBe(true);
+      }
+      researched = Math.max(researched, (s.sides[1].research ?? []).length);
+    }
+    expect(['won', 'lost', 'draw']).toContain(s.phase);
+    expect(s.round + 1).toBeLessThanOrEqual(MAX_ROUNDS);
+    expect(researched).toBeGreaterThan(0);
+  }, LONG);
+});
+

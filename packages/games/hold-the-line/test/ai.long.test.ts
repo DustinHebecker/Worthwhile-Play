@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { planRound } from '../src/ai';
-import { applyPlan, DIFFICULTIES, lockRound, newGame, resolveBattle, type Difficulty, type HoldState, type Length, type Planner } from '../src/rules';
+import { applyPlan, DIFFICULTIES, producersOf, WEAR_FROM, lockRound, newGame, resolveBattle, type Difficulty, type HoldState, type Length, type Planner, type WaveSource } from '../src/rules';
 import { randomPlan } from './plans';
 
 /**
@@ -11,9 +11,9 @@ import { randomPlan } from './plans';
  */
 const LONG = 300_000;
 
-function match(player: Difficulty | 'passive', opponent: Difficulty, mapId = 'duel', length: Length = 'rounds'): HoldState {
+function match(player: Difficulty | 'passive', opponent: Difficulty, mapId = 'duel', length: Length = 'rounds', waves: WaveSource = 'shop'): HoldState {
   const plan: Planner = (s) => planRound(s, 1, opponent);
-  let s = newGame(1, opponent, mapId, { length });
+  let s = newGame(1, opponent, mapId, { length, waves });
   while (s.phase === 'plan') {
     if (player !== 'passive') for (const cmd of planRound(s, 0, player)) s = applyPlan(s, 0, cmd);
     s = resolveBattle(lockRound(s, plan)).state;
@@ -41,11 +41,11 @@ describe('the computer opponent', () => {
     expect(match('passive', level).phase).toBe('lost');
   }, LONG);
 
-  it('the computer never issues a refused command', () => {
+  it.each(['shop', 'production'] as const)('the computer never issues a refused command (%s)', (waves) => {
     const arb = fc.record({ seed: fc.integer({ min: 0, max: 2 ** 31 }), build: fc.integer({ min: 0, max: 1000 }), n: fc.integer({ min: 0, max: 10 }) });
     fc.assert(
       fc.property(arb, ({ seed, build, n }) => {
-        let s = newGame(seed, 'hard');
+        let s = newGame(seed, 'hard', 'duel', { waves });
         for (let r = 0; r < 3 && s.phase === 'plan'; r++) {
           // At the lock, after the player's own plan: every command of the computer is carried out.
           let planned = 0;
@@ -63,6 +63,43 @@ describe('the computer opponent', () => {
     );
   }, LONG);
 
+});
+
+// The Duel with production and research (§ 18.2), endless as by default.
+describe('the computer opponent in the Duel with production', () => {
+  const duel = (a: Difficulty | 'passive', b: Difficulty) => match(a, b, 'duel', 'endless', 'production');
+
+  it.each(DIFFICULTIES)('mirror match at %s is a draw', (level) => {
+    expect(duel(level, level).phase).toBe('draw');
+  }, LONG);
+
+  it('hard beats normal, and both beat easy, from either seat; with a fallen core, well before the bound', () => {
+    for (const [a, b, result] of [
+      ['hard', 'normal', 'won'],
+      ['normal', 'hard', 'lost'],
+      ['normal', 'easy', 'won'],
+      ['easy', 'normal', 'lost'],
+      ['hard', 'easy', 'won'],
+      ['easy', 'hard', 'lost']
+    ] as const) {
+      const end = duel(a, b);
+      expect(end.phase, `${a}-${b}`).toBe(result);
+      expect(Math.min(end.sides[0].core, end.sides[1].core), `${a}-${b}`).toBe(0);
+      expect(end.round, `${a}-${b}`).toBeLessThan(WEAR_FROM);
+    }
+  }, LONG);
+
+  it('normal and hard build, research and send more over the game', () => {
+    for (const level of ['normal', 'hard'] as const) {
+      const end = duel(level, level);
+      expect(producersOf(end, 1), level).toBeGreaterThanOrEqual(3);
+      expect((end.sides[1].research ?? []).length, level).toBeGreaterThan(0);
+    }
+  }, LONG);
+
+  it.each(DIFFICULTIES)('a player who never plans loses against %s', (level) => {
+    expect(duel('passive', level).phase).toBe('lost');
+  }, LONG);
 });
 
 // External Small (§ 17): both sides only defend against the same outside force, so strength shows as

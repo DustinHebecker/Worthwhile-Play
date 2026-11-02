@@ -6,7 +6,7 @@ import { CROSSING, DUEL, ownPad } from '../src/maps';
 import { applyPlan, checkPlan, externalWave, EXTRACTOR_PRICE, mapOf, newGame, SHOP, START_CREDITS, UNIT_PRICES, type HoldState, type PlanCommand } from '../src/rules';
 
 /** Fast unit tests of the computer opponent; its strength is measured in ai.long.test.ts. */
-const fresh = (difficulty: 'easy' | 'normal' | 'hard' = 'normal'): HoldState => newGame(1, difficulty);
+const fresh = (difficulty: 'easy' | 'normal' | 'hard' = 'normal'): HoldState => newGame(1, difficulty, 'duel', { waves: 'shop' });
 const incoming = (side: number) => DUEL.lanes[1 - side]!;
 const mirror = ([x, y]: readonly [number, number]): [number, number] => [DUEL.w - 1 - x, DUEL.h - 1 - y];
 const mirrorCmd = (c: PlanCommand): PlanCommand => ('x' in c ? { ...c, ...Object.fromEntries([['x', DUEL.w - 1 - c.x], ['y', DUEL.h - 1 - c.y]]) } : c);
@@ -295,7 +295,7 @@ describe('planner details', () => {
   });
 
   it('chooses first the tower that saves the most threat per credit (oracle)', () => {
-    const s0 = atRound(newGame(1, 'normal'), 3);
+    const s0 = atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), 3);
     const s: HoldState = { ...s0, sides: [s0.sides[0], { ...s0.sides[1], credits: 400 }] };
     const wave = expectedWave(s, 1);
     const loss = leakage(s.world, s, 1, wave);
@@ -321,7 +321,7 @@ describe('planner details', () => {
 
 describe('leakage bounds', () => {
   const defended = (): HoldState => {
-    let s: HoldState = { ...newGame(1, 'normal'), sides: [newGame(1, 'normal').sides[0], { ...newGame(1, 'normal').sides[1], credits: 2000 }] };
+    let s: HoldState = { ...newGame(1, 'normal', 'duel', { waves: 'shop' }), sides: [newGame(1, 'normal', 'duel', { waves: 'shop' }).sides[0], { ...newGame(1, 'normal', 'duel', { waves: 'shop' }).sides[1], credits: 2000 }] };
     for (const [x, y] of padsNear(s, 1, incoming(1), 3).slice(0, 1)) s = applyPlan(s, 1, { t: 'place', kind: 'gun', x, y });
     return s;
   };
@@ -342,7 +342,7 @@ describe('leakage bounds', () => {
   });
 
   it('a wave longer than the simulation cap counts what is left as through', () => {
-    const s = newGame(1, 'normal');
+    const s = newGame(1, 'normal', 'duel', { waves: 'shop' });
     // 300 Walkers 8 ticks apart: the last ones are still waiting when the cap (1500 ticks) is reached.
     const wave: EnemyKind[] = Array(300).fill('walker');
     expect(leakage(s.world, s, 1, wave)).toBeCloseTo(totalThreat(wave), 6);
@@ -356,7 +356,7 @@ describe('leakage bounds', () => {
 
 describe('bounded planning work', () => {
   it('leakage counts its work in entity-ticks; a bound equal to the result changes nothing', () => {
-    let s = newGame(1, 'normal');
+    let s = newGame(1, 'normal', 'duel', { waves: 'shop' });
     const [x, y] = padsNear(s, 1, incoming(1), 3)[0]!;
     s = applyPlan(s, 1, { t: 'place', kind: 'gun', x, y });
     const wave: EnemyKind[] = Array(10).fill('walker');
@@ -364,7 +364,7 @@ describe('bounded planning work', () => {
     const full = leakage(s.world, s, 1, wave, Infinity, m);
     expect(m.used).toBeGreaterThan(wave.length);
     // Without towers there is less to simulate per tick.
-    const bare = newGame(1, 'normal');
+    const bare = newGame(1, 'normal', 'duel', { waves: 'shop' });
     const m2: Meter = { used: 0 };
     leakage(bare.world, bare, 1, wave, Infinity, m2);
     expect(m2.used).toBeLessThan(m.used);
@@ -373,7 +373,7 @@ describe('bounded planning work', () => {
   });
 
   it('with the budget used up, no more defence candidates are tried', () => {
-    const s = atRound(newGame(1, 'normal'), 3);
+    const s = atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), 3);
     const free = planRound(s, 1, 'normal');
     const spent = planRound(s, 1, 'normal', { used: WORK_BUDGET });
     expect(free.some((c) => c.t === 'place' || c.t === 'upgrade')).toBe(true);
@@ -384,13 +384,13 @@ describe('bounded planning work', () => {
 
   it('a plan records its work in the meter it is given', () => {
     const m: Meter = { used: 0 };
-    planRound(atRound(newGame(1, 'normal'), 3), 1, 'normal', m);
+    planRound(atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), 3), 1, 'normal', m);
     expect(m.used).toBeGreaterThan(0);
     expect(m.used).toBeLessThan(WORK_BUDGET);
   });
 
   it('the budget is a hard bound: a simulation that would pass it stops there and is never chosen (review of PR #107)', () => {
-    const s = atRound(newGame(1, 'normal'), 3);
+    const s = atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), 3);
     const wave = Array.from({ length: 20 }, () => 'brute' as const);
     const full: Meter = { used: 0 };
     const through = leakage(s.world, s, 1, wave, Infinity, full);
@@ -409,7 +409,7 @@ describe('bounded planning work', () => {
   });
 
   it('the first simulation of a round always runs, so the computer still defends with the budget nearly spent', () => {
-    const s = atRound(newGame(1, 'normal'), 3);
+    const s = atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), 3);
     const m: Meter = { used: WORK_BUDGET - 1 };
     planRound(s, 1, 'normal', m);
     // It measured where it stands (well past the bound), and tried no candidate after that.
@@ -417,7 +417,7 @@ describe('bounded planning work', () => {
   });
 
   it('Hard keeps Walkers once the budget is used up', () => {
-    const s = newGame(1, 'hard');
+    const s = newGame(1, 'hard', 'duel', { waves: 'shop' });
     expect(probeOrder(s, 1, 0, { used: WORK_BUDGET })).toEqual([SHOP[0]]);
     expect(probeOrder(s, 1, 0, { used: 0 })).toEqual(probeOrder(s, 1, 0));
   });
@@ -425,7 +425,7 @@ describe('bounded planning work', () => {
 
 describe('planner budgets', () => {
   it('the simulation budget of a level limits the candidates it tries', () => {
-    const s = atRound(newGame(1, 'normal'), 3);
+    const s = atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), 3);
     const saved = PROFILES.normal.sims;
     try {
       // One simulation: only the current loss is measured, no candidate is tried.
@@ -440,7 +440,7 @@ describe('planner budgets', () => {
   });
 
   it('Hard’s probe tries further orders while it has budget (against guns another order wins)', () => {
-    let s: HoldState = { ...newGame(1, 'hard'), sides: [{ ...newGame(1, 'hard').sides[0], credits: 2000 }, newGame(1, 'hard').sides[1]] };
+    let s: HoldState = { ...newGame(1, 'hard', 'duel', { waves: 'shop' }), sides: [{ ...newGame(1, 'hard', 'duel', { waves: 'shop' }).sides[0], credits: 2000 }, newGame(1, 'hard', 'duel', { waves: 'shop' }).sides[1]] };
     for (const [x, y] of padsNear(s, 0, incoming(0), 3).slice(0, 4)) s = applyPlan(s, 0, { t: 'place', kind: 'gun', x, y });
     const free = probeOrder(s, 1, 0, { used: 0 });
     expect(free).not.toEqual([SHOP[0]]);
@@ -474,7 +474,7 @@ describe('leakage at the simulation cap (review of PR #104, L4)', () => {
 
   it('the longest Duel wave (60 units) empties an undefended road in well under half the cap', () => {
     // Slowing towers act only on the walk (192 of these ticks), not on sending: the cap stays out of reach.
-    const d = newGame(1, 'normal');
+    const d = newGame(1, 'normal', 'duel', { waves: 'shop' });
     let w = structuredClone(d.world);
     let run: LaneRun = { tick: 0, pending: Array.from({ length: 60 }, (_, i) => ({ at: 8 * i, kind: 'brute' as const, route: 0, side: 0 })), walkers: [] };
     let ticks = 0;

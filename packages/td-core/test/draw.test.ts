@@ -141,6 +141,22 @@ describe('unit pictures', () => {
     expect(drawUnit(g, 'gun', 0, 0, 10, { colour: '#00f', ink: '#000', surface: '#fff', facing: 1, phase: 0, moving: false })).toBe(false);
   });
 
+  it('production buildings each have their own picture (design § 18.2); other kinds have none', async () => {
+    const { drawBuilding, BUILDING_KINDS } = await import('../src/buildings');
+    const { STRUCTURES } = await import('../src/ruleset');
+    const shapes = new Set<string>();
+    for (const kind of BUILDING_KINDS) {
+      expect(STRUCTURES as readonly string[]).toContain(kind);
+      const { g, calls } = recorder();
+      expect(drawBuilding(g, kind, 20, 20, 40, { colour: '#00f', ink: '#000', surface: '#fff' }), kind).toBe(true);
+      expect(calls).toContain('fillStyle=#00f');
+      shapes.add(calls.filter((c) => !c.includes('=')).join('|'));
+    }
+    expect(shapes.size).toBe(BUILDING_KINDS.length);
+    const { g } = recorder();
+    expect(drawBuilding(g, 'extractor', 0, 0, 10, { colour: '#00f', ink: '#000', surface: '#fff' })).toBe(false);
+  });
+
   it('moving units swing their legs; standing ones do not', async () => {
     const { drawUnit } = await import('../src/units');
     const draw1 = (phase: number, moving: boolean) => {
