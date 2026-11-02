@@ -1,0 +1,51 @@
+// Generates genuine saves with the code of this commit (strategy agent, save-compatibility fixtures).
+import { it } from 'vitest';
+import { writeFileSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
+import * as R from '../src/rules';
+import * as S from '../src/scenarios';
+
+const any = (x: unknown) => x as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+it('generates saves', async () => {
+  const r = any(R);
+  const s = any(S);
+  const out: { label: string; state: unknown }[] = [];
+  const push = (label: string, state: unknown) => out.push({ label, state: JSON.parse(JSON.stringify(state)) });
+  const play = (st: any, turns: number) => {
+    for (let t = 0; t < turns && st.phase === 'plan' && !st.handover; t++) st = r.lockTurn(st);
+    return st;
+  };
+  const specs: any[] = s.SCENARIOS ?? [s.FIELD_EXERCISE ?? r.FIELD_EXERCISE];
+  for (const spec of specs) {
+    const counts: number[] = s.opponentCounts?.(spec) ?? [1];
+    for (const n of counts) {
+      let st = r.newGame(7, spec, 'normal', spec.turnLimit ?? 12, false, null, n);
+      push(`${spec.id} ${n}`, play(st, 2));
+      const shapes: string[] = r.teamShapes?.(spec, n) ?? [];
+      for (const shape of shapes) push(`${spec.id} ${n} ${shape}`, play(r.newGame(9, spec, 'hard', null, false, null, n, [], false, null, shape), 1));
+      if (r.isHotSeat && n >= 1) {
+        const seats = Array.from({ length: n + 1 }, (_, i) => (i <= 1 ? 'person' : 'computer'));
+        push(`${spec.id} ${n} hot-seat`, r.newGame(11, spec, 'normal', null, false, null, n, seats));
+      }
+    }
+  }
+  // Player-made maps (editor) and random maps, where this version has them.
+  try {
+    const M = any(await import('../src/maps'));
+    if (M.fromScenario) for (const spec of specs.slice(0, 3)) {
+      const map = M.fromScenario(spec, 'Own');
+      const counts: number[] = s.opponentCounts?.(M.customSpec?.(map) ?? spec) ?? [1];
+      for (const n of counts) push(`custom ${spec.id} ${n}`, play(r.newGame(13, spec, 'normal', 12, false, map, n), 1));
+    }
+  } catch { /* no editor yet */ }
+  try {
+    const G = any(await import('../src/generator'));
+    for (const bases of [2, 4]) {
+      const map = G.generateMap(16, 12, 5, 'Random', bases);
+      const n = bases === 4 ? 3 : 1;
+      push(`random ${bases}`, play(r.newGame(15, s.FIELD_EXERCISE ?? specs[0], 'normal', 12, false, map, n, [], false, { w: 16, h: 12, seed: 5 }), 1));
+    }
+  } catch { /* no generator yet */ }
+  writeFileSync(process.env.FIXTURE_OUT!, gzipSync(JSON.stringify(out)));
+  console.log(`wrote ${out.length} saves`);
+}, 600_000);
