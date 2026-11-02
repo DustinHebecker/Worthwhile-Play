@@ -6,6 +6,8 @@ import { MAX_HASTE } from './effects';
 import { MAX_QUEUE, MAX_SUPPLY, NEUTRAL, STATUS_KINDS, type Deposit, type Entity, type Frame, type Order, type Projectile, type QueueItem, type Report, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
+/** Ruleset ids: lower-case letters, digits and hyphens, at most 64 characters (`base-1`, `strategy-3-sides`). */
+const isRulesetId = (v: unknown): boolean => typeof v === 'string' && /^[a-z0-9][a-z0-9-]{0,63}$/.test(v);
 const MAX_ID = 0x7fff_ffff;
 
 /** Structural check of an order; move targets must lie on a `w`×`h` map. Never throws. */
@@ -82,7 +84,9 @@ function validDeploy(e: Record<string, unknown>, ruleset: Ruleset | undefined): 
  * accessing a property, so no try/catch is needed (and none hides a broken guard).
  */
 export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World {
-  if (!isRecord(value) || value.v !== 1 || typeof value.ruleset !== 'string') return false;
+  // The world names the ruleset it was made with: with a ruleset given it must be that one; without,
+  // a short id (fuzz review of Hold the Line, 2026-11-02: any string was accepted).
+  if (!isRecord(value) || value.v !== 1 || !(ruleset ? value.ruleset === ruleset.id : isRulesetId(value.ruleset))) return false;
   if (!isInt(value.tick, 0) || !isInt(value.turn, 0) || !isUint32(value.rng) || !isInt(value.sides, 1, MAX_SIDES) || !isInt(value.nextId, 1, MAX_ID)) return false;
   const map = value.map;
   if (!isRecord(map) || !isInt(map.w, 1, MAX_DIM) || !isInt(map.h, 1, MAX_DIM) || typeof map.terrain !== 'string') return false;
