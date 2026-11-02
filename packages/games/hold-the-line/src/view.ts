@@ -1,6 +1,6 @@
 import { bcp47Tag, normalizeSeed, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { archetypeOf, type Entity, type SimEvent } from '@wp/strategy-engine';
-import { BASE_TOWERS, drawFrame, drawTerrain, Motion, readPalette, TD_RULESET, TICKS_PER_SECOND, TOWER_PRIORITIES, TOWERS, type EnemyKind, type Palette, type TowerPriority } from '@wp/td-core';
+import { BASE_TOWERS, drawFrame, drawTerrain, isStructureKind, Motion, readPalette, TD_RULESET, TICKS_PER_SECOND, TOWER_PRIORITIES, TOWERS, type EnemyKind, type Palette, type TowerPriority } from '@wp/td-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import { planRound } from './ai';
 import { mapForMode, ownPad } from './maps';
@@ -14,12 +14,25 @@ import {
   EXTRACTOR_PRICE,
   externalWave,
   incomeOf,
+  isProducerKind,
   levyOf,
+  MAX_PRODUCERS,
+  PRODUCER_KINDS,
+  PRODUCERS,
+  producersOf,
+  producing,
+  productionOf,
+  RESEARCH,
+  RESEARCH_IDS,
+  sendsOf,
   MAX_PRESSURE,
   MAX_ROUNDS,
   wearOf,
   WEAR_FROM,
   DEFAULT_LENGTH,
+  DEFAULT_WAVES,
+  WAVE_SOURCES,
+  type WaveSource,
   LENGTHS,
   INTEREST_PERCENT,
   lockRound,
@@ -54,10 +67,11 @@ export const MODE_CHOICES = ['vs-small', 'external-small', 'external-solo'] as c
 const toChoice = (m: unknown): (typeof MODE_CHOICES)[number] => ((MODE_CHOICES as readonly unknown[]).includes(m) ? (m as (typeof MODE_CHOICES)[number]) : 'vs-small');
 const toLength = (l: unknown): Length => ((LENGTHS as readonly unknown[]).includes(l) ? (l as Length) : DEFAULT_LENGTH);
 /** The game a start-screen choice asks for. */
-export const startOf = (choice: unknown, length: unknown): { mapId: string; options: GameOptions } => {
+export const startOf = (choice: unknown, length: unknown, waves?: unknown): { mapId: string; options: GameOptions } => {
   const c = toChoice(choice);
   const mode: Mode = c === 'vs-small' ? 'vs-small' : 'external-small';
-  return { mapId: mapForMode(mode).id, options: { length: toLength(length), ...(c === 'external-solo' && { solo: true }) } };
+  const source: WaveSource = (WAVE_SOURCES as readonly unknown[]).includes(waves) ? (waves as WaveSource) : DEFAULT_WAVES;
+  return { mapId: mapForMode(mode).id, options: { length: toLength(length), ...(c === 'external-solo' && { solo: true }), ...(mode === 'vs-small' && { waves: source }) } };
 };
 const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
 const hpMax = (kind: string): number => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
@@ -126,11 +140,15 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   );
 
   // --- Helpers ---------------------------------------------------------------------------------
-  const nameOf = (kind: string): string => (kind === 'extractor' ? t('structure.extractor') : t(`tower.${kind}`));
+  const nameOf = (kind: string): string => (isStructureKind(kind) ? t(`structure.${kind}`) : t(`tower.${kind}`));
   const unitName = (kind: string): string => t(`enemy.${kind}`);
   const about = (kind: string): string =>
     kind === 'extractor'
       ? t('about.extractor', { n: EXTRACTOR_INCOME })
+      : kind === 'lab'
+        ? t('about.lab')
+        : isProducerKind(kind)
+          ? t('about.producer', { list: listOf(sendsOf(kind, me().research ?? [])) })
       : kind === 'amplifier-2'
         ? t('about.amplifier') // its text already says what level 3 adds (and that it reaches own units)
         : TOWERS[kind]?.level === 3
@@ -139,7 +157,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const where = (x: number, y: number) => ({ row: y + 1, col: x + 1 });
   const me = () => state.sides[PLAYER];
   const map = () => mapOf(state);
-  const structureAt = (x: number, y: number) => state.world.entities.find((e) => e.x === x && e.y === y && (Object.hasOwn(TOWERS, e.kind) || e.kind === 'extractor'));
+  const structureAt = (x: number, y: number) => state.world.entities.find((e) => e.x === x && e.y === y && (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)));
   const listOf = (wave: readonly EnemyKind[]): string => {
     if (wave.length === 0) return t('intel.none');
     const counts = new Map<EnemyKind, number>();
@@ -168,7 +186,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
       const code = m.rows[y]![x];
       label = code === '=' ? t('cell.road', p) : code === 'b' ? t(ownPad(m, PLAYER, x, y) ? 'cell.pad.own' : state.solo ? 'cell.pad.idle' : 'cell.pad.foe', p) : t('cell.rock', p);
     }
-    const n = state.world.entities.filter((e) => e.x === x && e.y === y && !Object.hasOwn(TOWERS, e.kind) && e.kind !== 'extractor').length;
+    const n = state.world.entities.filter((e) => e.x === x && e.y === y && !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind)).length;
     return n > 0 ? t('cell.units', { cell: label, n }) : label;
   };
 
@@ -264,6 +282,14 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
       }
       const short = EXTRACTOR_PRICE > me().credits;
       list.append(option(t('panel.price', { name: nameOf('extractor'), n: EXTRACTOR_PRICE }), 'build-extractor', () => onPlan({ t: 'extractor', x, y }), short, short ? `${about('extractor')} ${t('panel.short')}` : about('extractor')));
+      // Duel with production: the buildings that send your wave, and the Lab.
+      if (producing(state)) {
+        for (const kind of PRODUCER_KINDS) {
+          const refusal = checkPlan(state, PLAYER, { t: 'produce', kind, x, y });
+          const note = refusal === 'credits' ? `${about(kind)} ${t('panel.short')}` : refusal === 'lab' ? `${about(kind)} ${t('panel.oneLab')}` : refusal === 'producers' ? `${about(kind)} ${t('panel.maxProducers', { n: MAX_PRODUCERS })}` : about(kind);
+          list.append(option(t('panel.price', { name: nameOf(kind), n: PRODUCERS[kind] }), `build-${kind}`, () => onPlan({ t: 'produce', kind, x, y }), refusal !== null, note));
+        }
+      }
       panel.append(list);
       return;
     }
@@ -312,10 +338,40 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     outside.append(h('p', { class: 'wp-muted' }, t(`external.note${solo}`)));
   };
 
+  /** Duel with production: what your buildings send, the levy, and research. */
+  const renderProduction = (): void => {
+    const planning = state.phase === 'plan';
+    const levy = levyOf(state);
+    const sent = planning ? productionOf(state, PLAYER) : me().wave.slice(0, me().wave.length - levy.length);
+    shop.append(
+      h('h3', { class: 'td-subtitle' }, t('production.title')),
+      h('p', { 'data-testid': 'production-wave' }, t('production.wave', { list: listOf(sent) })),
+      h('p', { class: 'wp-muted', 'data-testid': 'producers' }, t('production.count', { n: producersOf(state, PLAYER), max: MAX_PRODUCERS }))
+    );
+    if (levy.length > 0) shop.append(h('p', { 'data-testid': 'levy' }, t('shop.levy', { list: listOf(levy) })));
+    shop.append(h('p', { class: 'wp-muted' }, t('production.note')));
+    // Research: needs a Lab; each item once.
+    const done = me().research ?? [];
+    shop.append(h('h4', { class: 'td-subtitle' }, t('research.title')));
+    shop.append(h('p', { 'data-testid': 'research-done' }, t('research.done', { list: done.length > 0 ? done.map((id) => t(`research.${id}`)).join(', ') : t('intel.none') })));
+    const next = me().researching ?? [];
+    if (next.length > 0) shop.append(h('p', { 'data-testid': 'research-next' }, t('research.next', { list: next.map((id) => t(`research.${id}`)).join(', ') })));
+    if (!planning) return;
+    if (producersOf(state, PLAYER, ['lab']) === 0) return void shop.append(h('p', { class: 'wp-muted' }, t('research.needLab')));
+    const list = h('div', { class: 'td-options' });
+    for (const id of RESEARCH_IDS) {
+      if (done.includes(id) || next.includes(id)) continue;
+      const refusal = checkPlan(state, PLAYER, { t: 'research', id });
+      list.append(option(t('research.buy', { name: t(`research.${id}`), n: RESEARCH[id] }), `research-${id}`, () => onPlan({ t: 'research', id }), refusal !== null, refusal === 'credits' ? `${t(`researchAbout.${id}`)} ${t('panel.short')}` : t(`researchAbout.${id}`)));
+    }
+    shop.append(list);
+  };
+
   const renderShop = (): void => {
     clear(shop);
     shop.hidden = external();
     if (external()) return;
+    if (producing(state)) return renderProduction();
     const side = me();
     const planning = state.phase === 'plan';
     const max = capacityOf(side);
@@ -358,6 +414,11 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
       h('p', {}, t('intel.yours', { list: listOf(boughtOf(me().lastWave)) }))
     );
     if (levy.length > 0) intel.append(h('p', {}, t('intel.levy', { list: listOf(levy) })));
+    // Their buildings stand on the map; their research is told here (both sides see it).
+    if (producing(state)) {
+      const theirs = state.sides[1].research ?? [];
+      intel.append(h('p', { 'data-testid': 'intel-research' }, t('intel.research', { list: theirs.length > 0 ? theirs.map((id) => t(`research.${id}`)).join(', ') : t('intel.none') })));
+    }
   };
 
   const renderControls = (): void => {
@@ -571,6 +632,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
       case 'workshop':
         message = t('announce.workshop');
         break;
+      case 'produce':
+        message = t('announce.placed', { name: nameOf(cmd.kind) });
+        break;
+      case 'research':
+        message = t('announce.researched', { name: t(`research.${cmd.id}`) });
+        break;
     }
     commit(next, message);
   };
@@ -703,12 +770,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   return {
     newGame(options: NewGameOptions) {
-      const start = startOf(options.settings?.mode, options.settings?.length);
+      const start = startOf(options.settings?.mode, options.settings?.length, options.settings?.waves);
       initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), start.mapId, start.options);
       show(initial);
     },
     restore(saved: HoldState) {
-      initial = newGame(saved.seed, saved.difficulty, saved.mapId, { length: saved.length ?? 'rounds', ...(saved.solo && { solo: true }) });
+      initial = newGame(saved.seed, saved.difficulty, saved.mapId, { length: saved.length ?? 'rounds', ...(saved.solo && { solo: true }), waves: saved.waves ?? 'shop' });
       show(structuredClone(saved));
     },
     serialize: () => structuredClone(state),

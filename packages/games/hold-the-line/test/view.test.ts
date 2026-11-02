@@ -76,7 +76,7 @@ describe('Hold the Line view: the outside force', () => {
 
 describe('Hold the Line view: the endless Duel', () => {
   it('counts rounds against the bound, announces the wear-down ahead and shows it while it applies', () => {
-    const base = newGame(1, 'normal');
+    const base = newGame(1, 'normal', 'duel', { waves: 'shop' });
     const early = show(atRound(base, 10));
     expect(early.el('round')!.textContent).toBe(`Round 11 of at most ${MAX_ROUNDS}`);
     expect(early.el('wear')!.hidden).toBe(true);
@@ -91,7 +91,7 @@ describe('Hold the Line view: the endless Duel', () => {
   });
 
   it('shows the levy apart from what was bought, before and after the lock', () => {
-    const s = applyPlan(atRound(newGame(1, 'normal'), 12), 0, { t: 'buy', kind: 'runner' });
+    const s = applyPlan(atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), 12), 0, { t: 'buy', kind: 'runner' });
     const plan = show(s);
     expect(plan.el('capacity')!.textContent).toBe('Units: 1 of 8');
     expect(plan.el('levy')!.textContent).toContain(`${levyOf(s).filter((k) => k === 'walker').length} × Walker`);
@@ -100,5 +100,44 @@ describe('Hold the Line view: the endless Duel', () => {
     expect(battle.el('capacity')!.textContent).toBe('Units: 1 of 8');
     expect(battle.el('levy')).not.toBeNull();
     battle.instance.dispose();
+  });
+});
+
+describe('Hold the Line view: the Duel with production (design § 18.2)', () => {
+  it('a pad offers the buildings; built, they show what they send this round', () => {
+    const { el, instance, root } = show(newGame(1, 'normal'));
+    expect(el('shop')!.hidden).toBe(false);
+    expect(el('production-wave')!.textContent).toContain('nothing');
+    expect(root.querySelector('[data-testid="buy-walker"]')).toBeNull();
+    el('cell-1-13')!.click();
+    expect(el('build-lab')).not.toBeNull();
+    el('build-barracks')!.click();
+    expect(el('production-wave')!.textContent).toContain('3 × Walker');
+    expect(el('producers')!.textContent).toBe('Production buildings: 1 of 10');
+    expect(el('research-done')!.textContent).toContain('nothing');
+    expect(root.textContent).toContain('Build a Lab to research.');
+    instance.dispose();
+  });
+
+  it('with a Lab: research is offered, paid now and shown as coming into effect next round; the other side sees it', () => {
+    let s = newGame(1, 'normal');
+    s.sides[0].credits = 2000;
+    s = applyPlan(applyPlan(s, 0, { t: 'produce', kind: 'barracks', x: 1, y: 13 }), 0, { t: 'produce', kind: 'lab', x: 2, y: 13 });
+    const { el, instance } = show(s);
+    el('research-shields')!.click();
+    expect(el('research-next')!.textContent).toContain('Shield plates');
+    expect(el('research-shields')).toBeNull();
+    // Still Walkers this round.
+    expect(el('production-wave')!.textContent).toContain('3 × Walker');
+    const saved = instance.serialize() as HoldState;
+    expect(saved.sides[0].researching).toEqual(['shields']);
+    instance.dispose();
+    // The other side's research is told after the first round.
+    const later = { ...newGame(1, 'normal'), round: 1, log: [{ player: [], ai: [] }, { player: [], ai: [] }] } as HoldState;
+    later.sides[1].research = ['raiders'];
+    later.roundStart = { ...later.roundStart, sides: structuredClone(later.sides) };
+    const other = show(later);
+    expect(other.el('intel-research')!.textContent).toContain('Armed raiders');
+    other.instance.dispose();
   });
 });

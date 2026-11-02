@@ -691,7 +691,7 @@ External Large (mobile defenders meet the outside force before the split) needs 
 
 ---
 
-## 18. Hold the Line, revision after the owner's playtest (2026-11-01) — decided, not yet built
+## 18. Hold the Line, revision after the owner's playtest (2026-11-01) — steps A and B built
 
 Owner playtest of VS Small and the owner's answers (2026-11-01):
 
@@ -718,22 +718,24 @@ Order of work: Tower Defense polish from the same playtest first (smooth movemen
 - **Saves:** `stateVersion` 2 (identity migration from 1), so an older client does not read endless or solo saves as ten-round games. Solo saves must leave the other side untouched (no towers, plans, credits or core loss); their pressure is at most one wave.
 - **Review items from PR #104 folded in:** pressure is 0 before the first battle and at most 2 × `MAX_WAVE` (L1); each round's pressure is pinned to that round's leaks (M2); `isValidState` never throws, also on sparse arrays or throwing getters (L9).
 
-Still to come: Step B (Duel with production buildings and research; buying the wave as an option) and Step C (your own defenders against the outside force).
+Step B: § 18.2. Still to come: Step C (your own defenders against the outside force).
 
-### 18.2 Step B, planned: the Duel with production and research
+### 18.2 Step B as built: the Duel with production and research
 
-Default for the Duel; "buy the wave each round" (§ 16) becomes the start-screen option *Waves: Production / Shop*.
+Default for the Duel; buying the wave each round (§ 16) is the start-screen option *Attack waves: Production / Shop* (setting `waves`, shown for the Duel only). Saves from before the choice have no `waves` and stay Duels with the shop (`stateVersion` 3, identity migration from 1 and 2).
 
-- **Production buildings** on your own pads (like the Extractor: they take a pad, can be shot by armed units, sell for the usual refund). Each sends its units automatically at every lock:
+- **Production buildings** on your own pads (like the Extractor: they take a pad, 120 health, armed units can destroy them, they sell for the usual refund). Each sends its units at every lock, the round it is built included; at most 10 Barracks, Garages and Hangars together, and one Lab:
 
   | Building | Price | Sends every round |
   |---|---|---|
-  | Barracks | 100 | 3 Walkers |
-  | Garage | 150 | 2 Runners |
-  | Hangar | 175 | 1 Glider |
+  | Barracks | 150 | 3 Walkers |
+  | Garage | 200 | 2 Runners |
+  | Hangar | 225 | 1 Glider |
   | Lab | 150 (one per side) | nothing; allows research |
 
-- **Research** (needs a Lab; each item once, paid when chosen, in effect from the next lock; shown to both sides like the buildings):
+  The planned prices (100/150/175) made games between two computer sides end in round 7–9; with these and research taking effect a round later (below) they last 11–20 rounds.
+
+- **Research** (needs a Lab; each item once; paid when chosen, **in effect from the next round**, so the other side sees it a round ahead, like new buildings; shown to both sides in the summary of the last round). Research that took effect stays when the Lab is lost.
 
   | Research | Price | Effect |
   |---|---|---|
@@ -742,8 +744,10 @@ Default for the Duel; "buy the wave each round" (§ 16) becomes the start-screen
   | Armed raiders | 175 | Garages send Raiders instead of Runners |
   | Heavy chassis | 200 | every Garage also sends a Brute |
   | Twin hangars | 200 | every Hangar sends 2 Gliders |
-  | Siege works | 300 | a Siege crawler every third round |
+  | Siege works | 300 | a Siege crawler in every third round |
 
-- The wave = what the buildings send (in a fixed order) + the endless levy. Workshops and capacity go away in this variant: the buildings are the limit.
-- **Computer:** builds production in the kinds that get furthest against your visible towers (the scoring it already uses to buy), researches in the order that adds most threat per credit, and keeps the defence share it has now; Hard checks its wave against your towers with the wave simulation, as its probe does.
-- **Balance targets** (long suite, as for VS Small): mirror matches are draws; Hard beats Normal beats Easy from either seat; endless games end by round 47 (wear-down); a player who never builds loses.
+- **The wave** = what the buildings send (building by building, oldest first; then the Siege crawler) + the endless levy. No shop, no workshops. Longest possible wave: 10 × 4 + 1 + 40 = 81 units (`MOST_PRODUCED`, within the save bound of 120).
+- **Computer:** defends first (all but its kept share may go to defence, as against the outside force), then builds one production building per round on its pad least exposed to the incoming road: the kind whose units are worth most per credit against your towers (Easy: Barracks; Hard: by simulating the wave it would send, within the work budget). From three buildings on it builds a Lab and researches one item per round, the one adding most threat per credit. It expects your buildings' wave plus the levy (or your last wave, if that was stronger).
+- **Balance** (long suite `ai.long.test.ts`, endless): mirror matches are draws on every level; Hard beats Normal beats Easy from either seat, with a fallen core before the wear-down; Normal and Hard build at least three buildings and research; a player who never plans loses to every level. Measured (seed 1): Easy–Easy round 17, Normal–Normal 12, Hard–Hard 20, Hard–Normal 18, Normal–Easy 14, Hard–Easy 11.
+- **Pictures:** own canvas drawings with their own silhouettes (td-core `buildings.ts`): Barracks (hut with a pennant), Garage (ribbed roller door), Hangar (arched roof), Lab (dome with a flask).
+- **Saves:** research and research under way only with production, each item once; a round starts with none under way; buildings only with production (at most 10 plus one Lab); while planning no side has a wave; a produced wave holds only kinds buildings send, plus the levy at its end.

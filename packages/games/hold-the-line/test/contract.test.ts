@@ -10,11 +10,10 @@ const click = (root: HTMLElement, testId: string) => {
 
 runGameContract(game, {
   interact: (root) => {
-    // Build a Gun in the own half, buy two units and take one back.
+    // Duel with production (the default): a Gun and a Barracks in the own half.
     click(root, 'cell-5-12');
     click(root, 'build-gun');
-    click(root, 'buy-walker');
-    click(root, 'buy-runner');
-    click(root, 'unbuy-0');
+    click(root, 'cell-1-13');
+    click(root, 'build-barracks');
   }
 });

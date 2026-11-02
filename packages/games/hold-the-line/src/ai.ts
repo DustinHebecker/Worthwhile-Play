@@ -8,7 +8,16 @@ import {
   EXTRACTOR_PRICE,
   externalWave,
   extractorsOf,
+  levyOf,
   mapOf,
+  MAX_PRODUCERS,
+  PRODUCERS,
+  producersOf,
+  producing,
+  productionOf,
+  RESEARCH,
+  RESEARCH_IDS,
+  sendsOf,
   SHOP,
   UNIT_PRICES,
   type Difficulty,
@@ -97,6 +106,14 @@ export function padsNear(s: HoldState, side: number, route: Route, range: number
 export const expectedWave = (s: HoldState, side: number): EnemyKind[] => {
   if (s.mode === 'external-small') return externalWave(s);
   const last = s.sides[1 - side]!.lastWave;
+  // With production the other side's buildings and research are in plain sight: what they send now,
+  // plus this round's levy (or last round's wave, if that was stronger: buildings can be added).
+  if (producing(s)) {
+    const now = [...productionOf(s, 1 - side), ...levyOf(s)];
+    const threat = (w: readonly EnemyKind[]) => w.reduce((n, k) => n + ENEMIES[k].threat, 0);
+    const wave = threat(last) > threat(now) ? last : now;
+    return wave.length > 0 ? wave : Array.from({ length: 8 }, () => 'walker' as const);
+  }
   return last.length > 0 ? last : Array.from({ length: 8 }, () => 'walker' as const);
 };
 
@@ -170,7 +187,7 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
 }
 
 /** Share of the round's starting credits the defence may use: all but the kept share in External Small (no attack wave to pay for). */
-export const defenceShare = (profile: Profile, mode: HoldState['mode']): number => (mode === 'external-small' ? 1 - profile.keep : profile.defence);
+export const defenceShare = (profile: Profile, mode: HoldState['mode'], production = false): number => (mode === 'external-small' || production ? 1 - profile.keep : profile.defence);
 
 /**
  * Wave simulations for choosing the defence. Hard keeps PROBE_SIMS of its budget for probing attack
@@ -206,7 +223,7 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
 
   // 2. Defence against the wave it expects.
   // The defence budget is a share of what the round started with (an early extractor must not starve it).
-  const floor = Math.max(0, own().credits - Math.floor(start * defenceShare(profile, s.mode)));
+  const floor = Math.max(0, own().credits - Math.floor(start * defenceShare(profile, s.mode, producing(s))));
   const wave = expectedWave(s, side);
   const budget = defenceSims(profile, s.mode);
   let sims = 0;
@@ -252,6 +269,10 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   // (External Small: there is none to buy).
   if (s.mode === 'external-small') return plan;
   const keep = Math.floor(start * profile.keep);
+  if (producing(s)) {
+    for (const cmd of produceOrder(s, side, profile, keep, meter)) apply(cmd);
+    return plan;
+  }
   const order = profile.probe ? probeOrder(s, side, keep, meter) : attackOrder(s, side, profile);
   for (let i = 0; i < capacityOf(own()) * 2; i++) {
     const kind = order[i % order.length]!;
@@ -318,3 +339,94 @@ export function probeOrder(s: HoldState, side: number, keep: number, meter?: Met
   }
   return best?.order ?? ['walker'];
 }
+
+/** What a unit is worth in an attack against the defending towers: its threat times its chance to get through. */
+function unitValue(s: HoldState, side: number, kind: EnemyKind): number {
+  const arch = archetypeOf(TD_RULESET, kind)!;
+  let dps = 0;
+  for (const t of s.world.entities) {
+    if (t.side !== 1 - side || !Object.hasOwn(TOWERS, t.kind)) continue;
+    const weapon = archetypeOf(TD_RULESET, t.kind)?.weapon;
+    if (weapon) dps += (weapon.damage * weapon.vs[arch.armor]) / 100 / Math.max(1, weapon.cooldown);
+  }
+  const toughness = (arch.hp + (arch.shield?.hp ?? 0)) / (1 + dps * 40);
+  return ENEMIES[kind].threat * Math.min(1, toughness);
+}
+
+/**
+ * Duel with production: the computer's attack (design § 18.2). It researches what adds the most
+ * threat per credit to the buildings it has (once it has three, it builds a Lab), then builds the
+ * production building whose units are worth most per credit against the other side's towers, on its
+ * pads least exposed to the incoming road, as long as it keeps its share. Hard instead chooses the
+ * building by simulating its next wave against those towers (within the work budget).
+ * Returns the commands in order; each is legal when applied in turn.
+ */
+export function produceOrder(state: HoldState, side: number, profile: Profile, keep: number, meter: Meter = { used: 0 }): PlanCommand[] {
+  const plan: PlanCommand[] = [];
+  let s = state;
+  const apply = (cmd: PlanCommand): boolean => {
+    if (checkPlan(s, side, cmd) !== null || s.sides[side]!.credits - priceOf(cmd) < keep) return false;
+    s = applyPlan(s, side, cmd);
+    plan.push(cmd);
+    return true;
+  };
+  const incoming = mapOf(s).lanes[1 - side]!;
+  const farPad = (): [number, number] | undefined => padsNear(s, side, incoming, 3).reverse()[0];
+  const research = () => s.sides[side]!.research ?? [];
+  const waveValue = (wave: readonly EnemyKind[]) => wave.reduce((n, k) => n + unitValue(s, side, k), 0);
+
+  if (profile.lookahead) {
+    // A Lab once three buildings send; then research, best gain per credit first.
+    const pad = farPad();
+    if (producersOf(s, side) >= 3 && producersOf(s, side, ['lab']) === 0 && pad) apply({ t: 'produce', kind: 'lab', x: pad[0], y: pad[1] });
+    for (;;) {
+      const base = waveValue(productionOf(s, side));
+      let best: { id: (typeof RESEARCH_IDS)[number]; value: number } | null = null;
+      for (const id of RESEARCH_IDS) {
+        if (research().includes(id) || checkPlan(s, side, { t: 'research', id }) !== null) continue;
+        // The Siege crawler comes every third round: a third of it per round.
+        const gain = id === 'siege' ? unitValue(s, side, 'crawler') / 3 : waveValue(productionOf({ ...s, sides: withResearch(s, side, id) }, side)) - base;
+        const value = gain / RESEARCH[id];
+        if (gain > 0 && (!best || value > best.value)) best = { id, value };
+      }
+      if (!best || !apply({ t: 'research', id: best.id })) break;
+      break; // one item per round
+    }
+  }
+
+  // Buildings: the kind worth most per credit (Hard: by simulating the wave it would send).
+  const kinds = ['barracks', 'garage', 'hangar'] as const;
+  for (let i = 0; i < PRODUCERS_PER_ROUND && producersOf(s, side) < MAX_PRODUCERS; i++) {
+    const pad = farPad();
+    if (!pad) break;
+    let kind: (typeof kinds)[number];
+    if (!profile.lookahead) kind = 'barracks';
+    else if (profile.probe) {
+      const now = productionOf(s, side);
+      let best: { kind: (typeof kinds)[number]; value: number } | null = null;
+      for (const k of kinds) {
+        if (meter.used >= WORK_BUDGET) break;
+        const through = leakage(s.world, s, 1 - side, [...now, ...sendsOf(k, research())], Infinity, meter);
+        if (through === Infinity) break;
+        const value = through / PRODUCERS[k];
+        if (!best || value > best.value + 1e-9) best = { kind: k, value };
+      }
+      kind = best?.kind ?? 'barracks';
+    } else {
+      kind = kinds.reduce((a, b) => (waveValue(sendsOf(b, research())) / PRODUCERS[b] > waveValue(sendsOf(a, research())) / PRODUCERS[a] + 1e-9 ? b : a));
+    }
+    if (!apply({ t: 'produce', kind, x: pad[0], y: pad[1] })) break;
+  }
+  return plan;
+}
+
+/** New production buildings per round (the attack grows step by step, as the defence does). */
+export const PRODUCERS_PER_ROUND = 1;
+
+const priceOf = (cmd: PlanCommand): number => (cmd.t === 'produce' ? PRODUCERS[cmd.kind] : cmd.t === 'research' ? RESEARCH[cmd.id] : 0);
+const withResearch = (s: HoldState, side: number, id: (typeof RESEARCH_IDS)[number]): HoldState['sides'] => {
+  const sides = structuredClone(s.sides);
+  sides[side]!.research = [...(sides[side]!.research ?? []), id];
+  return sides;
+};
+

@@ -9,9 +9,11 @@ test('hold-the-line: a plan and a paused battle survive a reload at the same tic
   await expectResumeAfterReload(page, 'hold-the-line', async (p) => {
     await root(p).getByTestId('cell-5-12').click();
     await root(p).getByTestId('build-gun').click();
-    await root(p).getByTestId('buy-walker').click();
-    await root(p).getByTestId('buy-walker').click();
-    await expect(root(p).getByTestId('credits')).toHaveAttribute('data-value', '160');
+    // The Duel produces by default: a Barracks sends three Walkers at every lock.
+    await root(p).getByTestId('cell-1-13').click();
+    await root(p).getByTestId('build-barracks').click();
+    await expect(root(p).getByTestId('credits')).toHaveAttribute('data-value', '50');
+    await expect(root(p).getByTestId('production-wave')).toContainText('3 × Walker');
     await root(p).getByTestId('lock').click();
     await expect(game(p)).toHaveAttribute('data-phase', 'battle');
     await expect.poll(async () => Number(await game(p).getAttribute('data-tick'))).toBeGreaterThan(10);
@@ -43,7 +45,8 @@ test('hold-the-line: 44 px cells on a 360 px phone and locking by keyboard', asy
 });
 
 test('hold-the-line: a whole game ends calmly with a result', async ({ page }) => {
-  await startGame(page, 'hold-the-line', { difficulty: 'easy', settings: { length: 'rounds' } });
+  // The shop variant (start-screen choice "Attack waves: Shop").
+  await startGame(page, 'hold-the-line', { difficulty: 'easy', settings: { length: 'rounds', waves: 'shop' } });
   for (let round = 0; round < 10; round++) {
     if ((await game(page).getAttribute('data-phase')) !== 'plan') break;
     await root(page).getByTestId('buy-walker').click();
@@ -54,6 +57,34 @@ test('hold-the-line: a whole game ends calmly with a result', async ({ page }) =
   await expect(root(page).getByTestId('status')).toBeVisible();
   const saved = (await readSave(page, 'hold-the-line')) as { state: { phase: string } };
   expect(['won', 'lost', 'draw']).toContain(saved.state.phase);
+});
+
+test('hold-the-line: production buildings and research, in effect from the next round, survive a reload', async ({ page }) => {
+  await startGame(page, 'hold-the-line', { difficulty: 'easy' });
+  await root(page).getByTestId('cell-1-13').click();
+  await root(page).getByTestId('build-lab').click();
+  await root(page).getByTestId('research-shields').click();
+  await expect(root(page).getByTestId('research-next')).toContainText('Shield plates');
+  // Two rounds of income for a Barracks (the Lab and the research took all 300 credits).
+  for (const round of ['1', '2']) {
+    await root(page).getByTestId('lock').click();
+    await root(page).getByTestId('instant').click();
+    await expect(game(page)).toHaveAttribute('data-round', round);
+  }
+  await expect(root(page).getByTestId('research-done')).toContainText('Shield plates');
+  await root(page).getByTestId('cell-2-13').click();
+  await root(page).getByTestId('build-barracks').click();
+  await expect(root(page).getByTestId('production-wave')).toContainText('3 × Shield bearer');
+  // Wait for the save that holds the Barracks, then reload.
+  await expect
+    .poll(async () => {
+      const saved = (await readSave(page, 'hold-the-line')) as { state?: { world?: { entities?: { kind: string; side: number }[] }; sides?: { research?: string[] }[] } } | undefined;
+      return [saved?.state?.sides?.[0]?.research, saved?.state?.world?.entities?.some((e) => e.kind === 'barracks' && e.side === 0)];
+    })
+    .toEqual([['shields'], true]);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(root(page).getByTestId('production-wave')).toContainText('3 × Shield bearer');
 });
 
 test('hold-the-line: Outside force is chosen on the start screen, needs no shop and survives a reload', async ({ page }) => {
