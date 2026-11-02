@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { archetypeOf } from '@wp/strategy-engine';
 import { ENEMIES, isDefenderKind, TD_RULESET } from '@wp/td-core';
-import { defenderResearch, expectedWave, leakage, padsNear, planRound } from '../src/ai';
+import { defenderResearch, expectedWave, leakage, planRound } from '../src/ai';
 import { CROSSING, ownPad } from '../src/maps';
 import {
   applyPlan,
