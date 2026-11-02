@@ -3,7 +3,8 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'hold-the-line',
-  stateVersion: 1,
+  // 2: endless games and playing alone (an older client must not read them as ten-round games).
+  stateVersion: 2,
   skills: ['strategy', 'planning', 'spatial'],
   typicalMinutes: [15, 30],
   inputMethods: ['pointer', 'touch', 'keyboard'],

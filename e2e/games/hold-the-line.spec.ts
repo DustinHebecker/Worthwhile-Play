@@ -89,6 +89,8 @@ test('hold-the-line: alone against the outside force, endless until the core fal
   await startGame(page, 'hold-the-line', { settings: { mode: 'external-solo', length: 'endless' } });
   await expect(root(page).getByTestId('core-foe')).toBeHidden();
   await expect(root(page).getByTestId('round')).not.toContainText('10');
+  // Alone, the panel speaks of you only.
+  await expect(root(page).getByTestId('outside-wave')).toContainText('you face');
   // No defence at all: the core falls within a few rounds, and the game ends calmly.
   for (let round = 0; round < 10; round++) {
     if ((await game(page).getAttribute('data-phase')) !== 'plan') break;
@@ -98,6 +100,8 @@ test('hold-the-line: alone against the outside force, endless until the core fal
     await expect(game(page)).not.toHaveAttribute('data-phase', 'battle');
   }
   await expect(page.getByTestId('finished')).toBeVisible();
+  // Its own end wording: there is no other side that held.
+  await expect(page.getByTestId('finished')).toContainText('The outside force broke through your line.');
   const saved = (await readSave(page, 'hold-the-line')) as { state: { phase: string; solo?: boolean; length?: string } };
   expect(saved.state).toMatchObject({ phase: 'lost', solo: true, length: 'endless' });
 });

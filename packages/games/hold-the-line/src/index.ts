@@ -9,6 +9,8 @@ export default defineGame<HoldState>({
   metadata,
   create: createHoldTheLine,
   isValidState,
+  // Version 1 saves (before endless and solo) are valid as they are: without `length` they are ten-round games.
+  migrateState: (state, fromVersion) => (fromVersion === 1 && isValidState(state) ? state : undefined),
   settings: [
     { kind: 'choice', id: 'mode', labelKey: 'mode.label', valueKey: 'mode', values: [...MODE_CHOICES], default: 'vs-small', display: 'radio', hintKey: 'mode.hint' },
     { kind: 'choice', id: 'length', labelKey: 'length.label', valueKey: 'length', values: [...LENGTHS], default: DEFAULT_LENGTH, display: 'radio', hintKey: 'length.hint' },

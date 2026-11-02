@@ -14,7 +14,10 @@ import {
   EXTRACTOR_PRICE,
   externalWave,
   incomeOf,
+  levyOf,
   MAX_PRESSURE,
+  wearOf,
+  WEAR_FROM,
   DEFAULT_LENGTH,
   LENGTHS,
   INTEREST_PERCENT,
@@ -90,7 +93,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const coreOwn = h('span', { 'data-testid': 'core-own' });
   const coreFoe = h('span', { 'data-testid': 'core-foe' });
   const income = h('span', { 'data-testid': 'income' });
-  const hud = h('p', { class: 'td-hud' }, round, phase, credits, coreOwn, coreFoe, income);
+  const wear = h('span', { 'data-testid': 'wear' });
+  const hud = h('p', { class: 'td-hud' }, round, phase, credits, coreOwn, coreFoe, income, wear);
   const status = h('p', { class: 'wp-status td-status', 'data-testid': 'status', hidden: true });
   const canvas = h('canvas', { class: 'td-canvas', 'aria-hidden': 'true' });
   const cells = h('div', { class: 'td-cells', role: 'group', 'aria-label': t('board'), 'data-testid': 'board' });
@@ -207,6 +211,10 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     coreFoe.dataset.value = String(state.sides[1].core);
     income.hidden = state.phase !== 'plan';
     income.textContent = t('hud.income', { n: incomeOf(state, PLAYER), p: INTEREST_PERCENT });
+    // Endless: the wear-down from round WEAR_FROM + 1 (said in the rules; shown while it applies).
+    const worn = state.phase === 'plan' || state.phase === 'battle' ? wearOf(state) : 0;
+    wear.hidden = worn === 0;
+    wear.textContent = worn > 0 ? t('hud.wear', { n: worn, from: WEAR_FROM + 1 }) : '';
     container.dataset.phase = state.phase;
     container.dataset.round = String(state.round);
     container.dataset.tick = String(state.run?.tick ?? 0);
@@ -288,12 +296,14 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     outside.hidden = !external();
     if (!external()) return;
     const extra = Math.min(MAX_PRESSURE, state.pressure ?? 0);
+    // Alone there is no other side to speak of.
+    const solo = state.solo ? 'Solo' : '';
     outside.append(
       h('h3', { class: 'td-subtitle' }, t('external.title')),
-      h('p', { 'data-testid': 'outside-wave' }, t('external.incoming', { list: listOf(externalWave(state)) }))
+      h('p', { 'data-testid': 'outside-wave' }, t(`external.incoming${solo}`, { list: listOf(externalWave(state)) }))
     );
-    if (state.round > 0) outside.append(h('p', { 'data-testid': 'outside-pressure' }, t('external.pressure', { n: state.pressure ?? 0, extra })));
-    outside.append(h('p', { class: 'wp-muted' }, t('external.note')));
+    if (state.round > 0) outside.append(h('p', { 'data-testid': 'outside-pressure' }, t(`external.pressure${solo}`, { n: state.pressure ?? 0, extra })));
+    outside.append(h('p', { class: 'wp-muted' }, t(`external.note${solo}`)));
   };
 
   const renderShop = (): void => {
@@ -303,13 +313,17 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     const side = me();
     const planning = state.phase === 'plan';
     const max = capacityOf(side);
-    shop.append(h('h3', { class: 'td-subtitle' }, t('shop.title')), h('p', { 'data-testid': 'capacity' }, t('shop.capacity', { n: side.wave.length, max })));
+    // From the lock on, the wave ends with this round's levy: it is shown apart from what was bought.
+    const levy = levyOf(state);
+    const bought = planning ? side.wave : side.wave.slice(0, side.wave.length - levy.length);
+    shop.append(h('h3', { class: 'td-subtitle' }, t('shop.title')), h('p', { 'data-testid': 'capacity' }, t('shop.capacity', { n: bought.length, max })));
     const wave = h('ul', { class: 'td-wave-list', 'data-testid': 'wave' });
-    side.wave.forEach((kind, index) => {
+    bought.forEach((kind, index) => {
       wave.append(h('li', {}, h('button', { type: 'button', disabled: !planning, 'data-testid': `unbuy-${index}`, onclick: () => onPlan({ t: 'unbuy', index }) }, t('shop.remove', { name: unitName(kind) }))));
     });
-    if (side.wave.length === 0) wave.append(h('li', { class: 'wp-muted' }, t('shop.empty')));
+    if (bought.length === 0) wave.append(h('li', { class: 'wp-muted' }, t('shop.empty')));
     shop.append(wave);
+    if (levy.length > 0) shop.append(h('p', { 'data-testid': 'levy' }, t('shop.levy', { list: listOf(levy) })));
     if (!planning) return;
     const list = h('div', { class: 'td-options' });
     for (const kind of SHOP) {
@@ -329,11 +343,15 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     clear(intel);
     intel.hidden = external() || (state.round === 0 && state.phase === 'plan');
     if (intel.hidden) return;
+    // Last round's waves without that round's levy (both sides sent it; it is listed once).
+    const levy = state.round > 0 ? levyOf({ ...state, round: state.round - 1 }) : [];
+    const boughtOf = (wave: readonly EnemyKind[]) => wave.slice(0, wave.length - levy.length);
     intel.append(
       h('h3', { class: 'td-subtitle' }, t('intel.title')),
-      h('p', { 'data-testid': 'intel-theirs' }, t('intel.theirs', { list: listOf(state.sides[1].lastWave) })),
-      h('p', {}, t('intel.yours', { list: listOf(me().lastWave) }))
+      h('p', { 'data-testid': 'intel-theirs' }, t('intel.theirs', { list: listOf(boughtOf(state.sides[1].lastWave)) })),
+      h('p', {}, t('intel.yours', { list: listOf(boughtOf(me().lastWave)) }))
     );
+    if (levy.length > 0) intel.append(h('p', {}, t('intel.levy', { list: listOf(levy) })));
   };
 
   const renderControls = (): void => {
@@ -473,7 +491,10 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     if (reported || (state.phase !== 'won' && state.phase !== 'lost' && state.phase !== 'draw')) return;
     reported = true;
     announce(live, endText());
-    context.finished({ outcome: state.phase, stats: { core: me().core, opponent: state.sides[1].core, rounds: state.round + 1, killed: me().stats.killed } });
+    const stats = { core: me().core, rounds: state.round + 1, killed: me().stats.killed };
+    // Alone there is no opponent; a fallen core is the natural end there ("result.completed": the force broke through).
+    if (state.solo) context.finished({ outcome: state.phase === 'won' ? 'won' : 'completed', stats });
+    else context.finished({ outcome: state.phase, stats: { ...stats, opponent: state.sides[1].core } });
   };
 
   const loop = (time: number): void => {
