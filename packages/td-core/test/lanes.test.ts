@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createWorld, spawn, archetypeOf, type SimEvent, type World } from '@wp/strategy-engine';
+import { createWorld, isValidWorld, spawn, archetypeOf, type SimEvent, type World } from '@wp/strategy-engine';
 import { along, cellAt, chebyshev, CONTACT_DAMAGE, removeWalkers, STUN_BUDGET, tickLanes, type LaneRun, type Route } from '../src/lanes';
 import { DEFENDER_KINDS, isEnemyKind, TD_RULESET } from '../src/ruleset';
 
@@ -565,30 +565,39 @@ describe('defenders on the lanes, in detail', () => {
     expect(orderOf('picket', [2, 5], later('walker', 0))).toEqual([2, 1]);
     // Next to that cell it holds there.
     expect(orderOf('picket', [2, 2], later('walker', 0))).toBe('hold');
-    // On it: back to the first free cell of its own layer.
-    expect(orderOf('picket', [2, 0], later('walker', 0))).toEqual([2, 1]);
-    expect(orderOf('picket', [2, 0], later('walker', 0), [['picket', 0, 2, 1]])).toEqual([2, 2]);
-    expect(orderOf('picket', [2, 0], later('walker', 0), [['skimmer', 0, 2, 1]])).toEqual([2, 1]);
-    // Only for the force's own layer: a flying force does not move a ground defender, and the other way round.
-    expect(orderOf('picket', [2, 0], later('glider', 1))).toBe('hold');
-    expect(orderOf('skimmer', [2, 0], later('glider', 1))).toEqual([2, 1]);
-    expect(orderOf('skimmer', [2, 0], later('walker', 0))).toBe('hold');
   });
 
-  it('a hostile defender never keeps the force off the map: the unit enters on its cell; units of its own side still block', () => {
+  it("a defender of either side on a pending force unit's entry is set down on the nearest free cell it may stand on, and the unit enters (re-review B1')", () => {
+    const after = (kind: string, side: number, pending: LaneRun['pending'], others: [string, number, number, number][] = []) => {
+      const w = world();
+      const d = put(w, kind, side, 2, 0);
+      for (const [k, s2, x, y] of others) put(w, k, s2, x, y);
+      const out = tickLanes(w, { tick: 0, pending, walkers: [] }, ROUTES);
+      const e = out.world.entities.find((x) => x.id === d.id)!;
+      // Never two on one cell and layer: every state stays a valid save.
+      const cells = out.world.entities.map((x) => `${archetypeOf(TD_RULESET, x.kind)!.layer}:${x.x},${x.y}`);
+      expect(new Set(cells).size).toBe(cells.length);
+      return { at: [e.x, e.y], order: e.order.type, entered: out.run.pending.length === 0 };
+    };
+    const now = (kind: string, route: number): LaneRun['pending'] => [{ at: 0, kind: kind as never, route, side: 1 }];
+    // Ground: onto the road (the only road cell next to it is (2, 1)), holding; the walker enters.
+    expect(after('picket', 0, now('walker', 0))).toEqual({ at: [2, 1], order: 'hold', entered: true });
+    // Its own side's force too (the other half's entry, B1').
+    expect(after('picket', 1, now('walker', 0))).toEqual({ at: [2, 1], order: 'hold', entered: true });
+    // (2, 1) taken: the next free road cell, two away.
+    expect(after('picket', 0, now('walker', 0), [['picket', 0, 2, 1]]).at).toEqual([2, 2]);
+    // Air: any free cell, nearest ring first, then by row and column.
+    expect(after('skimmer', 0, now('glider', 1))).toEqual({ at: [1, 0], order: 'hold', entered: true });
+    // Only for the force's own layer.
+    expect(after('picket', 0, now('glider', 1)).at).toEqual([2, 0]);
+    expect(after('skimmer', 0, now('walker', 0)).at).toEqual([2, 0]);
+    // Without anything pending nobody is moved.
+    expect(after('picket', 0, []).at).toEqual([2, 0]);
+    // A force unit on the entry is not moved: the spawn waits behind it.
     const w = world();
-    put(w, 'picket', 0, 2, 0);
-    const entered = tickLanes(w, run([{ at: 0, kind: 'walker', route: 0, side: 1 }]), ROUTES);
-    expect(entered.run.pending).toEqual([]);
-    expect(entered.world.entities.filter((e) => e.kind === 'walker')).toHaveLength(1);
-    const w2 = world();
-    put(w2, 'picket', 1, 2, 0);
-    expect(tickLanes(w2, run([{ at: 0, kind: 'walker', route: 0, side: 1 }]), ROUTES).run.pending).toHaveLength(1);
-    const w3 = world();
-    put(w3, 'walker', 1, 2, 0);
-    expect(tickLanes(w3, run([{ at: 0, kind: 'walker', route: 0, side: 1 }]), ROUTES).run.pending).toHaveLength(1);
+    put(w, 'walker', 1, 2, 0);
+    expect(tickLanes(w, { tick: 0, pending: now('walker', 0), walkers: [] }, ROUTES).run.pending).toHaveLength(1);
   });
-
 
   it('a defender off its road (a flying one cutting a corner) holds at the end and for the force close by, not for the force far ahead on the road', () => {
     const w = world();
@@ -608,6 +617,21 @@ describe('defenders on the lanes, in detail', () => {
     expect(tickLanes(far, { tick: 1, pending: [], walkers: [{ id: d.id, route: 3, leg: 1 }] }, ROUTES).world.entities.find((e) => e.id === d.id)!.order).toMatchObject({ type: 'move' });
     far.entities.push(spawn(far.nextId++, 1, archetypeOf(TD_RULESET, 'glider')!, 1, 5));
     expect(tickLanes(far, { tick: 1, pending: [], walkers: [{ id: d.id, route: 3, leg: 1 }] }, ROUTES).world.entities.find((e) => e.id === d.id)!.order.type).toBe('hold');
+  });
+
+  it('M1: a boxed-in defender on the entry with a Brute due: every tick is a valid world, and the Brute enters', () => {
+    let w = world();
+    // Pickets fill the road below the entry; the one on the entry has nowhere on the road but further down.
+    for (let y = 0; y <= 4; y++) put(w, 'picket', 0, 2, y);
+    let r: LaneRun = { tick: 0, pending: [{ at: 0, kind: 'brute', route: 0, side: 1 }], walkers: [] };
+    let entered = false;
+    for (let i = 0; i < 200; i++) {
+      const out = tickLanes(w, r, ROUTES);
+      [w, r] = [out.world, out.run];
+      expect(isValidWorld(structuredClone(w), TD_RULESET), `tick ${i}`).toBe(true);
+      entered ||= r.pending.length === 0;
+    }
+    expect(entered).toBe(true);
   });
 });
 

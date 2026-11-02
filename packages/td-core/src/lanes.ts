@@ -98,16 +98,15 @@ export interface LaneTick {
 export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], owned = false): LaneTick {
   const w = owned ? world : structuredClone(world);
   const r = owned ? run : structuredClone(run);
+  // 0. The force's entries stay clear: a defender (of either side) on one is set down next to it.
+  if (r.pending.length > 0 && w.entities.some((e) => isDefenderKind(e.kind))) clearEntries(w, r.pending, routes);
   // 1. Spawns that are due and whose spawn cell is free on their layer (in order per route); then defenders.
   const due = <T extends { at: number; kind: string; route: number; side?: number }>(list: readonly T[]): T[] => {
     const waiting: T[] = [];
     for (const p of list) {
       const [x, y] = routes[p.route]!.points[0]!;
       const arch = archetypeOf(TD_RULESET, p.kind)!;
-      // A hostile defender never keeps the force off the map: the unit enters on its cell and the two
-      // meet there (contact and fire end it). Defenders normally keep clear of the entry (below);
-      // this is the guarantee when they are boxed in around it (re-review of PR #111, B1).
-      const blocked = w.entities.some((e) => e.x === x && e.y === y && archetypeOf(TD_RULESET, e.kind)?.layer === arch.layer && !(isDefenderKind(e.kind) && e.side !== (p.side ?? 1)));
+      const blocked = w.entities.some((e) => e.x === x && e.y === y && archetypeOf(TD_RULESET, e.kind)?.layer === arch.layer);
       if (p.at > r.tick || blocked || waiting.some((q) => q.route === p.route && q.at <= r.tick)) {
         waiting.push(p);
         continue;
@@ -140,17 +139,7 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
       // Off its road (a flying defender cutting a corner) it counts as well away from its start.
       const onRoad = along(points, unit.x, unit.y);
       const at = onRoad ?? 0;
-      // On a spawn cell the force still needs: step back to the first free cell along its road.
-      if (entry(unit.x, unit.y)) {
-        for (let k = at - 1; k >= 0; k--) {
-          const [bx, by] = cellAt(points, k);
-          if (w.entities.some((e) => e.x === bx && e.y === by && archetypeOf(TD_RULESET, e.kind)?.layer === layer)) continue;
-          if (unit.order.type !== 'move' || unit.order.x !== bx || unit.order.y !== by) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: bx, y: by } });
-          break;
-        }
-        continue;
-      }
-      // Its goal, short of such a spawn cell.
+      // Its goal, short of a spawn cell the force still needs (step 0 keeps those clear in any case).
       const [hx, hy] = entry(gx, gy) ? cellAt(points, (along(points, gx, gy) ?? 0) - 1) : [gx, gy];
       // A defender holds where a unit of the force is close ahead *along its road* (its reach or the
       // hold line, whichever is more; measured along the road, not across a bend: review of PR #111,
@@ -207,6 +196,46 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
   }
   r.tick++;
   return { world: next, run: r, events: result.events, leaks };
+}
+
+/**
+ * Keeps the force's entries clear (§ 18.3; re-reviews of PR #111, B1 and B1'): a defender, of either
+ * side, standing on the spawn cell of a pending force unit on its own layer is set down on the
+ * nearest free cell it may stand on (ground: a road cell of any route; air: any cell), never on
+ * another such entry, and holds there. Without this, a defender holding on an entry (or a flying one
+ * landing on the other half's entry) kept the force off the map until the bound. Nothing ever
+ * shares a cell, so every state stays a valid save. In id order, nearest ring first, then by row
+ * and column: deterministic.
+ */
+function clearEntries(w: World, pending: LaneRun['pending'], routes: readonly Route[]): void {
+  const layerOf = (kind: string) => archetypeOf(TD_RULESET, kind)?.layer;
+  const entries = new Set(pending.map((p) => `${layerOf(p.kind)}:${routes[p.route]!.points[0]!.join(',')}`));
+  let road: Set<string> | null = null;
+  for (const d of [...w.entities].sort((a, b) => a.id - b.id)) {
+    const layer = layerOf(d.kind);
+    if (!isDefenderKind(d.kind) || !entries.has(`${layer}:${d.x},${d.y}`)) continue;
+    road ??= new Set(routes.flatMap((route) => Array.from({ length: (along(route.points, ...route.points[route.points.length - 1]!) ?? 0) + 1 }, (_, k) => cellAt(route.points, k).join(','))));
+    const free = (x: number, y: number) =>
+      x >= 0 && y >= 0 && x < w.map.w && y < w.map.h && !entries.has(`${layer}:${x},${y}`) && (layer === 'air' || road!.has(`${x},${y}`)) && !w.entities.some((e) => e.x === x && e.y === y && layerOf(e.kind) === layer);
+    let to: [number, number] | null = null;
+    for (let ring = 1; ring < Math.max(w.map.w, w.map.h) && !to; ring++) {
+      for (let y = d.y - ring; y <= d.y + ring && !to; y++) {
+        for (let x = d.x - ring; x <= d.x + ring; x++) {
+          if (chebyshev(x, y, d.x, d.y) === ring && free(x, y)) {
+            to = [x, y];
+            break;
+          }
+        }
+      }
+    }
+    if (!to) continue;
+    [d.x, d.y] = to;
+    d.order = { type: 'hold' };
+    delete d.prev;
+    delete d.bumps;
+    delete d.stuck;
+    delete d.stall;
+  }
 }
 
 /** Removes units (e.g. at the safety bound or when a game ends mid-wave) and reports them as leaks. */

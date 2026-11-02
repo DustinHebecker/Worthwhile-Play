@@ -71,13 +71,17 @@ describe('defenders never stall a battle', () => {
     );
   }, 900_000);
 
-  /** Steps a battle to its end and returns the ticks it took (re-review of PR #111, B1). */
-  const ticksOf = (s: HoldState): number => {
+  /**
+   * Steps a battle to its end and returns the ticks it took (re-reviews of PR #111, B1 and B1');
+   * with `every`, checks that the save is valid every that many ticks (M1: nothing shares a cell).
+   */
+  const ticksOf = (s: HoldState, every = 100): number => {
     let t = lockRound(s, () => []);
     let ticks = 0;
     while (t.phase === 'battle') {
       ticks = t.run!.tick;
-      t = stepBattle(t, 100).state;
+      t = stepBattle(t, every).state;
+      expect(isValidState(clone(t)), `tick ${t.run?.tick}`).toBe(true);
     }
     return ticks;
   };
@@ -92,9 +96,33 @@ describe('defenders never stall a battle', () => {
       [20, 10, false, false]
     ];
     for (const [round, n, twin, solo] of cases) {
-      const s = setup(round, [Array(n).fill(HANGAR), []], [twin ? ['hangars'] : [], []], solo, true);
-      expect(ticksOf(s), `round ${round + 1}, ${n} Hangars${twin ? ' (twin)' : ''}${solo ? ', alone' : ''}`).toBeLessThanOrEqual(2000);
+      // Alone only your side builds; otherwise both sides the same (B1': Skimmers of one side landed on the other half's entry).
+      const s = setup(round, [Array(n).fill(HANGAR), solo ? [] : Array(n).fill(HANGAR)], [twin ? ['hangars'] : [], solo ? [] : twin ? ['hangars'] : []], solo, true);
+      expect(ticksOf(s), `round ${round + 1}, ${n} Hangars${twin ? ' (twin)' : ''}${solo ? ', alone' : ', both sides'}`).toBeLessThanOrEqual(2000);
     }
   }, 900_000);
+
+  it("B1': 2 to 10 Hangars with and without Twin hangars on both sides, rounds 1 to 47 sampled: every battle ends within 2000 ticks, every save valid", () => {
+    for (const n of [2, 4, 6, 8, 10]) {
+      for (const twin of [false, true]) {
+        for (const round of [0, 3, 6, 9, 10, 12, 16, 20, 25, 31, 38, 46]) {
+          const research = twin ? ['hangars'] : [];
+          const s = setup(round, [Array(n).fill(HANGAR), Array(n).fill(HANGAR)], [research, research], false, true);
+          expect(ticksOf(s, 50), `round ${round + 1}, ${n} Hangars each${twin ? ' (twin)' : ''}`).toBeLessThanOrEqual(2000);
+        }
+      }
+    }
+  }, 1_800_000);
+
+  it('M1: saves taken every tick while defenders crowd the entries stay valid (nothing ever shares a cell)', () => {
+    for (const [round, kinds] of [
+      [6, [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]],
+      [9, [0, 0, 0, 0, 0, 1, 1, 1, 2, 2]],
+      [20, [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]]
+    ] as const) {
+      const s = setup(round, [kinds, kinds], [['hangars', 'shields', 'chassis'], ['hangars', 'shields', 'chassis']], false, true);
+      expect(ticksOf(s, 1)).toBeLessThanOrEqual(2000);
+    }
+  }, 1_800_000);
 });
 
