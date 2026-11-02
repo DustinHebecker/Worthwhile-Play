@@ -291,3 +291,102 @@ describe('defenders on the lanes (design § 18.3, E5b)', () => {
     expect(b.events).toEqual(a.events);
   });
 });
+
+describe('defenders on the lanes, in detail', () => {
+  const put = (w: World, kind: string, side: number, x: number, y: number) => {
+    const e = spawn(w.nextId++, side, archetypeOf(TD_RULESET, kind)!, x, y);
+    w.entities.push(e);
+    return e;
+  };
+  /** One tick with a defender walking route 2 (from the bottom) at (2, y) and the given units. */
+  const holdAt = (kind: string, unit: [string, number, number, number] | null): string => {
+    const w = world();
+    const d = put(w, kind, 0, 2, 6);
+    if (unit) put(w, unit[0], unit[1], unit[2], unit[3]);
+    const r: LaneRun = { tick: 1, pending: [], walkers: [{ id: d.id, route: 2, leg: 1 }] };
+    const out = tickLanes(w, r, ROUTES).world.entities.find((e) => e.id === d.id)!;
+    return out.order.type;
+  };
+
+  it('holds at the hold line (3 cells) or within its reach, for hostile wave units only', () => {
+    expect(holdAt('picket', null)).toBe('move');
+    expect(holdAt('picket', ['walker', 1, 2, 3])).toBe('hold'); // 3 cells: the hold line
+    expect(holdAt('picket', ['walker', 1, 2, 2])).toBe('move'); // 4 cells: beyond it and its reach (2)
+    expect(holdAt('mortar-team', ['walker', 1, 2, 2])).toBe('hold'); // its reach is 4
+    expect(holdAt('picket', ['walker', 0, 2, 3])).toBe('move'); // its own side's unit
+    expect(holdAt('picket', ['picket', 1, 2, 3])).toBe('move'); // another defender is not the force
+  });
+
+  it('walks its route waypoint by waypoint, and at its end holds', () => {
+    const w = world();
+    const d = put(w, 'scout', 0, 2, 7);
+    let r: LaneRun = { tick: 0, pending: [], walkers: [{ id: d.id, route: 2, leg: 1 }] };
+    let cur = w;
+    const orders = new Set<string>();
+    for (let i = 0; i < 80; i++) {
+      const s = tickLanes(cur, r, ROUTES);
+      [cur, r] = [s.world, s.run];
+      const e = cur.entities.find((x) => x.id === d.id)!;
+      orders.add(e.order.type === 'move' ? `move ${e.order.x},${e.order.y}` : e.order.type);
+    }
+    expect(orders).toEqual(new Set(['move 2,0', 'hold']));
+    expect(r.walkers).toHaveLength(1);
+  });
+
+  it('defenders set off in order on their route, each when its cell is free', () => {
+    const w = world();
+    const r: LaneRun = { tick: 0, pending: [], walkers: [], guards: [{ at: 0, kind: 'picket', route: 2, side: 0 }, { at: 0, kind: 'medic', route: 2, side: 0 }] };
+    const first = tickLanes(w, r, ROUTES);
+    expect(first.world.entities.map((e) => e.kind)).toEqual(['picket']);
+    expect(first.run.guards!.map((g) => g.kind)).toEqual(['medic']);
+    let [cur, run] = [first.world, first.run];
+    for (let i = 0; i < 30 && run.guards!.length > 0; i++) [cur, run] = (({ world: a, run: b }) => [a, b] as const)(tickLanes(cur, run, ROUTES));
+    expect(cur.entities.map((e) => e.kind).sort()).toEqual(['medic', 'picket']);
+    expect(cur.entities.find((e) => e.kind === 'medic')!.side).toBe(0);
+  });
+
+  it('contact hits only next to it, on its layer, from the other side, every CONTACT_EVERY ticks, the lowest id first', () => {
+    const run1 = (units: [string, number, number, number][], tick: number) => {
+      const w = world();
+      w.tick = tick;
+      const made = units.map(([k, side, x, y]) => put(w, k, side, x, y));
+      const out = tickLanes(w, { tick, pending: [], walkers: [] }, ROUTES);
+      return { made, out };
+    };
+    // Adjacent brute (threat 3) next to two pickets: the lower id is hit by 12.
+    const { made, out } = run1([['picket', 0, 2, 4], ['picket', 0, 1, 4], ['brute', 1, 2, 3]], 8);
+    const hp = (id: number) => out.world.entities.find((e) => e.id === id)?.hp;
+    expect(hp(made[0]!.id)).toBe(50 - 3 * CONTACT_DAMAGE);
+    expect(hp(made[1]!.id)).toBe(50);
+    const hit = out.events.find((e) => e.t === 'hit' && e.id === made[0]!.id)!;
+    expect(hit).toMatchObject({ damage: 3 * CONTACT_DAMAGE, side: 0, tick: out.world.tick - 1 });
+    expect(out.world.entities.find((e) => e.id === made[0]!.id)!.hitAt).toBe(out.world.tick - 1);
+    // Not on other ticks, not two cells away, not across layers, not from its own side.
+    expect(run1([['picket', 0, 2, 4], ['brute', 1, 2, 3]], 9).out.events.some((e) => e.t === 'hit' && e.side === 0)).toBe(false);
+    expect(run1([['picket', 0, 2, 5], ['brute', 1, 2, 3]], 8).out.events.some((e) => e.t === 'hit' && e.side === 0)).toBe(false);
+    expect(run1([['skimmer', 0, 2, 4], ['brute', 1, 2, 3]], 8).out.events.some((e) => e.t === 'hit' && e.side === 0)).toBe(false);
+    expect(run1([['picket', 0, 2, 4], ['brute', 0, 2, 3]], 8).out.events.some((e) => e.t === 'hit' && e.side === 0)).toBe(false);
+  });
+
+  it('contact soaks the shield first and keeps it down; at 0 health the defender is destroyed and removed', () => {
+    const w = world();
+    w.tick = 8;
+    const d = put(w, 'picket-shield', 0, 2, 4);
+    d.shield = 10;
+    d.shieldAt = 7; // hit just before: the shield is not back yet
+    put(w, 'brute', 1, 2, 3);
+    const out = tickLanes(w, { tick: 8, pending: [], walkers: [] }, ROUTES);
+    const after = out.world.entities.find((e) => e.id === d.id)!;
+    expect(after.shield).toBe(0);
+    expect(after.hp).toBe(50 - (3 * CONTACT_DAMAGE - 10));
+    expect(after.shieldAt).toBe(out.world.tick - 1);
+    const w2 = world();
+    w2.tick = 8;
+    const weak = put(w2, 'picket', 0, 2, 4);
+    weak.hp = 5;
+    put(w2, 'brute', 1, 2, 3);
+    const out2 = tickLanes(w2, { tick: 8, pending: [], walkers: [] }, ROUTES);
+    expect(out2.world.entities.some((e) => e.id === weak.id)).toBe(false);
+    expect(out2.events).toContainEqual(expect.objectContaining({ t: 'destroyed', id: weak.id, kind: 'picket', side: 0, x: 2, y: 4 }));
+  });
+});

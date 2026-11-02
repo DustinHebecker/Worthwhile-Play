@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { isDefenderKind } from '@wp/td-core';
-import { defenderResearch, expectedWave, leakage, planRound } from '../src/ai';
+import { archetypeOf } from '@wp/strategy-engine';
+import { ENEMIES, isDefenderKind, TD_RULESET } from '@wp/td-core';
+import { defenderResearch, expectedWave, leakage, padsNear, planRound } from '../src/ai';
 import { CROSSING, ownPad } from '../src/maps';
 import {
   applyPlan,
@@ -198,5 +199,69 @@ describe('defenders: the computer', () => {
     expect(defenderResearch(garages, 1)).toEqual([{ t: 'research', id: 'siege' }]);
     garages.sides[1].researching = ['siege'];
     expect(defenderResearch(garages, 1)).toEqual([]);
+  });
+});
+
+describe('defenders: the computer, in detail', () => {
+  const atRound = (s: HoldState, round: number): HoldState => ({ ...s, round, log: Array.from({ length: round + 1 }, () => ({ player: [], ai: [] })), pressure: 0 });
+
+  it('leakage with defenders and no force simulates nothing; with a force, it matches the real battle', () => {
+    const s = built(['barracks', 'garage', 'hangar'], { solo: true });
+    const m = { used: 0 };
+    expect(leakage(s.world, s, 0, [], Infinity, m)).toBe(0);
+    expect(m.used).toBe(0);
+    // Alone and without towers, what the real battle lets through (health-weighted) is what the simulation says.
+    for (const round of [1, 5]) {
+      const at = atRound(s, round);
+      at.roundStart = { ...at.roundStart, sides: clone(at.sides), world: clone(at.world) };
+      const wave = expectedWave(at, 0);
+      const { leaks } = resolveBattle(lockRound(at, idle));
+      const through = leaks.reduce((n, l) => n + (ENEMIES[l.kind].threat * l.hp) / (archetypeOf(TD_RULESET, l.kind)?.hp ?? 1), 0);
+      expect(leakage(at.world, at, 0, wave), `round ${round + 1}`).toBeCloseTo(through, 6);
+    }
+  });
+
+  it('Normal builds defender buildings when they are worth it: in its own game against the outside force it does', () => {
+    let s = newGame(1, 'normal', CROSSING.id);
+    const built: string[] = [];
+    for (let round = 0; round < 9 && s.phase === 'plan'; round++) {
+      for (const c of planRound(s, 0, 'normal')) s = applyPlan(s, 0, c);
+      s = lockRound(s, (v) => {
+        const plan = planRound(v, 1, 'normal');
+        for (const c of plan) if (c.t === 'produce') built.push(c.kind);
+        return plan;
+      });
+      s = resolveBattle(s).state;
+    }
+    expect(built.some((k) => k === 'barracks' || k === 'garage' || k === 'hangar')).toBe(true);
+  }, 60_000);
+
+  it('adds a Lab or research only from its defence money (not below its floor)', () => {
+    const s = atRound(built(['barracks', 'garage', 'hangar'], {}, 1), 4);
+    s.sides[1].credits = 2000;
+    s.roundStart = { ...s.roundStart, sides: clone(s.sides) };
+    expect(planRound(s, 1, 'normal').some((c) => c.t === 'produce' && c.kind === 'lab')).toBe(true);
+    const poor = clone(s);
+    poor.sides[1].credits = 120;
+    poor.roundStart.sides[1].credits = 120;
+    expect(planRound(poor, 1, 'normal').some((c) => c.t === 'produce' && c.kind === 'lab')).toBe(false);
+    // Easy never researches.
+    expect(planRound(s, 1, 'easy').some((c) => c.t === 'research' || (c.t === 'produce' && c.kind === 'lab'))).toBe(false);
+  });
+
+  it('research order with every building: Armour plates, Heavy chassis, Armed raiders, Field repair, Twin hangars, Siege works', () => {
+    const s = built(['barracks', 'garage', 'hangar', 'lab'], {}, 1);
+    const order: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const [cmd] = defenderResearch(s, 1);
+      if (!cmd || cmd.t !== 'research') break;
+      order.push(cmd.id);
+      s.sides[1].research = [...(s.sides[1].research ?? []), cmd.id];
+    }
+    expect(order).toEqual(['shields', 'chassis', 'raiders', 'repair', 'hangars', 'siege']);
+    // Without a Hangar, Twin hangars is skipped.
+    const noHangar = built(['barracks', 'garage', 'garage', 'lab'], {}, 1);
+    noHangar.sides[1].research = ['shields', 'chassis', 'raiders', 'repair'];
+    expect(defenderResearch(noHangar, 1)).toEqual([{ t: 'research', id: 'siege' }]);
   });
 });
