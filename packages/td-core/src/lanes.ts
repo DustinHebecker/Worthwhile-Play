@@ -99,7 +99,7 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
   const w = owned ? world : structuredClone(world);
   const r = owned ? run : structuredClone(run);
   // 0. The force's entries stay clear: a defender (of either side) on one is set down next to it.
-  if (r.pending.length > 0 && w.entities.some((e) => isDefenderKind(e.kind))) clearEntries(w, r.pending, routes);
+  if (r.pending.length > 0 && w.entities.some((e) => isDefenderKind(e.kind))) clearEntries(w, r.pending, routes, r.walkers);
   // 1. Spawns that are due and whose spawn cell is free on their layer (in order per route); then defenders.
   const due = <T extends { at: number; kind: string; route: number; side?: number }>(list: readonly T[]): T[] => {
     const waiting: T[] = [];
@@ -159,7 +159,10 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
           return p !== null && p >= at && p - at <= reach;
         });
       const end = walker.leg === points.length - 1 && chebyshev(unit.x, unit.y, hx, hy) <= 1;
-      if (adjacent || ((onRoad === null || at > SPAWN_CLEAR) && (ahead || end))) {
+      // Next to a spawn cell the force still needs it holds: moving on, the engine may step it onto
+      // the entry, step 0 sets it down again, and so on (jitter; follow-up to PR #111, M).
+      const byEntry = entries.size > 0 && [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => entry(unit.x + dx, unit.y + dy)));
+      if (byEntry || adjacent || ((onRoad === null || at > SPAWN_CLEAR) && (ahead || end))) {
         if (unit.order.type !== 'hold') commands.push({ side: unit.side, unit: unit.id, order: { type: 'hold' } });
       } else if (unit.order.type !== 'move' || unit.order.x !== hx || unit.order.y !== hy) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: hx, y: hy } });
       continue;
@@ -207,30 +210,33 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
  * shares a cell, so every state stays a valid save. In id order, nearest ring first, then by row
  * and column: deterministic.
  */
-function clearEntries(w: World, pending: LaneRun['pending'], routes: readonly Route[]): void {
+function clearEntries(w: World, pending: LaneRun['pending'], routes: readonly Route[], walkers: LaneRun['walkers']): void {
   const layerOf = (kind: string) => archetypeOf(TD_RULESET, kind)?.layer;
   const entries = new Set(pending.map((p) => `${layerOf(p.kind)}:${routes[p.route]!.points[0]!.join(',')}`));
+  const cellsOf = (route: Route) => Array.from({ length: (along(route.points, ...route.points[route.points.length - 1]!) ?? 0) + 1 }, (_, k) => cellAt(route.points, k).join(','));
   let road: Set<string> | null = null;
   for (const d of [...w.entities].sort((a, b) => a.id - b.id)) {
     const layer = layerOf(d.kind);
     if (!isDefenderKind(d.kind) || !entries.has(`${layer}:${d.x},${d.y}`)) continue;
-    road ??= new Set(routes.flatMap((route) => Array.from({ length: (along(route.points, ...route.points[route.points.length - 1]!) ?? 0) + 1 }, (_, k) => cellAt(route.points, k).join(','))));
-    const free = (x: number, y: number) =>
-      x >= 0 && y >= 0 && x < w.map.w && y < w.map.h && !entries.has(`${layer}:${x},${y}`) && (layer === 'air' || road!.has(`${x},${y}`)) && !w.entities.some((e) => e.x === x && e.y === y && layerOf(e.kind) === layer);
-    let to: [number, number] | null = null;
-    for (let ring = 1; ring < Math.max(w.map.w, w.map.h) && !to; ring++) {
-      for (let y = d.y - ring; y <= d.y + ring && !to; y++) {
-        for (let x = d.x - ring; x <= d.x + ring; x++) {
-          if (chebyshev(x, y, d.x, d.y) === ring && free(x, y)) {
-            to = [x, y];
-            break;
-          }
+    road ??= new Set(routes.flatMap(cellsOf));
+    // A ground defender goes back onto its own road if it can, else onto any road (follow-up to PR #111, L1).
+    const route = walkers.find((x) => x.id === d.id)?.route;
+    const own = route === undefined ? null : new Set(cellsOf(routes[route]!));
+    const nearest = (allowed: ReadonlySet<string> | null): [number, number] | null => {
+      const free = (x: number, y: number) =>
+        x >= 0 && y >= 0 && x < w.map.w && y < w.map.h && !entries.has(`${layer}:${x},${y}`) && (allowed === null || allowed.has(`${x},${y}`)) && !w.entities.some((e) => e.x === x && e.y === y && layerOf(e.kind) === layer);
+      for (let ring = 1; ring < Math.max(w.map.w, w.map.h); ring++) {
+        for (let y = d.y - ring; y <= d.y + ring; y++) {
+          for (let x = d.x - ring; x <= d.x + ring; x++) if (chebyshev(x, y, d.x, d.y) === ring && free(x, y)) return [x, y];
         }
       }
-    }
+      return null;
+    };
+    const to = layer === 'air' ? nearest(null) : ((own && nearest(own)) ?? nearest(road));
     if (!to) continue;
     [d.x, d.y] = to;
     d.order = { type: 'hold' };
+    d.mp = 0;
     delete d.prev;
     delete d.bumps;
     delete d.stuck;
