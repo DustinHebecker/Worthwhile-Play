@@ -5,7 +5,7 @@ import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
 import { DEFAULT_DOCTRINE, MAX_SUPPLY, NEUTRAL, type Archetype, type Command, type Doctrine, type Entity, type Order, type OrderEndReason, type Report, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, isActiveEw, isEmitter, type Network } from './network';
 import { initialIntel, reportingUnits, updateIntel } from './vision';
-import { archetypeOf, carrierOf, findEntity, hostile, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
+import { archetypeOf, canEngage, carrierOf, findEntity, hostile, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
 import { depositAt, incomeOf, isReady, repairPrice, sellRefund, spawnCell } from './economy';
 
 export interface SimResult {
@@ -46,10 +46,10 @@ export const INTERCEPT_RADIUS = 6;
 
 const has = (e: Entity, kind: Status['kind']): boolean => e.status.some((s) => s.kind === kind && s.ticks > 0);
 
-/** Integer damage after the armor matrix and cover; at least 1 if the class can be engaged at all. */
+/** Integer damage after the armor matrix and cover; at least 1 if the target can be engaged at all (`canEngage`). */
 export function computeDamage(base: number, weapon: WeaponSpec, target: Archetype, cover: number): number {
+  if (!canEngage(weapon, target)) return 0;
   const pct = weapon.vs[target.armor];
-  if (pct <= 0) return 0;
   return Math.max(1, Math.floor((base * pct * (100 - cover)) / 10000));
 }
 
@@ -58,7 +58,7 @@ export function inWeaponRange(world: World, ruleset: Ruleset, shooter: Entity, a
   const weapon = arch.weapon;
   if (!weapon) return false;
   const targetArch = archetypeOf(ruleset, target.kind);
-  if (!targetArch || weapon.vs[targetArch.armor] <= 0) return false;
+  if (!targetArch || !canEngage(weapon, targetArch)) return false;
   const bonus = weapon.delivery === 'ballistic' ? 0 : terrainAt(world.map, ruleset, shooter.x, shooter.y).rangeBonus;
   const d = dist2(shooter.x, shooter.y, target.x, target.y);
   const range = weapon.range + bonus;
@@ -910,8 +910,8 @@ function attackAim(ctx: Intent, e: Entity, a: Archetype, id: number): number | '
   if (seen || !rs.fog) at = target;
   else at = w.intel?.[e.side]?.find((r) => r.id === id);
   if (!at || !weapon) return 'lost';
-  const armor = archetypeOf(rs, at.kind)?.armor;
-  if (!armor || weapon.vs[armor] <= 0) return 'lost';
+  const atArch = archetypeOf(rs, at.kind);
+  if (!atArch || !canEngage(weapon, atArch)) return 'lost';
   if (seen && target && inWeaponRange(w, rs, e, a, target)) return undefined;
   const vision = a.vision;
   // Fog: the unit looks at the last reported cell itself and the target is not there.

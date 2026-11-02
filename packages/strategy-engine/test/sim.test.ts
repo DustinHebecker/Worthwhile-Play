@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BASE_ARCHETYPES, BASE_RULESET, computeDamage, createWorld, DEFAULT_DOCTRINE, resolveTurn, runTicks, STRATEGY_RULESET, validateCommand, type Command, type World } from '../src';
+import { BASE_ARCHETYPES, BASE_RULESET, canEngage, computeDamage, createWorld, inWeaponRange, DEFAULT_DOCTRINE, resolveTurn, runTicks, STRATEGY_RULESET, validateCommand, type Command, type World } from '../src';
 import { mapOf, open, worldOf } from './helpers';
 
 const rs = BASE_RULESET;
@@ -301,5 +301,41 @@ describe('doctrine in combat (mutation run on sim.ts, 2026-10-15)', () => {
     expect(unit(r.world, 2)!.noContact).toBe(STRATEGY_RULESET.ticksPerTurn);
     expect(unit(r.world, 2)!.order).toEqual({ type: 'deploy' });
     expect(unit(r.world, 2)!.deploy).toBe(STRATEGY_RULESET.ticksPerTurn);
+  });
+});
+
+describe('flyers are engaged only by weapons that reach the air (orchestrator finding 2026-11-02)', () => {
+  // A flyer with armor 'structure' (Hold the Line's Skimmer): ground-only weapons (vs.air 0) must
+  // never hit it, whatever their armor row says; weapons that reach the air hit it by its armor row.
+  const skimmer = { ...A.kite!, id: 'skimmer', armor: 'structure' as const };
+  const rules = { ...rs, archetypes: { ...rs.archetypes, skimmer } };
+  const warden = A.warden!.weapon!; // vs: structure 100, air 0
+  const rifles = A.rifles!.weapon!; // vs: structure 30, air 40
+
+  it('canEngage: armor row and, on the air layer, the air row', () => {
+    expect(canEngage(warden, { armor: 'structure', layer: 'ground' })).toBe(true);
+    expect(canEngage(warden, { armor: 'structure', layer: 'air' })).toBe(false);
+    expect(canEngage(warden, { armor: 'air', layer: 'air' })).toBe(false);
+    expect(canEngage(rifles, { armor: 'structure', layer: 'air' })).toBe(true);
+    expect(canEngage({ ...rifles, vs: { ...rifles.vs, structure: 0 } }, { armor: 'structure', layer: 'air' })).toBe(false);
+    expect(computeDamage(18, warden, skimmer, 0)).toBe(0);
+    expect(computeDamage(10, rifles, skimmer, 0)).toBe(3); // by its armor row (structure 30 %), not the air row
+  });
+
+  it('a ground-only weapon neither targets, nor may be ordered at, nor hurts a flyer; one that reaches the air does', () => {
+    const world = createWorld(
+      { map: open(6, 1), sides: 2, seed: 1, entities: [{ side: 0, kind: 'warden', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 1, y: 0 }, { side: 1, kind: 'skimmer', x: 2, y: 0 }] },
+      rules
+    );
+    const [w, r, sk] = world.entities;
+    expect(inWeaponRange(world, rules, w!, A.warden!, sk!)).toBe(false);
+    expect(inWeaponRange(world, rules, r!, A.rifles!, sk!)).toBe(true);
+    expect(validateCommand(world, rules, { side: 0, unit: w!.id, order: { type: 'attack', target: sk!.id } })).toEqual({ ok: false, reason: 'bad-target' });
+    expect(validateCommand(world, rules, { side: 0, unit: r!.id, order: { type: 'attack', target: sk!.id } })).toEqual({ ok: true });
+    // Only the rifles fire at it (the warden holds and finds nothing it can engage).
+    const { world: after, events } = runTicks(world, rules, [], 4);
+    const shooters = new Set(events.flatMap((e) => (e.t === 'fire' && e.target === sk!.id ? [e.id] : [])));
+    expect(shooters).toEqual(new Set([r!.id]));
+    expect(after.entities.find((e) => e.id === sk!.id)!.hp).toBeLessThan(skimmer.hp);
   });
 });

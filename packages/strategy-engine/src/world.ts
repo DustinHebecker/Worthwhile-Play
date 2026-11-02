@@ -5,7 +5,7 @@ import { MAX_QUEUE } from './types';
 import { computeNetwork, isCommandable, type Network } from './network';
 import { initialIntel, isSpotted, observedCells } from './vision';
 import { invalidExtensions } from './effects';
-import { LOST_CONTACT, NEUTRAL, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Deposit, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
+import { LOST_CONTACT, NEUTRAL, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Deposit, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type WeaponSpec, type World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
 export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
@@ -76,6 +76,13 @@ export const teamOf = (world: Pick<World, 'teams'>, side: number): number => (si
  * fired on) but never acts itself. Every hostility check goes through here (teams, later, only
  * change the data).
  */
+/**
+ * Whether `weapon` can engage targets of archetype `target` at all: its armor class (`vs` > 0) and,
+ * on the air layer, flying targets as such (`vs.air` > 0), whatever armor class the flyer carries
+ * (orchestrator finding 2026-11-02: a flyer with armor 'structure' was hit by ground-only weapons).
+ */
+export const canEngage = (weapon: WeaponSpec, target: Pick<Archetype, 'armor' | 'layer'>): boolean => weapon.vs[target.armor] > 0 && (target.layer !== 'air' || weapon.vs.air > 0);
+
 export const hostile = (world: Pick<World, 'teams'>, a: number, b: number): boolean =>
   a !== b && (a === NEUTRAL || b === NEUTRAL || teamOf(world, a) !== teamOf(world, b));
 
@@ -219,8 +226,8 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       // that no longer exists, is 'not-visible', so the answer reveals nothing the side does not know.
       if (ruleset.fog && target?.side !== unit.side && !isSpotted(world, ruleset, unit.side, order.target)) return { ok: false, reason: 'not-visible' };
       if (!target || !hostile(world, unit.side, target.side)) return { ok: false, reason: 'bad-target' };
-      const armor = archetypeOf(ruleset, target.kind)?.armor;
-      if (!armor || arch.weapon.vs[armor] <= 0) return { ok: false, reason: 'bad-target' };
+      const targetArch = archetypeOf(ruleset, target.kind);
+      if (!targetArch || !canEngage(arch.weapon, targetArch)) return { ok: false, reason: 'bad-target' };
       return { ok: true };
     }
     case 'produce': {
