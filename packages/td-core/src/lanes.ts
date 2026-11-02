@@ -1,4 +1,4 @@
-import { archetypeOf, runTicks, spawn, type Command, type Layer, type SimEvent, type World } from '@wp/strategy-engine';
+import { archetypeOf, runTicks, spawn, type Command, type Entity, type Layer, type SimEvent, type World } from '@wp/strategy-engine';
 import { ENEMIES, isDefenderKind, isEnemyKind, TD_RULESET, type DefenderKind, type EnemyKind } from './ruleset';
 
 /**
@@ -73,6 +73,10 @@ export const CONTACT_EVERY = 4;
 export const CONTACT_DAMAGE = 4;
 /** A defender holds once a hostile wave unit is this close (cells), whatever its reach: the hold line. */
 export const HOLD_LINE = 3;
+/** A defender holds wherever it is once a unit of the force is this close (cells, in a straight line). */
+export const CLOSE = 2;
+/** A defender never holds within this many cells of its start (unless the force is CLOSE). */
+export const SPAWN_CLEAR = 2;
 /** How far a defender looks for the force when it has no weapon (a Medic stays with the others). */
 const UNARMED_REACH = 2;
 
@@ -117,6 +121,7 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
   const commands: Command[] = [];
   const leaks: Leak[] = [];
   const gone = new Set<number>();
+  const guarded = w.entities.some((e) => isDefenderKind(e.kind));
   for (const walker of r.walkers) {
     const unit = w.entities.find((e) => e.id === walker.id);
     if (!unit) continue;
@@ -124,12 +129,21 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
     while (walker.leg < points.length - 1 && chebyshev(unit.x, unit.y, ...points[walker.leg]!) <= 1) walker.leg++;
     const [gx, gy] = points[walker.leg]!;
     if (isDefenderKind(unit.kind)) {
-      // A defender holds where the force is within its reach, and at the end of its route.
-      const reach = archetypeOf(TD_RULESET, unit.kind)?.weapon?.range ?? UNARMED_REACH;
-      // Hold a little ahead of the force too (HOLD_LINE): walking into each other, the two would block one another out of reach.
-      const near = w.entities.some((e) => e.side !== unit.side && isEnemyKind(e.kind) && ((e.x - unit.x) ** 2 + (e.y - unit.y) ** 2 <= reach * reach || chebyshev(e.x, e.y, unit.x, unit.y) <= HOLD_LINE));
+      // A defender holds where a unit of the force is close ahead *along its road* (its reach or the
+      // hold line, whichever is more; measured along the road, not across a bend: review of PR #111,
+      // M2), or CLOSE to it, and at the end of its route. It never holds near its start, so the
+      // defenders behind it can set off.
+      const reach = Math.max(HOLD_LINE, archetypeOf(TD_RULESET, unit.kind)?.weapon?.range ?? UNARMED_REACH);
+      const at = along(points, unit.x, unit.y) ?? 0;
+      const hostile = w.entities.filter((e) => e.side !== unit.side && isEnemyKind(e.kind));
+      // Very close (CLOSE cells) it holds wherever it is: walking into each other, the two would block one another out of reach.
+      const adjacent = hostile.some((e) => chebyshev(e.x, e.y, unit.x, unit.y) <= CLOSE);
+      const ahead = hostile.some((e) => {
+        const p = along(points, e.x, e.y);
+        return p !== null && p >= at && p - at <= reach;
+      });
       const end = walker.leg === points.length - 1 && chebyshev(unit.x, unit.y, gx, gy) <= 1;
-      if (near || end) {
+      if (adjacent || (at > SPAWN_CLEAR && (ahead || end))) {
         if (unit.order.type !== 'hold') commands.push({ side: unit.side, unit: unit.id, order: { type: 'hold' } });
       } else if (unit.order.type !== 'move' || unit.order.x !== gx || unit.order.y !== gy) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: gx, y: gy } });
       continue;
@@ -139,7 +153,10 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
       gone.add(unit.id);
       continue;
     }
-    if (unit.order.type !== 'move' || unit.order.x !== gx || unit.order.y !== gy) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: gx, y: gy } });
+    // A hostile defender on its road ahead: head for the cell just before it (the engine finds no
+    // way past it to the waypoint, and would not even close in), so the two meet (§ 18.3).
+    const [tx, ty] = guarded ? frontOf(points, unit, w.entities, [gx, gy]) : [gx, gy];
+    if (unit.order.type !== 'move' || unit.order.x !== tx || unit.order.y !== ty) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: tx, y: ty } });
   }
   w.entities = w.entities.filter((e) => !gone.has(e.id));
   r.walkers = r.walkers.filter((x) => !gone.has(x.id));
@@ -199,5 +216,55 @@ function contact(w: World, events: SimEvent[]): void {
     if (target.hp === 0) events.push({ t: 'destroyed', tick, id: target.id, side: target.side, kind: target.kind, x: target.x, y: target.y });
   }
   w.entities = w.entities.filter((e) => !(isDefenderKind(e.kind) && e.hp === 0));
+}
+
+/**
+ * Where (x, y) lies along a route of straight (or diagonal) legs, in cells from its start
+ * (Chebyshev steps), or null when it is not on the route.
+ */
+export function along(points: Route['points'], x: number, y: number): number | null {
+  let done = 0;
+  for (let i = 1; i < points.length; i++) {
+    const [ax, ay] = points[i - 1]!;
+    const [bx, by] = points[i]!;
+    const length = chebyshev(ax, ay, bx, by);
+    const k = chebyshev(ax, ay, x, y);
+    // On this leg when stepping k cells from its start towards its end lands on (x, y).
+    if (k <= length && length > 0 && ax + Math.round(((bx - ax) * k) / length) === x && ay + Math.round(((by - ay) * k) / length) === y) return done + k;
+    done += length;
+  }
+  return points.length === 1 && points[0]![0] === x && points[0]![1] === y ? 0 : null;
+}
+
+/** The cell `k` steps along a route from its start (clamped to its ends). */
+export function cellAt(points: Route['points'], k: number): [number, number] {
+  let left = Math.max(0, k);
+  for (let i = 1; i < points.length; i++) {
+    const [ax, ay] = points[i - 1]!;
+    const [bx, by] = points[i]!;
+    const length = chebyshev(ax, ay, bx, by);
+    if (left <= length && length > 0) return [ax + Math.round(((bx - ax) * left) / length), ay + Math.round(((by - ay) * left) / length)];
+    left -= length;
+  }
+  const [x, y] = points[points.length - 1]!;
+  return [x, y];
+}
+
+/**
+ * Where a wave unit heads: its waypoint, or, when a hostile defender on its layer stands on its road
+ * between it and that waypoint, the cell just before the nearest such defender.
+ */
+function frontOf(points: Route['points'], unit: Entity, entities: readonly Entity[], goal: readonly [number, number]): [number, number] {
+  const at = along(points, unit.x, unit.y);
+  const target = along(points, goal[0], goal[1]);
+  if (at === null || target === null) return [goal[0], goal[1]];
+  const layer = archetypeOf(TD_RULESET, unit.kind)?.layer;
+  let nearest = Infinity;
+  for (const d of entities) {
+    if (!isDefenderKind(d.kind) || d.side === unit.side || archetypeOf(TD_RULESET, d.kind)?.layer !== layer) continue;
+    const p = along(points, d.x, d.y);
+    if (p !== null && p > at && p <= target && p < nearest) nearest = p;
+  }
+  return nearest === Infinity ? [goal[0], goal[1]] : cellAt(points, nearest - 1);
 }
 

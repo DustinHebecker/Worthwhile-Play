@@ -190,8 +190,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
       const code = m.rows[y]![x];
       label = code === '=' ? t('cell.road', p) : code === 'b' ? t(ownPad(m, PLAYER, x, y) ? 'cell.pad.own' : state.solo ? 'cell.pad.idle' : 'cell.pad.foe', p) : t('cell.rock', p);
     }
-    const n = state.world.entities.filter((e) => e.x === x && e.y === y && !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind)).length;
-    return n > 0 ? t('cell.units', { cell: label, n }) : label;
+    // Units of the force and defenders are counted apart (§ 18.3).
+    const here = state.world.entities.filter((e) => e.x === x && e.y === y && !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind));
+    const guards = here.filter((e) => isDefenderKind(e.kind)).length;
+    const n = here.length - guards;
+    const withUnits = n > 0 ? t('cell.units', { cell: label, n }) : label;
+    return guards > 0 ? t('cell.defenders', { cell: withUnits, n: guards }) : withUnits;
   };
 
   const buildCells = (): void => {

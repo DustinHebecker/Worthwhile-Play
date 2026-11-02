@@ -158,6 +158,13 @@ describe('unit pictures', () => {
     expect(pathOf('bulwark')).not.toBe(pathOf('brute'));
   });
 
+  it('a holding defender stands on a bar (the hold line); a moving one does not', () => {
+    const holding = draw((w) => (put(w, 'picket', 0).order = { type: 'hold' }));
+    const moving = draw((w) => (put(w, 'picket', 0).order = { type: 'move', x: 2, y: 0 }));
+    expect(holding.length).toBe(moving.length + 6);
+    expect(holding.filter((c) => c === 'stroke()').length).toBe(moving.filter((c) => c === 'stroke()').length + 1);
+  });
+
   it('production buildings each have their own picture (design § 18.2); other kinds have none', async () => {
     const { drawBuilding, BUILDING_KINDS } = await import('../src/buildings');
     const { STRUCTURES } = await import('../src/ruleset');

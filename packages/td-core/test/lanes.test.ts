@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, spawn, archetypeOf, type SimEvent, type World } from '@wp/strategy-engine';
-import { chebyshev, CONTACT_DAMAGE, removeWalkers, STUN_BUDGET, tickLanes, type LaneRun, type Route } from '../src/lanes';
+import { along, chebyshev, CONTACT_DAMAGE, removeWalkers, STUN_BUDGET, tickLanes, type LaneRun, type Route } from '../src/lanes';
 import { DEFENDER_KINDS, isEnemyKind, TD_RULESET } from '../src/ruleset';
 
 /** A straight road down column 2 of a 5 × 8 map, plus an air route along it. */
@@ -298,23 +298,45 @@ describe('defenders on the lanes, in detail', () => {
     w.entities.push(e);
     return e;
   };
-  /** One tick with a defender walking route 2 (from the bottom) at (2, y) and the given units. */
-  const holdAt = (kind: string, unit: [string, number, number, number] | null): string => {
+  /** One tick with a defender walking route 2 (from the bottom, (2, 7)) at (2, 4), 3 cells along it, and the given units. */
+  const holdAt = (kind: string, unit: [string, number, number, number] | null, at: [number, number] = [2, 4]): string => {
     const w = world();
-    const d = put(w, kind, 0, 2, 6);
+    const d = put(w, kind, 0, at[0], at[1]);
     if (unit) put(w, unit[0], unit[1], unit[2], unit[3]);
     const r: LaneRun = { tick: 1, pending: [], walkers: [{ id: d.id, route: 2, leg: 1 }] };
     const out = tickLanes(w, r, ROUTES).world.entities.find((e) => e.id === d.id)!;
     return out.order.type;
   };
 
-  it('holds at the hold line (3 cells) or within its reach, for hostile wave units only', () => {
+  it('holds where the force is close ahead along its road (hold line or reach), for hostile wave units only', () => {
     expect(holdAt('picket', null)).toBe('move');
-    expect(holdAt('picket', ['walker', 1, 2, 3])).toBe('hold'); // 3 cells: the hold line
-    expect(holdAt('picket', ['walker', 1, 2, 2])).toBe('move'); // 4 cells: beyond it and its reach (2)
-    expect(holdAt('mortar-team', ['walker', 1, 2, 2])).toBe('hold'); // its reach is 4
-    expect(holdAt('picket', ['walker', 0, 2, 3])).toBe('move'); // its own side's unit
-    expect(holdAt('picket', ['picket', 1, 2, 3])).toBe('move'); // another defender is not the force
+    expect(holdAt('picket', ['walker', 1, 2, 1])).toBe('hold'); // 3 cells ahead: the hold line
+    expect(holdAt('picket', ['walker', 1, 2, 0])).toBe('move'); // 4 cells ahead: beyond it and its reach
+    expect(holdAt('mortar-team', ['walker', 1, 2, 0])).toBe('hold'); // its reach is 4
+    expect(holdAt('picket', ['walker', 0, 2, 1])).toBe('move'); // its own side's unit
+    expect(holdAt('picket', ['picket', 1, 2, 1])).toBe('move'); // another defender is not the force
+    // Behind it (already past) does not count, unless CLOSE (2 cells).
+    expect(holdAt('picket', ['walker', 1, 2, 7])).toBe('move');
+    expect(holdAt('picket', ['walker', 1, 2, 6])).toBe('hold');
+    // Off its road (across a bend) it counts only when CLOSE in a straight line.
+    expect(holdAt('picket', ['walker', 1, 0, 1])).toBe('move');
+    expect(holdAt('picket', ['walker', 1, 0, 2])).toBe('hold');
+  });
+
+  it('never holds near its start, so the defenders behind it can set off; unless the force is CLOSE', () => {
+    expect(holdAt('picket', ['walker', 1, 2, 3], [2, 6])).toBe('move');
+    expect(holdAt('picket', ['walker', 1, 2, 4], [2, 6])).toBe('hold');
+  });
+
+  it('along: the position on a route in cells from its start, or null off it', () => {
+    const route = [[0, 0], [0, 3], [4, 3]] as const;
+    expect(along(route, 0, 0)).toBe(0);
+    expect(along(route, 0, 2)).toBe(2);
+    expect(along(route, 0, 3)).toBe(3);
+    expect(along(route, 2, 3)).toBe(5);
+    expect(along(route, 4, 3)).toBe(7);
+    expect(along(route, 1, 1)).toBeNull();
+    expect(along(route, 5, 3)).toBeNull();
   });
 
   it('walks its route waypoint by waypoint, and at its end holds', () => {

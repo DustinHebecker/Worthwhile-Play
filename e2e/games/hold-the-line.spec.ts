@@ -177,3 +177,32 @@ test('hold-the-line: alone, a Drill yard sends defenders that meet the force; th
   const after = (await readSave(page, 'hold-the-line')) as { state: { world: { entities: { kind: string }[] } } };
   expect(after.state.world.entities.some((e) => e.kind === 'picket')).toBe(false);
 });
+
+test('hold-the-line: a paused battle with defenders on the road survives a reload at the same tick', async ({ page }) => {
+  test.setTimeout(120_000);
+  let tick = '';
+  let defenders = 0;
+  const onRoad = async (p: Page) =>
+    (((await readSave(p, 'hold-the-line')) as { state?: { world?: { entities?: { kind: string }[] } } } | undefined)?.state?.world?.entities ?? []).filter((e) => e.kind === 'picket').length;
+  await expectResumeAfterReload(
+    page,
+    'hold-the-line',
+    async (p) => {
+      await root(p).getByTestId('cell-0-16').click();
+      await root(p).getByTestId('build-barracks').click();
+      await root(p).getByTestId('lock').click();
+      await expect(game(p)).toHaveAttribute('data-phase', 'battle', PLANNING);
+      // Pause once Pickets stand on the road (the saved state holds them).
+      await expect.poll(() => onRoad(p), PLANNING).toBeGreaterThan(0);
+      await root(p).getByTestId('play').click();
+      tick = (await game(p).getAttribute('data-tick')) ?? '';
+    },
+    { settings: { mode: 'external-solo', length: 'endless' } }
+  );
+  defenders = await onRoad(page);
+  expect(defenders).toBeGreaterThan(0);
+  await expect(game(page)).toHaveAttribute('data-phase', 'battle');
+  await expect(game(page)).toHaveAttribute('data-tick', tick);
+  await root(page).getByTestId('instant').click();
+  await expect(game(page)).not.toHaveAttribute('data-phase', 'battle', PLANNING);
+});

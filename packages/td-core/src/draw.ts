@@ -271,6 +271,15 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.fillStyle = unitColour(e.side, e.kind);
       g.fill();
     }
+    // A holding defender (§ 18.3) stands on a bar across the road: the hold line, readable without colour.
+    if (isDefenderKind(e.kind) && e.order.type === 'hold') {
+      g.strokeStyle = palette.ink;
+      g.lineWidth = Math.max(2, cell * 0.06);
+      g.beginPath();
+      g.moveTo(cx - s * 0.42, cy + s * 0.5);
+      g.lineTo(cx + s * 0.42, cy + s * 0.5);
+      g.stroke();
+    }
     if (e.kind === 'crawler') {
       g.strokeStyle = unitColour(e.side, e.kind);
       g.lineWidth = 2;

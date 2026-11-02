@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { archetypeOf } from '@wp/strategy-engine';
-import { ENEMIES, isDefenderKind, TD_RULESET } from '@wp/td-core';
+import { along, ENEMIES, isDefenderKind, TD_RULESET, TOWERS } from '@wp/td-core';
 import { defenderResearch, expectedWave, leakage, planRound } from '../src/ai';
 import { CROSSING, ownPad } from '../src/maps';
 import {
@@ -15,6 +15,7 @@ import {
   MAX_DEFENDERS,
   newGame,
   resolveBattle,
+  routesOf,
   stepBattle,
   type HoldState,
   type PlanCommand,
@@ -263,5 +264,89 @@ describe('defenders: the computer, in detail', () => {
     const noHangar = built(['barracks', 'garage', 'garage', 'lab'], {}, 1);
     noHangar.sides[1].research = ['shields', 'chassis', 'raiders', 'repair'];
     expect(defenderResearch(noHangar, 1)).toEqual([{ t: 'research', id: 'siege' }]);
+  });
+});
+
+describe('defenders: review of PR #111', () => {
+  const at = (s: HoldState, round: number): HoldState =>
+    ({ ...s, round, pressure: 0, log: Array.from({ length: round + 1 }, () => ({ player: [], ai: [] })), roundStart: { world: clone(s.world), sides: clone(s.sides) } }) as HoldState;
+
+  it('M1: no tower ever damages an opposing defender (they carry the armour class towers cannot engage)', () => {
+    // The orchestrator's repro: guns along both halves' edges at the split, ten Drill yards a side.
+    let s = clone(newGame(1, 'normal', CROSSING.id));
+    for (const side of [0, 1] as const) {
+      s.sides[side].credits = 50_000;
+      const guns = side === 0 ? [[3, 9], [4, 9], [5, 9], [1, 9]] : [[0, 7], [1, 7], [2, 7], [3, 7]];
+      for (const [x, y] of guns) s = applyPlan(s, side, { t: 'place', kind: 'gun', x: x!, y: y! });
+      const free = pads(side).filter(([x, y]) => !s.world.entities.some((e) => e.x === x && e.y === y)).reverse();
+      for (let i = 0; i < 10; i++) s = applyPlan(s, side, { t: 'produce', kind: 'barracks', x: free[i]![0], y: free[i]![1] });
+    }
+    let t = lockRound(at(s, 5), idle);
+    const defenders = new Set<number>();
+    const towers = new Set(s.world.entities.filter((e) => Object.hasOwn(TOWERS, e.kind)).map((e) => e.id));
+    let towerShotsAtDefenders = 0;
+    let towerShots = 0;
+    while (t.phase === 'battle') {
+      const step = stepBattle(t, 1);
+      for (const e of step.state.world.entities) if (isDefenderKind(e.kind)) defenders.add(e.id);
+      for (const ev of step.events) {
+        if (ev.t !== 'fire' || !towers.has(ev.id)) continue;
+        towerShots++;
+        if (defenders.has(ev.target)) towerShotsAtDefenders++;
+      }
+      t = step.state;
+    }
+    expect(defenders.size).toBeGreaterThan(0);
+    expect(towerShots).toBeGreaterThan(0);
+    expect(towerShotsAtDefenders).toBe(0);
+    // The reason: defenders carry the armour class no tower can engage.
+    expect(archetypeOf(TD_RULESET, 'picket')!.armor).toBe('structure');
+    for (const kind of Object.keys(TOWERS)) expect(archetypeOf(TD_RULESET, kind)!.weapon?.vs.structure ?? 0, kind).toBe(0);
+  });
+
+  it('saves: defender kinds must match the side’s research and round, guards have no extra fields, defenders stand on the road and only move or hold', () => {
+    const locked = lockRound(at(built(['barracks']), 4), idle);
+    const mid = stepBattle(locked, 30).state;
+    const bad: [HoldState, (t: HoldState) => void][] = [
+      [locked, (t) => (t.run!.guards![0]!.kind = 'picket-shield')], // no Armour plates
+      [locked, (t) => (t.run!.guards![0]!.kind = 'mortar-team')], // no Siege works
+      [locked, (t) => ((t.run!.guards![0] as unknown as Record<string, unknown>).extra = 1)],
+      [mid, (t) => (t.world.entities.find((e) => isDefenderKind(e.kind))!.order = { type: 'attack', target: 1 })],
+      [mid, (t) => {
+        const d = t.world.entities.find((e) => isDefenderKind(e.kind))!;
+        [d.x, d.y] = [0, 16];
+      }]
+    ];
+    for (const [i, [base, tamper]] of bad.entries()) {
+      const t = clone(base);
+      tamper(t);
+      expect(isValidState(t), `case ${i}`).toBe(false);
+    }
+    // With Siege works, a Mortar team is allowed in its rounds only.
+    const siege = built(['barracks']);
+    siege.sides[0].research = ['siege'];
+    const third = lockRound(at(siege, 2), idle);
+    expect(third.run!.guards!.some((g) => g.kind === 'mortar-team')).toBe(true);
+    expect(isValidState(clone(third))).toBe(true);
+  });
+
+  it('M2: with ten buildings the front stands out on the road, not at the core, and reserves set off as it falls', () => {
+    const s = built(['barracks', 'garage', 'barracks', 'hangar', 'barracks', 'garage', 'barracks', 'hangar', 'garage', 'barracks'], { solo: true });
+    const route = routesOf(CROSSING)[guardRoute(0)]!.points;
+    const length = along(route, ...route[route.length - 1]!)!;
+    let t = lockRound(at(s, 5), idle);
+    const due = (t.run!.guards ?? []).length;
+    let front = 0;
+    let fewestWaiting = due;
+    while (t.phase === 'battle') {
+      t = stepBattle(t, 1).state;
+      if (t.phase !== 'battle') break;
+      fewestWaiting = Math.min(fewestWaiting, t.run!.guards?.length ?? 0);
+      for (const e of t.world.entities) if (e.side === 0 && isDefenderKind(e.kind) && e.kind !== 'skimmer') front = Math.max(front, along(route, e.x, e.y) ?? 0);
+    }
+    // The first ones walk on to the bend in the middle of the road (before: one or two cells from the core).
+    expect(front).toBeGreaterThanOrEqual(Math.floor(length / 2) - 1);
+    // At least half of the 23 set off during the battle (before: 5 to 7 left the core at all).
+    expect(due - fewestWaiting).toBeGreaterThanOrEqual(Math.ceil(due / 2));
   });
 });

@@ -315,6 +315,12 @@ export function defendersOf(s: Pick<HoldState, 'world' | 'sides' | 'round' | 'mo
   if (research.includes('siege') && (s.round + 1) % SIEGE_EVERY === 0) guards.push('mortar-team');
   return guards;
 }
+/** Defender kinds a side's buildings can send with `research` (the Mortar team only with Siege works, in its rounds). */
+export function guardKinds(research: readonly ResearchId[], s: Pick<HoldState, 'round'>): DefenderKind[] {
+  const kinds = new Set((['barracks', 'garage', 'hangar'] as const).flatMap((k) => guardsOf(k, research)));
+  if (research.includes('siege') && (s.round + 1) % SIEGE_EVERY === 0) kinds.add('mortar-team');
+  return [...kinds];
+}
 /** Most defenders a side can have in one battle (bounds what a save may hold). */
 export const MAX_DEFENDERS = MAX_PRODUCERS * MOST_PER_PRODUCER + 1;
 /** Defenders walk the road that comes for them, reversed: routes 2 and 3 of a battle. */
@@ -848,10 +854,18 @@ function checkState(v: unknown): v is HoldState {
     // A wave unit walks its side's lane; a defender the road that comes for its side, reversed.
     const routeOf = (e: { kind: string; side: number }) => (isDefenderKind(e.kind) ? guardRoute(e.side) : e.side);
     if (run.walkers.length !== units.length || units.some((e) => !(run.walkers as Walker[]).some((x) => x.id === e.id && x.route === routeOf(e)))) return false;
-    // Defenders yet to set off: of their kinds, on their road, from their side (alone: yours only).
+    // Defenders yet to set off: of the kinds the side's research allows, on their road, from their
+    // side (alone: yours only), with no other fields.
+    const sidesNow = v.sides as SideState[];
+    const allowedGuard = (kind: string, side: number) => guardKinds(sidesNow[side]!.research ?? [], v as unknown as HoldState).includes(kind as DefenderKind);
     if (run.guards !== undefined) {
-      if (!external || !isArrayOf(run.guards, (g): g is GuardSpawn => isRecord(g) && isInt(g.at, 0, 8 * MAX_DEFENDERS) && typeof g.kind === 'string' && isDefenderKind(g.kind) && isInt(g.side, 0, solo ? 0 : 1) && g.route === guardRoute(g.side as number))) return false;
+      const isGuard = (g: unknown): g is GuardSpawn =>
+        isRecord(g) && Object.keys(g).length === 4 && isInt(g.at, 0, 8 * MAX_DEFENDERS) && typeof g.kind === 'string' && isInt(g.side, 0, solo ? 0 : 1) && allowedGuard(g.kind, g.side as number) && g.route === guardRoute(g.side as number);
+      if (!external || !isArrayOf(run.guards, isGuard)) return false;
     }
+    // Defenders: on a road cell (ground; flying ones may cross pads), moving or holding, of the kinds their side may send.
+    const onRoad = (e: { x: number; y: number; kind: string }) => archetypeOf(TD_RULESET, e.kind)?.layer === 'air' || map.rows[e.y]?.[e.x] === '=';
+    if (units.some((e) => isDefenderKind(e.kind) && (!onRoad(e) || (e.order.type !== 'move' && e.order.type !== 'hold') || !allowedGuard(e.kind, e.side)))) return false;
     const guardsOn = (side: number) => units.filter((e) => e.side === side && isDefenderKind(e.kind)).length + ((run.guards as GuardSpawn[] | undefined) ?? []).filter((g) => g.side === side).length;
     if (guardsOn(0) > MAX_DEFENDERS || guardsOn(1) > MAX_DEFENDERS) return false;
     if (new Set(run.walkers.map((x) => x.id)).size !== run.walkers.length) return false;

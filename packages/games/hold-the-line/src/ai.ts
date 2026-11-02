@@ -252,10 +252,11 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
         if (e.side !== side || !Object.hasOwn(TOWERS, e.kind)) continue;
         for (const kind of TOWERS[e.kind]!.next) candidates.push({ t: 'upgrade', id: e.id, kind });
       }
-      // Against the outside force, a building that sends defenders (on the least exposed pad) is a candidate too.
+      // Against the outside force, a building that sends defenders (on the least exposed pad) is a
+      // candidate too; first, so the simulation budget never runs out before it is tried.
       if (s.mode === 'external-small') {
         const far = padsNear(s, side, incoming, 3).reverse()[0];
-        if (far) for (const kind of ['barracks', 'garage', 'hangar'] as const) candidates.push({ t: 'produce', kind, x: far[0], y: far[1] });
+        if (far) candidates.unshift(...(['barracks', 'garage', 'hangar'] as const).map((kind): PlanCommand => ({ t: 'produce', kind, x: far[0], y: far[1] })));
       }
       let best: { cmd: PlanCommand; loss: number; value: number } | null = null;
       for (const cmd of candidates) {
