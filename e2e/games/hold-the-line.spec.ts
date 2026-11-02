@@ -43,7 +43,7 @@ test('hold-the-line: 44 px cells on a 360 px phone and locking by keyboard', asy
 });
 
 test('hold-the-line: a whole game ends calmly with a result', async ({ page }) => {
-  await startGame(page, 'hold-the-line', { difficulty: 'easy' });
+  await startGame(page, 'hold-the-line', { difficulty: 'easy', settings: { length: 'rounds' } });
   for (let round = 0; round < 10; round++) {
     if ((await game(page).getAttribute('data-phase')) !== 'plan') break;
     await root(page).getByTestId('buy-walker').click();
@@ -83,4 +83,21 @@ test('hold-the-line: Outside force is chosen on the start screen, needs no shop 
   await expect(game(page)).toHaveAttribute('data-round', '1');
   await expect(root(page).getByTestId('outside-wave')).toBeVisible();
   await expect(root(page).getByTestId('shop')).toBeHidden();
+});
+
+test('hold-the-line: alone against the outside force, endless until the core falls', async ({ page }) => {
+  await startGame(page, 'hold-the-line', { settings: { mode: 'external-solo', length: 'endless' } });
+  await expect(root(page).getByTestId('core-foe')).toBeHidden();
+  await expect(root(page).getByTestId('round')).not.toContainText('10');
+  // No defence at all: the core falls within a few rounds, and the game ends calmly.
+  for (let round = 0; round < 10; round++) {
+    if ((await game(page).getAttribute('data-phase')) !== 'plan') break;
+    await root(page).getByTestId('lock').click();
+    await expect(game(page)).toHaveAttribute('data-phase', /battle|lost/);
+    if ((await game(page).getAttribute('data-phase')) === 'battle') await root(page).getByTestId('instant').click();
+    await expect(game(page)).not.toHaveAttribute('data-phase', 'battle');
+  }
+  await expect(page.getByTestId('finished')).toBeVisible();
+  const saved = (await readSave(page, 'hold-the-line')) as { state: { phase: string; solo?: boolean; length?: string } };
+  expect(saved.state).toMatchObject({ phase: 'lost', solo: true, length: 'endless' });
 });

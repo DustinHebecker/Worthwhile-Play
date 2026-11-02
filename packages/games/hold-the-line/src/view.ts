@@ -15,7 +15,8 @@ import {
   externalWave,
   incomeOf,
   MAX_PRESSURE,
-  MODES,
+  DEFAULT_LENGTH,
+  LENGTHS,
   INTEREST_PERCENT,
   lockRound,
   mapOf,
@@ -32,6 +33,8 @@ import {
   WORKSHOP_PRICE,
   type Difficulty,
   type HoldState,
+  type GameOptions,
+  type Length,
   type Mode,
   type PlanCommand
 } from './rules';
@@ -42,7 +45,16 @@ const SAVE_EVERY = 5 * TICKS_PER_SECOND;
 const SPEEDS = [1, 2, 4] as const;
 const PLAYER = 0;
 
-const toMode = (m: unknown): Mode => ((MODES as readonly unknown[]).includes(m) ? (m as Mode) : 'vs-small');
+/** Start-screen choice of mode: the two modes, and the outside force played alone. */
+export const MODE_CHOICES = ['vs-small', 'external-small', 'external-solo'] as const;
+const toChoice = (m: unknown): (typeof MODE_CHOICES)[number] => ((MODE_CHOICES as readonly unknown[]).includes(m) ? (m as (typeof MODE_CHOICES)[number]) : 'vs-small');
+const toLength = (l: unknown): Length => ((LENGTHS as readonly unknown[]).includes(l) ? (l as Length) : DEFAULT_LENGTH);
+/** The game a start-screen choice asks for. */
+export const startOf = (choice: unknown, length: unknown): { mapId: string; options: GameOptions } => {
+  const c = toChoice(choice);
+  const mode: Mode = c === 'vs-small' ? 'vs-small' : 'external-small';
+  return { mapId: mapForMode(mode).id, options: { length: toLength(length), ...(c === 'external-solo' && { solo: true }) } };
+};
 const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
 const hpMax = (kind: string): number => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
 const splashOf = (kind: string): number => archetypeOf(TD_RULESET, kind)?.weapon?.splash ?? 0;
@@ -184,12 +196,13 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   // --- Rendering -------------------------------------------------------------------------------
   const renderHud = (): void => {
-    round.textContent = t('hud.round', { n: state.round + 1, total: ROUNDS });
+    round.textContent = (state.length ?? 'rounds') === 'endless' ? t('hud.roundEndless', { n: state.round + 1 }) : t('hud.round', { n: state.round + 1, total: ROUNDS });
     phase.textContent = state.phase === 'plan' ? t('hud.plan') : state.phase === 'battle' ? t(playing && !hostPaused ? 'hud.battle' : 'hud.paused') : '';
     credits.textContent = t('hud.credits', { n: me().credits });
     credits.dataset.value = String(me().credits);
     coreOwn.textContent = t('hud.core.own', { n: me().core });
     coreOwn.dataset.value = String(me().core);
+    coreFoe.hidden = state.solo === true;
     coreFoe.textContent = t('hud.core.foe', { n: state.sides[1].core });
     coreFoe.dataset.value = String(state.sides[1].core);
     income.hidden = state.phase !== 'plan';
@@ -331,9 +344,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     instantButton.hidden = p !== 'battle';
     playButton.textContent = t(playing ? 'controls.pause' : 'controls.play');
     speedButton.textContent = t('controls.speed', { n: speed });
-    const own = me().core;
-    const foe = state.sides[1].core;
-    if (p === 'won' || p === 'lost' || p === 'draw') status.textContent = t(`status.${p}`, { n: state.round + 1, own, foe });
+    if (p === 'won' || p === 'lost' || p === 'draw') status.textContent = endText();
     status.hidden = status.textContent === '';
   };
 
@@ -436,7 +447,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     hits = new Set();
     acc = 0;
     if (state.phase === 'plan') {
-      status.textContent = t(external() ? 'status.roundExternal' : 'status.round', {
+      status.textContent = t(state.solo ? 'status.roundSolo' : external() ? 'status.roundExternal' : 'status.round', {
         n: before.round + 1,
         lost: before.sides[PLAYER].core - me().core,
         taken: before.sides[1].core - state.sides[1].core,
@@ -451,10 +462,17 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     render();
   };
 
+  /** The closing line: alone, how long you held; otherwise both cores. */
+  const endText = (): string => {
+    const p = state.phase;
+    if (state.solo) return t(p === 'won' ? 'status.soloWon' : 'status.soloLost', { n: state.round + 1, own: me().core });
+    return t(`status.${p}`, { n: state.round + 1, own: me().core, foe: state.sides[1].core });
+  };
+
   const reportEnd = (): void => {
     if (reported || (state.phase !== 'won' && state.phase !== 'lost' && state.phase !== 'draw')) return;
     reported = true;
-    announce(live, t(`status.${state.phase}`, { n: state.round + 1, own: me().core, foe: state.sides[1].core }));
+    announce(live, endText());
     context.finished({ outcome: state.phase, stats: { core: me().core, opponent: state.sides[1].core, rounds: state.round + 1, killed: me().stats.killed } });
   };
 
@@ -589,9 +607,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     const token = ++tokens;
     thinking = { token, timer: null };
     lockedAt = state;
-    const w = workerFailed ? null : plannerWorker();
+    // Alone there is nobody to plan for; elsewhere the computer plans (in its Worker if it can).
+    const w = state.solo || workerFailed ? null : plannerWorker();
     if (w) w.postMessage({ token, seen: seenBy(state) });
-    else planHere(token, state);
+    else if (state.solo) {
+      thinking.timer = setTimeout(() => planned(token, lockedAt ?? state, []), 0);
+    } else planHere(token, state);
   };
 
   const togglePlay = (): void => {
@@ -655,11 +676,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   return {
     newGame(options: NewGameOptions) {
-      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), mapForMode(toMode(options.settings?.mode)).id);
+      const start = startOf(options.settings?.mode, options.settings?.length);
+      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), start.mapId, start.options);
       show(initial);
     },
     restore(saved: HoldState) {
-      initial = newGame(saved.seed, saved.difficulty, saved.mapId);
+      initial = newGame(saved.seed, saved.difficulty, saved.mapId, { length: saved.length ?? 'rounds', ...(saved.solo && { solo: true }) });
       show(structuredClone(saved));
     },
     serialize: () => structuredClone(state),

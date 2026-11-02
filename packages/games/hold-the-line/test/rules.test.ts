@@ -177,8 +177,9 @@ describe('battle', () => {
     expect(end.sides[1].wave).toEqual([]);
   });
 
-  it('the game ends after the last round or when a core falls; the higher core wins', () => {
-    let s = fresh();
+  it('a short game ends after its last round or when a core falls; the higher core wins', () => {
+    const short = () => newGame(1, 'normal', 'duel', { length: 'rounds' });
+    let s = short();
     for (let round = 0; round < ROUNDS && s.phase === 'plan'; round++) {
       s = applyPlan(s, 0, { t: 'buy', kind: 'walker' });
       s = resolveBattle(lockRound(s, idle)).state;
@@ -188,7 +189,7 @@ describe('battle', () => {
     expect(s.sides[1].core).toBe(START_CORE - ROUNDS);
     expect(isValidState(clone(s))).toBe(true);
     // Both silent: a draw.
-    let quiet = fresh();
+    let quiet = short();
     while (quiet.phase === 'plan') quiet = resolveBattle(lockRound(quiet, idle)).state;
     expect(quiet.phase).toBe('draw');
   });
@@ -321,9 +322,11 @@ describe('properties', () => {
       tamper(t);
       expect(isValidState(t)).toBe(false);
     }
-    // A finished game at the last round with equal cores is a draw, and valid.
-    const end = { ...clone(s), round: ROUNDS - 1, phase: 'draw' as const, log: Array.from({ length: ROUNDS }, () => ({ player: [], ai: [] })) };
+    // A finished short game at the last round with equal cores is a draw, and valid; an endless one
+    // cannot have ended there with both cores standing.
+    const end = { ...clone(s), length: 'rounds' as const, round: ROUNDS - 1, phase: 'draw' as const, log: Array.from({ length: ROUNDS }, () => ({ player: [], ai: [] })) };
     expect(isValidState(end)).toBe(true);
+    expect(isValidState({ ...end, length: 'endless' })).toBe(false);
   });
 
   it('isValidState never throws and rejects junk and tampered saves', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { planRound } from '../src/ai';
-import { applyPlan, DIFFICULTIES, lockRound, newGame, resolveBattle, type Difficulty, type HoldState, type Planner } from '../src/rules';
+import { applyPlan, DIFFICULTIES, lockRound, newGame, resolveBattle, type Difficulty, type HoldState, type Length, type Planner } from '../src/rules';
 import { randomPlan } from './plans';
 
 /**
@@ -11,9 +11,9 @@ import { randomPlan } from './plans';
  */
 const LONG = 300_000;
 
-function match(player: Difficulty | 'passive', opponent: Difficulty, mapId = 'duel'): HoldState {
+function match(player: Difficulty | 'passive', opponent: Difficulty, mapId = 'duel', length: Length = 'rounds'): HoldState {
   const plan: Planner = (s) => planRound(s, 1, opponent);
-  let s = newGame(1, opponent, mapId);
+  let s = newGame(1, opponent, mapId, { length });
   while (s.phase === 'plan') {
     if (player !== 'passive') for (const cmd of planRound(s, 0, player)) s = applyPlan(s, 0, cmd);
     s = resolveBattle(lockRound(s, plan)).state;
@@ -94,5 +94,28 @@ describe('the computer opponent in External Small', () => {
 
   it.each(DIFFICULTIES)('a player who never builds loses against %s', (level) => {
     expect(match('passive', level, 'crossing').phase).toBe('lost');
+  }, LONG);
+});
+
+// Endless (owner 2026-11-01): every game ends, by a fallen core, well before the safety bound.
+describe('endless games end', () => {
+  it.each(['duel', 'crossing'])('%s: hard mirror and hard against normal end with a fallen core', (mapId) => {
+    for (const [a, b] of [['hard', 'hard'], ['hard', 'normal']] as const) {
+      const end = match(a, b, mapId, 'endless');
+      expect(['won', 'lost', 'draw'], `${mapId} ${a}-${b}`).toContain(end.phase);
+      expect(Math.min(end.sides[0].core, end.sides[1].core), `${mapId} ${a}-${b}`).toBe(0);
+      expect(end.round, `${mapId} ${a}-${b}`).toBeLessThan(60);
+    }
+  }, LONG);
+
+  it('alone against the outside force, Hard planning for you holds for a while and then falls', () => {
+    let s = newGame(1, 'hard', 'crossing', { solo: true });
+    while (s.phase === 'plan') {
+      for (const cmd of planRound(s, 0, 'hard')) s = applyPlan(s, 0, cmd);
+      s = resolveBattle(lockRound(s, () => [])).state;
+    }
+    expect(s.phase).toBe('lost');
+    expect(s.round).toBeGreaterThanOrEqual(9);
+    expect(s.round).toBeLessThan(60);
   }, LONG);
 });
