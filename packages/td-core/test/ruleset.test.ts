@@ -131,3 +131,21 @@ describe('roster data', () => {
     }
   });
 });
+
+describe('the force against flying defenders (engine canEngage, PR #112; design § 18.3)', () => {
+  it('Raider and Siege crawler aim at flyers: full structure damage against a Skimmer, a scratch against a Glider; no tower engages a Skimmer', async () => {
+    const { canEngage, computeDamage } = await import('@wp/strategy-engine');
+    const skimmer = archetypeOf(TD_RULESET, 'skimmer')!;
+    const glider = archetypeOf(TD_RULESET, 'glider')!;
+    for (const kind of ['raider', 'crawler']) {
+      const weapon = archetypeOf(TD_RULESET, kind)!.weapon!;
+      expect(canEngage(weapon, skimmer), kind).toBe(true);
+      expect(computeDamage(weapon.damage, weapon, skimmer, 0), kind).toBe(weapon.damage);
+      expect(computeDamage(weapon.damage, weapon, glider, 0), kind).toBe(1);
+    }
+    for (const kind of Object.keys(TOWERS)) {
+      const weapon = archetypeOf(TD_RULESET, kind)?.weapon;
+      if (weapon) expect(canEngage(weapon, skimmer), kind).toBe(false);
+    }
+  });
+});

@@ -212,8 +212,8 @@ const ENEMY_ARCHETYPES: readonly Archetype[] = [
   enemy('brute', 220, 'heavy', 2),
   enemy('glider', 30, 'air', 1),
   // Armed: fires at towers within reach while it walks past.
-  enemy('raider', 70, 'light', 2, weapon({ damage: 4, range: 2, cooldown: 4, vs: vs(0, 0, 0, 0, 100) })),
-  enemy('crawler', 1500, 'heavy', 2, weapon({ damage: 12, range: 2, cooldown: 6, vs: vs(0, 0, 0, 0, 100) })),
+  enemy('raider', 70, 'light', 2, weapon({ damage: 4, range: 2, cooldown: 4, vs: vs(0, 0, 0, 1, 100) })),
+  enemy('crawler', 1500, 'heavy', 2, weapon({ damage: 12, range: 2, cooldown: 6, vs: vs(0, 0, 0, 1, 100) })),
   // Shield that soaks damage first and returns after 3 s without a hit; beams hit it harder, an EMP strips it.
   enemy('shielder', 60, 'light', 2, null, { shield: { hp: 80, regenDelay: 24 } }),
   // Repairs the units around it (not itself).
