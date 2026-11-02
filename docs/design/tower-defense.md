@@ -703,3 +703,42 @@ Owner playtest of VS Small and the owner's answers (2026-11-01):
    - **Produced units help**: your production buildings send defenders that move out on the road and fight the outside force every round. This needs unit-versus-unit combat on the road (the "External Large" step of § 13.2).
 
 Order of work: Tower Defense polish from the same playtest first (smooth movement and better unit pictures, which Hold the Line shares; more waves with a gentler ramp; the card picture), then Duel with production and research and Endless, then Outside force with Solo, Endless and defenders.
+
+### 18.1 Step A as built: Endless, the short game, playing alone
+
+- **Start screen:** *Mode* — Duel, Outside force, Outside force alone; *Length* — Endless (default), Ten rounds. Saves from before the choice have no `length` and stay ten-round games.
+- **Endless:** a game ends only when a core falls (both in the same battle: a draw); `MAX_ROUNDS` (999) is only a safety bound for saves. Escalation makes every game end:
+  - **Duel:** *conscripts* — each side sends, on top of what it bought, a Walker every second round and from round 12 one more per round, every fourth a Brute (at most 40). Measured (long suite): Hard–Hard and Hard–Normal end with a fallen core well before round 60.
+  - **Outside force:** after the table's ten rounds the force keeps growing (more Brutes, Shield bearers, Raiders and Gliders each round, a Siege crawler every other round), within the save bound of 120 units per half.
+- **Alone (Outside force only):** only the half that comes for you sets off; nobody plans for the other side, its core is never attacked and is hidden. Endless: you hold as long as you can (the game is lost when your core falls; the end text says in which round). Ten rounds: you win if your core still stands after round 10.
+- **Review items from PR #104 folded in:** pressure is 0 before the first battle and at most 2 × `MAX_WAVE` (L1); each round's pressure is pinned to that round's leaks (M2); `isValidState` never throws, also on sparse arrays or throwing getters (L9).
+
+Still to come: Step B (Duel with production buildings and research; buying the wave as an option) and Step C (your own defenders against the outside force).
+
+### 18.2 Step B, planned: the Duel with production and research
+
+Default for the Duel; "buy the wave each round" (§ 16) becomes the start-screen option *Waves: Production / Shop*.
+
+- **Production buildings** on your own pads (like the Extractor: they take a pad, can be shot by armed units, sell for the usual refund). Each sends its units automatically at every lock:
+
+  | Building | Price | Sends every round |
+  |---|---|---|
+  | Barracks | 100 | 3 Walkers |
+  | Garage | 150 | 2 Runners |
+  | Hangar | 175 | 1 Glider |
+  | Lab | 150 (one per side) | nothing; allows research |
+
+- **Research** (needs a Lab; each item once, paid when chosen, in effect from the next lock; shown to both sides like the buildings):
+
+  | Research | Price | Effect |
+  |---|---|---|
+  | Shield plates | 150 | Barracks send Shield bearers instead of Walkers |
+  | Field repair | 150 | every Barracks also sends a Mender |
+  | Armed raiders | 175 | Garages send Raiders instead of Runners |
+  | Heavy chassis | 200 | every Garage also sends a Brute |
+  | Twin hangars | 200 | every Hangar sends 2 Gliders |
+  | Siege works | 300 | a Siege crawler every third round |
+
+- The wave = what the buildings send (in a fixed order) + the endless conscripts. Workshops and capacity go away in this variant: the buildings are the limit.
+- **Computer:** builds production in the kinds that get furthest against your visible towers (the scoring it already uses to buy), researches in the order that adds most threat per credit, and keeps the defence share it has now; Hard checks its wave against your towers with the wave simulation, as its probe does.
+- **Balance targets** (long suite, as for VS Small): mirror matches are draws; Hard beats Normal beats Easy from either seat; endless games end before round 60; a player who never builds loses.
