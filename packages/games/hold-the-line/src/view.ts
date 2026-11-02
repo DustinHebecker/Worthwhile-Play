@@ -14,8 +14,13 @@ import {
   EXTRACTOR_PRICE,
   externalWave,
   incomeOf,
+  levyOf,
   MAX_PRESSURE,
-  MODES,
+  MAX_ROUNDS,
+  wearOf,
+  WEAR_FROM,
+  DEFAULT_LENGTH,
+  LENGTHS,
   INTEREST_PERCENT,
   lockRound,
   mapOf,
@@ -32,6 +37,8 @@ import {
   WORKSHOP_PRICE,
   type Difficulty,
   type HoldState,
+  type GameOptions,
+  type Length,
   type Mode,
   type PlanCommand
 } from './rules';
@@ -42,10 +49,22 @@ const SAVE_EVERY = 5 * TICKS_PER_SECOND;
 const SPEEDS = [1, 2, 4] as const;
 const PLAYER = 0;
 
-const toMode = (m: unknown): Mode => ((MODES as readonly unknown[]).includes(m) ? (m as Mode) : 'vs-small');
+/** Start-screen choice of mode: the two modes, and the outside force played alone. */
+export const MODE_CHOICES = ['vs-small', 'external-small', 'external-solo'] as const;
+const toChoice = (m: unknown): (typeof MODE_CHOICES)[number] => ((MODE_CHOICES as readonly unknown[]).includes(m) ? (m as (typeof MODE_CHOICES)[number]) : 'vs-small');
+const toLength = (l: unknown): Length => ((LENGTHS as readonly unknown[]).includes(l) ? (l as Length) : DEFAULT_LENGTH);
+/** The game a start-screen choice asks for. */
+export const startOf = (choice: unknown, length: unknown): { mapId: string; options: GameOptions } => {
+  const c = toChoice(choice);
+  const mode: Mode = c === 'vs-small' ? 'vs-small' : 'external-small';
+  return { mapId: mapForMode(mode).id, options: { length: toLength(length), ...(c === 'external-solo' && { solo: true }) } };
+};
 const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
 const hpMax = (kind: string): number => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
 const splashOf = (kind: string): number => archetypeOf(TD_RULESET, kind)?.weapon?.splash ?? 0;
+
+/** Rounds ahead of the wear-down that the HUD announces it (review of PR #107). */
+const WEAR_NOTICE = 5;
 
 export function createHoldTheLine(context: GameContext): GameInstance<HoldState> {
   const { t, root } = context;
@@ -78,7 +97,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const coreOwn = h('span', { 'data-testid': 'core-own' });
   const coreFoe = h('span', { 'data-testid': 'core-foe' });
   const income = h('span', { 'data-testid': 'income' });
-  const hud = h('p', { class: 'td-hud' }, round, phase, credits, coreOwn, coreFoe, income);
+  const wear = h('span', { 'data-testid': 'wear' });
+  const hud = h('p', { class: 'td-hud' }, round, phase, credits, coreOwn, coreFoe, income, wear);
   const status = h('p', { class: 'wp-status td-status', 'data-testid': 'status', hidden: true });
   const canvas = h('canvas', { class: 'td-canvas', 'aria-hidden': 'true' });
   const cells = h('div', { class: 'td-cells', role: 'group', 'aria-label': t('board'), 'data-testid': 'board' });
@@ -143,10 +163,10 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     const [fx, fy] = m.lanes[0]!.points.at(-1)!;
     if (s) label = t(s.side === PLAYER ? 'cell.tower.own' : 'cell.tower.foe', { ...p, tower: nameOf(s.kind), hp: s.hp, max: hpMax(s.kind) });
     else if (x === ox && y === oy) label = t('cell.core.own', p);
-    else if (x === fx && y === fy) label = t('cell.core.foe', p);
+    else if (x === fx && y === fy) label = t(state.solo ? 'cell.core.idle' : 'cell.core.foe', p);
     else {
       const code = m.rows[y]![x];
-      label = code === '=' ? t('cell.road', p) : code === 'b' ? t(ownPad(m, PLAYER, x, y) ? 'cell.pad.own' : 'cell.pad.foe', p) : t('cell.rock', p);
+      label = code === '=' ? t('cell.road', p) : code === 'b' ? t(ownPad(m, PLAYER, x, y) ? 'cell.pad.own' : state.solo ? 'cell.pad.idle' : 'cell.pad.foe', p) : t('cell.rock', p);
     }
     const n = state.world.entities.filter((e) => e.x === x && e.y === y && !Object.hasOwn(TOWERS, e.kind) && e.kind !== 'extractor').length;
     return n > 0 ? t('cell.units', { cell: label, n }) : label;
@@ -184,16 +204,23 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   // --- Rendering -------------------------------------------------------------------------------
   const renderHud = (): void => {
-    round.textContent = t('hud.round', { n: state.round + 1, total: ROUNDS });
+    round.textContent = (state.length ?? 'rounds') === 'endless' ? t('hud.roundEndless', { n: state.round + 1, total: MAX_ROUNDS }) : t('hud.round', { n: state.round + 1, total: ROUNDS });
     phase.textContent = state.phase === 'plan' ? t('hud.plan') : state.phase === 'battle' ? t(playing && !hostPaused ? 'hud.battle' : 'hud.paused') : '';
     credits.textContent = t('hud.credits', { n: me().credits });
     credits.dataset.value = String(me().credits);
     coreOwn.textContent = t('hud.core.own', { n: me().core });
     coreOwn.dataset.value = String(me().core);
+    coreFoe.hidden = state.solo === true;
     coreFoe.textContent = t('hud.core.foe', { n: state.sides[1].core });
     coreFoe.dataset.value = String(state.sides[1].core);
     income.hidden = state.phase !== 'plan';
     income.textContent = t('hud.income', { n: incomeOf(state, PLAYER), p: INTEREST_PERCENT });
+    // Endless: the wear-down from round WEAR_FROM + 1, announced WEAR_NOTICE rounds ahead and shown while it applies.
+    const running = state.phase === 'plan' || state.phase === 'battle';
+    const worn = running ? wearOf(state) : 0;
+    const soon = running && worn === 0 && (state.length ?? 'rounds') === 'endless' && state.round >= WEAR_FROM - WEAR_NOTICE;
+    wear.hidden = worn === 0 && !soon;
+    wear.textContent = worn > 0 ? t('hud.wear', { n: worn, from: WEAR_FROM + 1 }) : soon ? t('hud.wearSoon', { from: WEAR_FROM + 1 }) : '';
     container.dataset.phase = state.phase;
     container.dataset.round = String(state.round);
     container.dataset.tick = String(state.run?.tick ?? 0);
@@ -275,12 +302,14 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     outside.hidden = !external();
     if (!external()) return;
     const extra = Math.min(MAX_PRESSURE, state.pressure ?? 0);
+    // Alone there is no other side to speak of.
+    const solo = state.solo ? 'Solo' : '';
     outside.append(
       h('h3', { class: 'td-subtitle' }, t('external.title')),
-      h('p', { 'data-testid': 'outside-wave' }, t('external.incoming', { list: listOf(externalWave(state)) }))
+      h('p', { 'data-testid': 'outside-wave' }, t(`external.incoming${solo}`, { list: listOf(externalWave(state)) }))
     );
-    if (state.round > 0) outside.append(h('p', { 'data-testid': 'outside-pressure' }, t('external.pressure', { n: state.pressure ?? 0, extra })));
-    outside.append(h('p', { class: 'wp-muted' }, t('external.note')));
+    if (state.round > 0) outside.append(h('p', { 'data-testid': 'outside-pressure' }, t(`external.pressure${solo}`, { n: state.pressure ?? 0, extra })));
+    outside.append(h('p', { class: 'wp-muted' }, t(`external.note${solo}`)));
   };
 
   const renderShop = (): void => {
@@ -290,13 +319,17 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     const side = me();
     const planning = state.phase === 'plan';
     const max = capacityOf(side);
-    shop.append(h('h3', { class: 'td-subtitle' }, t('shop.title')), h('p', { 'data-testid': 'capacity' }, t('shop.capacity', { n: side.wave.length, max })));
+    // From the lock on, the wave ends with this round's levy: it is shown apart from what was bought.
+    const levy = levyOf(state);
+    const bought = planning ? side.wave : side.wave.slice(0, side.wave.length - levy.length);
+    shop.append(h('h3', { class: 'td-subtitle' }, t('shop.title')), h('p', { 'data-testid': 'capacity' }, t('shop.capacity', { n: bought.length, max })));
     const wave = h('ul', { class: 'td-wave-list', 'data-testid': 'wave' });
-    side.wave.forEach((kind, index) => {
+    bought.forEach((kind, index) => {
       wave.append(h('li', {}, h('button', { type: 'button', disabled: !planning, 'data-testid': `unbuy-${index}`, onclick: () => onPlan({ t: 'unbuy', index }) }, t('shop.remove', { name: unitName(kind) }))));
     });
-    if (side.wave.length === 0) wave.append(h('li', { class: 'wp-muted' }, t('shop.empty')));
+    if (bought.length === 0) wave.append(h('li', { class: 'wp-muted' }, t('shop.empty')));
     shop.append(wave);
+    if (levy.length > 0) shop.append(h('p', { 'data-testid': 'levy' }, t('shop.levy', { list: listOf(levy) })));
     if (!planning) return;
     const list = h('div', { class: 'td-options' });
     for (const kind of SHOP) {
@@ -316,11 +349,15 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     clear(intel);
     intel.hidden = external() || (state.round === 0 && state.phase === 'plan');
     if (intel.hidden) return;
+    // Last round's waves without that round's levy (both sides sent it; it is listed once).
+    const levy = state.round > 0 ? levyOf({ ...state, round: state.round - 1 }) : [];
+    const boughtOf = (wave: readonly EnemyKind[]) => wave.slice(0, wave.length - levy.length);
     intel.append(
       h('h3', { class: 'td-subtitle' }, t('intel.title')),
-      h('p', { 'data-testid': 'intel-theirs' }, t('intel.theirs', { list: listOf(state.sides[1].lastWave) })),
-      h('p', {}, t('intel.yours', { list: listOf(me().lastWave) }))
+      h('p', { 'data-testid': 'intel-theirs' }, t('intel.theirs', { list: listOf(boughtOf(state.sides[1].lastWave)) })),
+      h('p', {}, t('intel.yours', { list: listOf(boughtOf(me().lastWave)) }))
     );
+    if (levy.length > 0) intel.append(h('p', {}, t('intel.levy', { list: listOf(levy) })));
   };
 
   const renderControls = (): void => {
@@ -331,9 +368,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     instantButton.hidden = p !== 'battle';
     playButton.textContent = t(playing ? 'controls.pause' : 'controls.play');
     speedButton.textContent = t('controls.speed', { n: speed });
-    const own = me().core;
-    const foe = state.sides[1].core;
-    if (p === 'won' || p === 'lost' || p === 'draw') status.textContent = t(`status.${p}`, { n: state.round + 1, own, foe });
+    if (p === 'won' || p === 'lost' || p === 'draw') status.textContent = endText();
     status.hidden = status.textContent === '';
   };
 
@@ -436,7 +471,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     hits = new Set();
     acc = 0;
     if (state.phase === 'plan') {
-      status.textContent = t(external() ? 'status.roundExternal' : 'status.round', {
+      status.textContent = t(state.solo ? 'status.roundSolo' : external() ? 'status.roundExternal' : 'status.round', {
         n: before.round + 1,
         lost: before.sides[PLAYER].core - me().core,
         taken: before.sides[1].core - state.sides[1].core,
@@ -451,11 +486,21 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     render();
   };
 
+  /** The closing line: alone, how long you held; otherwise both cores. */
+  const endText = (): string => {
+    const p = state.phase;
+    if (state.solo) return t(p === 'won' ? 'status.soloWon' : 'status.soloLost', { n: state.round + 1, own: me().core });
+    return t(`status.${p}`, { n: state.round + 1, own: me().core, foe: state.sides[1].core });
+  };
+
   const reportEnd = (): void => {
     if (reported || (state.phase !== 'won' && state.phase !== 'lost' && state.phase !== 'draw')) return;
     reported = true;
-    announce(live, t(`status.${state.phase}`, { n: state.round + 1, own: me().core, foe: state.sides[1].core }));
-    context.finished({ outcome: state.phase, stats: { core: me().core, opponent: state.sides[1].core, rounds: state.round + 1, killed: me().stats.killed } });
+    announce(live, endText());
+    const stats = { core: me().core, rounds: state.round + 1, killed: me().stats.killed };
+    // Alone there is no opponent; a fallen core is the natural end there ("result.completed": the force broke through).
+    if (state.solo) context.finished({ outcome: state.phase === 'won' ? 'won' : 'completed', stats });
+    else context.finished({ outcome: state.phase, stats: { ...stats, opponent: state.sides[1].core } });
   };
 
   const loop = (time: number): void => {
@@ -589,9 +634,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     const token = ++tokens;
     thinking = { token, timer: null };
     lockedAt = state;
-    const w = workerFailed ? null : plannerWorker();
+    // Alone there is nobody to plan for; elsewhere the computer plans (in its Worker if it can).
+    const w = state.solo || workerFailed ? null : plannerWorker();
     if (w) w.postMessage({ token, seen: seenBy(state) });
-    else planHere(token, state);
+    else if (state.solo) {
+      thinking.timer = setTimeout(() => planned(token, lockedAt ?? state, []), 0);
+    } else planHere(token, state);
   };
 
   const togglePlay = (): void => {
@@ -655,11 +703,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   return {
     newGame(options: NewGameOptions) {
-      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), mapForMode(toMode(options.settings?.mode)).id);
+      const start = startOf(options.settings?.mode, options.settings?.length);
+      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), start.mapId, start.options);
       show(initial);
     },
     restore(saved: HoldState) {
-      initial = newGame(saved.seed, saved.difficulty, saved.mapId);
+      initial = newGame(saved.seed, saved.difficulty, saved.mapId, { length: saved.length ?? 'rounds', ...(saved.solo && { solo: true }) });
       show(structuredClone(saved));
     },
     serialize: () => structuredClone(state),

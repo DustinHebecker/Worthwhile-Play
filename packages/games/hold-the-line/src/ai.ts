@@ -112,16 +112,21 @@ export interface Meter {
  * Most simulation work a plan may start (entity-ticks; about 13 µs each in Node). Above every plan of
  * the measured games (VS Small at most 29 000, External Small 101 000), so it changes no decision
  * there; it bounds the rare rich rounds (3000 credits in round 10: up to 406 000 before) to about
- * two seconds in Node. The planner also runs in a Worker (view.ts), so the page stays responsive.
+ * two seconds in Node on an idle machine (1.2–3.8 s measured on a loaded one). It is a hard bound: a
+ * simulation that would pass it stops there and counts as unknown (never chosen). The planner also
+ * runs in a Worker (view.ts), so the page stays responsive.
  */
 export const WORK_BUDGET = 150_000;
 
 /**
  * Threat of `wave` that would get through `side`'s current defence, weighted by health kept. With
  * `bound`, the simulation stops once that much is through (the caller only needs to know it is
- * at least that), and the result is then at least `bound`.
+ * at least that), and the result is then at least `bound`. With a `meter`, a simulation that would
+ * use more than `limit` (WORK_BUDGET) stops there, and the result is Infinity (unknown: never the best
+ * choice). The planner's first simulation of a round runs without that limit, so it always knows
+ * where it stands (review of PR #107; it peaks at about 13 000).
  */
-export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity, meter?: Meter): number {
+export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity, meter?: Meter, limit = WORK_BUDGET): number {
   const route = mapOf(s).lanes[1 - side]!;
   // Only the attacking side's units run; its route index here is 0 of a one-route list.
   // Only what can matter: the defender's towers and extractors (the attacker's own structures never
@@ -139,7 +144,10 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
   // whose loss only equals the bound).
   for (let i = 0; i < 1500 && (run.pending.length > 0 || run.walkers.length > 0) && loss <= bound + 1e-9; i++) {
     const step = tickLanes(w, run, [route], true);
-    if (meter) meter.used += step.world.entities.length;
+    if (meter) {
+      meter.used += step.world.entities.length;
+      if (meter.used >= limit) return Infinity;
+    }
     w = step.world;
     run = step.run;
     for (const l of step.leaks) loss += (ENEMIES[l.kind].threat * l.hp) / (archetypeOf(TD_RULESET, l.kind)?.hp ?? 1);
@@ -195,15 +203,15 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   const wave = expectedWave(s, side);
   const budget = defenceSims(profile, s.mode);
   let sims = 0;
-  const threat = (st: HoldState, bound = Infinity): number => {
+  const threat = (st: HoldState, bound = Infinity, limit = WORK_BUDGET): number => {
     sims++;
-    return leakage(st.world, st, side, wave, bound, meter);
+    return leakage(st.world, st, side, wave, bound, meter, limit);
   };
   if (!profile.lookahead) {
     const [x, y] = padsNear(s, side, incoming, 3)[0] ?? [-1, -1];
     apply({ t: 'place', kind: 'gun', x, y });
   } else {
-    let loss = threat(s);
+    let loss = threat(s, Infinity, Infinity);
     for (let step = 0; step < profile.steps && loss > 0; step++) {
       const candidates: PlanCommand[] = [];
       for (const kind of BASE_TOWERS) {
@@ -292,11 +300,13 @@ export function probeOrder(s: HoldState, side: number, keep: number, meter?: Met
   for (let i = 0; i < SHOP.length; i++) for (let j = i + 1; j < SHOP.length; j++) orders.push([SHOP[i]!, SHOP[j]!]);
   let best: { order: EnemyKind[]; through: number } | null = null;
   for (const order of orders) {
-    // Out of work: keep the best order found so far (the first one is always tried).
+    // Out of work: keep the best order found so far (none yet: Walkers).
     if (best && meter && meter.used >= WORK_BUDGET) break;
     const wave = fill(order);
     if (wave.length === 0) continue;
     const through = leakage(s.world, s, 1 - side, wave, Infinity, meter);
+    // Cut short by the budget: unknown, and the budget is spent.
+    if (through === Infinity) break;
     if (!best || through > best.through + 0.01) best = { order, through };
   }
   return best?.order ?? ['walker'];
