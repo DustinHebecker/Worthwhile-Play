@@ -2,8 +2,8 @@ import type { Entity, World } from '@wp/strategy-engine';
 import { drawIcon, drawTerrainMap, type TerrainColours } from '@wp/strategy-art';
 import type { Placed } from './motion';
 import { drawBuilding } from './buildings';
-import { isStructureKind, TOWERS, type Family } from './ruleset';
-import { drawUnit } from './units';
+import { isDefenderKind, isStructureKind, TOWERS, type Family } from './ruleset';
+import { drawPennant, drawPosed, gaitOf, poseOf } from './units';
 
 /**
  * Canvas painting of the map (view only, floats allowed), in the look of the strategy game
@@ -96,7 +96,16 @@ export const ENEMY_ICON: Readonly<Record<string, readonly [string, number]>> = {
   raider: ['lancer', 0.85],
   crawler: ['warden', 1.35],
   shielder: ['tracer', 0.85],
-  mender: ['mast-truck', 0.85]
+  mender: ['mast-truck', 0.85],
+  // Defenders (§ 18.3), in their side's colour and with a pennant.
+  picket: ['rifles', 0.75],
+  'picket-shield': ['rifles', 0.8],
+  medic: ['mast-truck', 0.75],
+  scout: ['outrider', 0.75],
+  'gun-car': ['tracer', 0.8],
+  bulwark: ['warden', 0.9],
+  skimmer: ['kite', 0.75],
+  'mortar-team': ['howitzer', 0.85]
 };
 
 export interface Frame {
@@ -251,27 +260,38 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
 
   // Wave units.
   const outside = { own: false, colour: palette.ink, surface: palette.surface, view: 'profile' as const };
-  const unitStyle = (side: number) => (f.neutralUnits ? outside : styleOf(side));
-  const unitColour = (side: number) => (f.neutralUnits ? palette.ink : colourOf(side));
+  // An outside force is drawn in ink; defenders (§ 18.3) always in their side's colour, with a pennant.
+  const unitStyle = (side: number, kind: string) => (f.neutralUnits && !isDefenderKind(kind) ? outside : styleOf(side));
+  const unitColour = (side: number, kind: string) => (f.neutralUnits && !isDefenderKind(kind) ? palette.ink : colourOf(side));
   for (const e of f.world.entities) {
     if (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)) continue;
-    const [cx, by] = pos(e);
-    // A small hop per step while it moves (no hop in reduced motion: then nothing glides either).
+    const [cx, cy] = pos(e);
+    // The strategy picture, posed by its gait while it moves (standing in reduced motion: then
+    // nothing glides either), facing the way it goes.
     const placed = placeOf(e);
     const { progress } = placed;
-    const cy = by - (progress < 1 ? Math.sin(progress * Math.PI) * cell * 0.06 : 0);
     const [icon, size] = ENEMY_ICON[e.kind] ?? ['rifles', 0.8];
     const s = cell * size;
-    const facing: 1 | -1 = placed.dx < 0 ? -1 : 1;
-    const drawn = drawUnit(g, e.kind, cx, cy, s, { colour: unitColour(e.side), ink: palette.ink, surface: palette.surface, facing, phase: progress, moving: progress < 1 });
-    if (!drawn && !drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, unitStyle(e.side))) {
+    const style = unitStyle(e.side, e.kind);
+    const facing: 1 | -1 = placed.dx < 0 ? -1 : placed.dx > 0 ? 1 : style.own ? 1 : -1;
+    if (!drawPosed(g, icon, cx, cy, s, style, facing, poseOf(gaitOf(icon), progress < 1 ? progress : null))) {
       g.beginPath();
       g.arc(cx, cy, s * 0.3, 0, TAU);
-      g.fillStyle = unitColour(e.side);
+      g.fillStyle = unitColour(e.side, e.kind);
       g.fill();
     }
+    if (isDefenderKind(e.kind)) drawPennant(g, cx, cy - s / 2, s, facing, unitColour(e.side, e.kind), palette.ink);
+    // A holding defender (§ 18.3) stands on a bar across the road: the hold line, readable without colour.
+    if (isDefenderKind(e.kind) && e.order.type === 'hold') {
+      g.strokeStyle = palette.ink;
+      g.lineWidth = Math.max(2, cell * 0.06);
+      g.beginPath();
+      g.moveTo(cx - s * 0.42, cy + s * 0.5);
+      g.lineTo(cx + s * 0.42, cy + s * 0.5);
+      g.stroke();
+    }
     if (e.kind === 'crawler') {
-      g.strokeStyle = unitColour(e.side);
+      g.strokeStyle = unitColour(e.side, e.kind);
       g.lineWidth = 2;
       g.beginPath();
       g.arc(cx, cy, s * 0.55, 0, TAU);
@@ -288,7 +308,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     }
     if ((e.shield ?? 0) > 0) {
       // Shield: a hexagon around the unit, as long as any shield is left.
-      g.strokeStyle = unitColour(e.side);
+      g.strokeStyle = unitColour(e.side, e.kind);
       g.lineWidth = 2;
       g.beginPath();
       for (let i = 0; i <= 6; i++) {
@@ -337,7 +357,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.stroke();
     }
     const max = f.hpMax(e.kind);
-    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, unitColour(e.side), palette.muted);
+    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, unitColour(e.side, e.kind), palette.muted);
   }
 
   // Blasts.

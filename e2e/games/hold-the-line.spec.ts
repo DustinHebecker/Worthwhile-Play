@@ -102,7 +102,9 @@ test('hold-the-line: production buildings and research, in effect from the next 
 test('hold-the-line: Outside force is chosen on the start screen, needs no shop and survives a reload', async ({ page }) => {
   await startGame(page, 'hold-the-line', { settings: { mode: 'external-small' }, difficulty: 'easy' });
   await expect(root(page).getByTestId('outside-wave')).toBeVisible();
-  await expect(root(page).getByTestId('shop')).toBeHidden();
+  // No shop: the panel of buildings sends defenders here (§ 18.3).
+  await expect(root(page).getByTestId('buy-walker')).toHaveCount(0);
+  await expect(root(page).getByTestId('production-wave')).toContainText('defenders');
   // The force comes in at the middle row: both entry cells are road.
   await expect(root(page).getByTestId('cell-2-8')).toHaveAttribute('aria-label', /road/);
   await expect(root(page).getByTestId('cell-4-8')).toHaveAttribute('aria-label', /road/);
@@ -125,7 +127,9 @@ test('hold-the-line: Outside force is chosen on the start screen, needs no shop 
   await page.getByTestId('continue').click();
   await expect(game(page)).toHaveAttribute('data-round', '1');
   await expect(root(page).getByTestId('outside-wave')).toBeVisible();
-  await expect(root(page).getByTestId('shop')).toBeHidden();
+  // No shop: the panel of buildings sends defenders here (§ 18.3).
+  await expect(root(page).getByTestId('buy-walker')).toHaveCount(0);
+  await expect(root(page).getByTestId('production-wave')).toContainText('defenders');
 });
 
 test('hold-the-line: alone against the outside force, endless until the core falls', async ({ page }) => {
@@ -149,4 +153,56 @@ test('hold-the-line: alone against the outside force, endless until the core fal
   await expect(page.getByTestId('finished')).toContainText('The outside force broke through your line.');
   const saved = (await readSave(page, 'hold-the-line')) as { state: { phase: string; solo?: boolean; length?: string } };
   expect(saved.state).toMatchObject({ phase: 'lost', solo: true, length: 'endless' });
+});
+
+test('hold-the-line: alone, a Drill yard sends defenders that meet the force; they leave when the battle ends', async ({ page }) => {
+  test.setTimeout(120_000);
+  await startGame(page, 'hold-the-line', { settings: { mode: 'external-solo', length: 'endless' } });
+  await root(page).getByTestId('cell-0-16').click();
+  await root(page).getByTestId('build-barracks').click();
+  await expect(root(page).getByTestId('production-wave')).toContainText('3 × Picket');
+  await root(page).getByTestId('lock').click();
+  // The battle runs with the defenders on the road (or, if it is over at once, the next round has begun).
+  await expect.poll(async () => (await game(page).getAttribute('data-phase')) === 'battle' || (await game(page).getAttribute('data-round')) === '1', PLANNING).toBe(true);
+  if ((await game(page).getAttribute('data-phase')) === 'battle') {
+    await expect
+      .poll(async () => {
+        const saved = (await readSave(page, 'hold-the-line')) as { state?: { world?: { entities?: { kind: string }[] }; run?: { guards?: unknown[] } | null } } | undefined;
+        return (saved?.state?.run?.guards?.length ?? 0) + (saved?.state?.world?.entities?.filter((e) => e.kind === 'picket').length ?? 0);
+      }, PLANNING)
+      .toBeGreaterThan(0);
+    await root(page).getByTestId('instant').click();
+  }
+  await expect(game(page)).not.toHaveAttribute('data-phase', 'battle', PLANNING);
+  const after = (await readSave(page, 'hold-the-line')) as { state: { world: { entities: { kind: string }[] } } };
+  expect(after.state.world.entities.some((e) => e.kind === 'picket')).toBe(false);
+});
+
+test('hold-the-line: a paused battle with defenders on the road survives a reload at the same tick', async ({ page }) => {
+  test.setTimeout(120_000);
+  let tick = '';
+  let defenders = 0;
+  const onRoad = async (p: Page) =>
+    (((await readSave(p, 'hold-the-line')) as { state?: { world?: { entities?: { kind: string }[] } } } | undefined)?.state?.world?.entities ?? []).filter((e) => e.kind === 'picket').length;
+  await expectResumeAfterReload(
+    page,
+    'hold-the-line',
+    async (p) => {
+      await root(p).getByTestId('cell-0-16').click();
+      await root(p).getByTestId('build-barracks').click();
+      await root(p).getByTestId('lock').click();
+      await expect(game(p)).toHaveAttribute('data-phase', 'battle', PLANNING);
+      // Pause once Pickets stand on the road (the saved state holds them).
+      await expect.poll(() => onRoad(p), PLANNING).toBeGreaterThan(0);
+      await root(p).getByTestId('play').click();
+      tick = (await game(p).getAttribute('data-tick')) ?? '';
+    },
+    { settings: { mode: 'external-solo', length: 'endless' } }
+  );
+  defenders = await onRoad(page);
+  expect(defenders).toBeGreaterThan(0);
+  await expect(game(page)).toHaveAttribute('data-phase', 'battle');
+  await expect(game(page)).toHaveAttribute('data-tick', tick);
+  await root(page).getByTestId('instant').click();
+  await expect(game(page)).not.toHaveAttribute('data-phase', 'battle', PLANNING);
 });

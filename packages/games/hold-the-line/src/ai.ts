@@ -1,10 +1,11 @@
 import { archetypeOf, type World } from '@wp/strategy-engine';
-import { BASE_TOWERS, ENEMIES, TD_RULESET, tickLanes, TOWERS, type EnemyKind, type LaneRun, type PendingSpawn, type Route } from '@wp/td-core';
+import { BASE_TOWERS, ENEMIES, isDefenderKind, TD_RULESET, tickLanes, TOWERS, type EnemyKind, type GuardSpawn, type LaneRun, type PendingSpawn, type Route } from '@wp/td-core';
 import { ownPad } from './maps';
 import {
   applyPlan,
   capacityOf,
   checkPlan,
+  defendersOf,
   EXTRACTOR_PRICE,
   externalWave,
   extractorsOf,
@@ -148,7 +149,8 @@ export const LEAKAGE_TICKS = 1500;
 
 export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity, meter?: Meter, limit = WORK_BUDGET): number {
   const route = mapOf(s).lanes[1 - side]!;
-  // Only the attacking side's units run; its route index here is 0 of a one-route list.
+  // Only the attacking side's units run; its route index here is 0 of a two-route list, the second
+  // being that road reversed for the defending side's own defenders (outside force, § 18.3).
   // Only what can matter: the defender's towers and extractors (the attacker's own structures never
   // fire at its own units, and a raider's shots at an extractor do not change what gets through).
   let w: World = structuredClone({ ...world, entities: world.entities.filter((e) => e.side === side && Object.hasOwn(TOWERS, e.kind)), projectiles: [] });
@@ -158,12 +160,15 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
     at += kind === 'swarm' ? 3 : 8;
     return p;
   });
-  let run: LaneRun = { tick: 0, pending, walkers: [] };
+  const guards: GuardSpawn[] = defendersOf(s, side).map((kind, i) => ({ at: 8 * i, kind, route: 1, side }));
+  let run: LaneRun = { tick: 0, pending, walkers: [], ...(guards.length > 0 && { guards }) };
+  const routes = [route, { ...route, points: [...route.points].reverse() }];
+  const forceLeft = () => run.pending.length > 0 || run.walkers.some((x) => !isDefenderKind(w.entities.find((e) => e.id === x.id)?.kind ?? ''));
   let loss = 0;
   // Stops once the loss is clearly above the bound (the epsilon keeps rounding from cutting a run
   // whose loss only equals the bound).
-  for (let i = 0; i < LEAKAGE_TICKS && (run.pending.length > 0 || run.walkers.length > 0) && loss <= bound + 1e-9; i++) {
-    const step = tickLanes(w, run, [route], true);
+  for (let i = 0; i < LEAKAGE_TICKS && forceLeft() && loss <= bound + 1e-9; i++) {
+    const step = tickLanes(w, run, routes, true);
     if (meter) {
       meter.used += step.world.entities.length;
       if (meter.used >= limit) return Infinity;
@@ -247,6 +252,12 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
         if (e.side !== side || !Object.hasOwn(TOWERS, e.kind)) continue;
         for (const kind of TOWERS[e.kind]!.next) candidates.push({ t: 'upgrade', id: e.id, kind });
       }
+      // Against the outside force, a building that sends defenders (on the least exposed pad) is a
+      // candidate too; first, so the simulation budget never runs out before it is tried.
+      if (s.mode === 'external-small') {
+        const far = padsNear(s, side, incoming, 3).reverse()[0];
+        if (far) candidates.unshift(...(['barracks', 'garage', 'hangar'] as const).map((kind): PlanCommand => ({ t: 'produce', kind, x: far[0], y: far[1] })));
+      }
       let best: { cmd: PlanCommand; loss: number; value: number } | null = null;
       for (const cmd of candidates) {
         if (sims >= budget || meter.used >= WORK_BUDGET) break;
@@ -266,8 +277,12 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   }
 
   // 3. The attack wave: the units that get furthest per credit against the player's visible towers
-  // (External Small: there is none to buy).
-  if (s.mode === 'external-small') return plan;
+  // (External Small: there is none to buy; its defenders get a Lab and research instead, from the
+  // next round on, so no simulation of this round can show their worth).
+  if (s.mode === 'external-small') {
+    if (profile.lookahead) for (const cmd of defenderResearch(s, side)) if (own().credits - priceOf(cmd) >= floor) apply(cmd);
+    return plan;
+  }
   const keep = Math.floor(start * profile.keep);
   if (producing(s)) {
     for (const cmd of produceOrder(s, side, profile, keep, meter)) apply(cmd);
@@ -429,4 +444,21 @@ const withResearch = (s: HoldState, side: number, id: (typeof RESEARCH_IDS)[numb
   sides[side]!.research = [...(sides[side]!.research ?? []), id];
   return sides;
 };
+
+/**
+ * Against the outside force (§ 18.3): from three defender buildings on, a Lab on the least exposed
+ * pad, then one research item per round, the first in a fixed order that helps a building it has.
+ */
+export function defenderResearch(s: HoldState, side: number): PlanCommand[] {
+  if (producersOf(s, side) < 3) return [];
+  const has = (kind: string) => producersOf(s, side, [kind]) > 0;
+  if (!has('lab')) {
+    const far = padsNear(s, side, mapOf(s).lanes[1 - side]!, 3).reverse()[0];
+    return far ? [{ t: 'produce', kind: 'lab', x: far[0], y: far[1] }] : [];
+  }
+  const order: [(typeof RESEARCH_IDS)[number], string][] = [['shields', 'barracks'], ['chassis', 'garage'], ['raiders', 'garage'], ['repair', 'barracks'], ['hangars', 'hangar'], ['siege', 'lab']];
+  const done = [...(s.sides[side]!.research ?? []), ...(s.sides[side]!.researching ?? [])];
+  const next = order.find(([id, needs]) => !done.includes(id) && has(needs));
+  return next ? [{ t: 'research', id: next[0] }] : [];
+}
 
