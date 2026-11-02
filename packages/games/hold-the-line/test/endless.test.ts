@@ -40,19 +40,19 @@ const emptyBattleAt = (s: HoldState, round: number): HoldState => {
 
 describe('length', () => {
   it('new games are endless unless the short game is chosen; old saves count as short', () => {
-    expect(newGame(1, 'normal').length).toBe('endless');
-    expect(newGame(1, 'normal', 'duel', { length: 'rounds' }).length).toBe('rounds');
+    expect(newGame(1, 'normal', 'duel', { waves: 'shop' }).length).toBe('endless');
+    expect(newGame(1, 'normal', 'duel', { length: 'rounds', waves: 'shop' }).length).toBe('rounds');
     expect(lastRound({ length: 'endless' })).toBe(MAX_ROUNDS - 1);
     expect(lastRound({ length: 'rounds' })).toBe(ROUNDS - 1);
     expect(lastRound({})).toBe(ROUNDS - 1);
-    const old = clone(newGame(1, 'normal')) as Partial<HoldState>;
+    const old = clone(newGame(1, 'normal', 'duel', { waves: 'shop' })) as Partial<HoldState>;
     delete old.length;
     expect(isValidState(old)).toBe(true);
-    expect(isValidState({ ...clone(newGame(1, 'normal')), length: 'forever' })).toBe(false);
+    expect(isValidState({ ...clone(newGame(1, 'normal', 'duel', { waves: 'shop' })), length: 'forever' })).toBe(false);
   });
 
   it('an endless game goes on past round ten while both cores stand', () => {
-    let s = atRound(newGame(1, 'normal'), ROUNDS - 1);
+    let s = atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), ROUNDS - 1);
     s = { ...s, roundStart: { ...s.roundStart, sides: s.sides } };
     const after = resolveBattle(lockRound(s, idle)).state;
     expect(after.phase).toBe('plan');
@@ -66,7 +66,7 @@ const count = (wave: readonly EnemyKind[], kind: EnemyKind): number => wave.filt
 
 describe('the levy (endless duel)', () => {
   it('grows with the rounds, with every fourth a Brute, up to a cap; none in the short game or outside force', () => {
-    const s = newGame(1, 'normal');
+    const s = newGame(1, 'normal', 'duel', { waves: 'shop' });
     expect(levyOf({ ...s, round: 0 })).toEqual([]);
     expect(levyOf({ ...s, round: 4 })).toEqual(['walker', 'walker']);
     expect(levyOf({ ...s, round: 9 })).toHaveLength(4);
@@ -80,7 +80,7 @@ describe('the levy (endless duel)', () => {
   });
 
   it('once full, it grows heavier every round: two more Walkers become Brutes (review of PR #107)', () => {
-    const s = newGame(1, 'normal');
+    const s = newGame(1, 'normal', 'duel', { waves: 'shop' });
     expect(count(levyOf({ ...s, round: 34 }), 'brute')).toBe(MAX_LEVY / 4);
     for (let round = 35; round < MAX_ROUNDS; round++) {
       const [before, now] = [levyOf({ ...s, round: round - 1 }), levyOf({ ...s, round })];
@@ -93,7 +93,7 @@ describe('the levy (endless duel)', () => {
   });
 
   it('join both waves at the lock, after what was bought; saves keep them valid', () => {
-    let s = atRound(newGame(1, 'normal'), 6);
+    let s = atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), 6);
     s = { ...s, roundStart: { ...s.roundStart } };
     s = applyPlan(s, 0, { t: 'buy', kind: 'runner' });
     const locked = lockRound(s, idle);
@@ -169,7 +169,7 @@ describe('alone against the outside force', () => {
     expect(locked.sides[0].wave).toEqual([]);
     expect(locked.sides[1].wave).toEqual(externalWave(locked));
     expect(isValidState(clone(stepBattle(locked, 40).state))).toBe(true);
-    expect(newGame(1, 'normal', 'duel', { solo: true }).solo).toBeUndefined();
+    expect(newGame(1, 'normal', 'duel', { solo: true, waves: 'shop' }).solo).toBeUndefined();
   });
 
   it('endless: ends when your core falls (lost); short: you win by holding ten rounds', () => {
@@ -206,7 +206,7 @@ describe('alone against the outside force', () => {
     expect(isValidState({ ...later, pressure: MAX_WAVE })).toBe(true);
     expect(isValidState({ ...later, pressure: MAX_WAVE + 1 })).toBe(false);
     expect(isValidState({ ...clone(s), solo: false })).toBe(false);
-    expect(isValidState({ ...clone(newGame(1, 'normal')), solo: true })).toBe(false);
+    expect(isValidState({ ...clone(newGame(1, 'normal', 'duel', { waves: 'shop' })), solo: true })).toBe(false);
     const hit = clone(s);
     hit.sides[1].core = START_CORE - 1;
     expect(isValidState(hit)).toBe(false);
@@ -223,7 +223,7 @@ describe('the wear-down (endless)', () => {
   const emptyBattle = emptyBattleAt;
 
   it('starts at round WEAR_FROM + 1 and takes one more each round; none in the short game', () => {
-    const s = newGame(1, 'normal');
+    const s = newGame(1, 'normal', 'duel', { waves: 'shop' });
     expect(wearOf({ ...s, round: WEAR_FROM - 1 })).toBe(0);
     expect(wearOf({ ...s, round: WEAR_FROM })).toBe(1);
     expect(wearOf({ ...s, round: WEAR_FROM + 3 })).toBe(4);
@@ -253,7 +253,7 @@ describe('the wear-down (endless)', () => {
   });
 
   it('a core worn down to nothing ends the game; equal cores make a draw', () => {
-    const s = newGame(1, 'normal');
+    const s = newGame(1, 'normal', 'duel', { waves: 'shop' });
     const low = emptyBattle(s, WEAR_FROM + 4);
     low.sides[0].core = 5;
     low.sides[1].core = 6;
@@ -269,7 +269,7 @@ describe('the wear-down (endless)', () => {
 
 describe('the wear-down never undoes a decided game (review of PR #107, B2)', () => {
   const endOf = (round: number, own: number, foe: number): HoldState => {
-    const t = emptyBattleAt(newGame(1, 'normal'), round);
+    const t = emptyBattleAt(newGame(1, 'normal', 'duel', { waves: 'shop' }), round);
     t.sides[0].core = own;
     t.sides[1].core = foe;
     return stepBattle(t, 1).state;
@@ -303,7 +303,7 @@ describe('the wear-down never undoes a decided game (review of PR #107, B2)', ()
 
   it('the core falling in a real battle (levy through, no defence) is a loss, whatever the wear-down', () => {
     // Round 47: no towers on your side, a full defence on theirs; the levy breaks your core in battle.
-    const s = atRound(newGame(1, 'normal'), WEAR_FROM + 7);
+    const s = atRound(newGame(1, 'normal', 'duel', { waves: 'shop' }), WEAR_FROM + 7);
     s.sides[0].core = 3;
     s.sides[1].core = 5;
     s.sides[1].credits = MAX_CREDITS;
@@ -318,7 +318,7 @@ describe('the wear-down never undoes a decided game (review of PR #107, B2)', ()
 
 describe('credits stay within what a save may hold (review of PR #107)', () => {
   it('income, interest and bounties stop at MAX_CREDITS', () => {
-    const s = newGame(1, 'normal');
+    const s = newGame(1, 'normal', 'duel', { waves: 'shop' });
     const rich = { ...s, sides: [{ ...s.sides[0], credits: MAX_CREDITS - 10 }, { ...s.sides[1], credits: MAX_CREDITS }] as HoldState['sides'] };
     rich.roundStart = { ...rich.roundStart, sides: rich.sides };
     const end = resolveBattle(lockRound(rich, idle)).state;
@@ -329,7 +329,7 @@ describe('credits stay within what a save may hold (review of PR #107)', () => {
   });
 
   it('a sale at the limit keeps the credits at the limit', () => {
-    let s = applyPlan(newGame(1, 'normal'), 0, { t: 'place', kind: 'gun', x: 3, y: 9 });
+    let s = applyPlan(newGame(1, 'normal', 'duel', { waves: 'shop' }), 0, { t: 'place', kind: 'gun', x: 3, y: 9 });
     const id = s.sides[0].towers[0]!.id;
     s = { ...s, sides: [{ ...s.sides[0], credits: MAX_CREDITS }, s.sides[1]] };
     expect(applyPlan(s, 0, { t: 'sell', id }).sides[0].credits).toBe(MAX_CREDITS);
@@ -347,7 +347,7 @@ describe('credits stay within what a save may hold (review of PR #107)', () => {
 
 describe('isValidState never throws (review L9)', () => {
   it('sparse arrays and odd objects are just invalid', () => {
-    const s = clone(newGame(1, 'normal'));
+    const s = clone(newGame(1, 'normal', 'duel', { waves: 'shop' }));
     const sparse = { ...s, sides: [s.sides[0]] as unknown[] };
     (sparse.sides as unknown[]).length = 2;
     expect(isValidState(sparse)).toBe(false);

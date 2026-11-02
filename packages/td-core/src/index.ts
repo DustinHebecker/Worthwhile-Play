@@ -10,4 +10,5 @@ export * from './towers';
 export * from './draw';
 export * from './motion';
 export * from './units';
+export * from './buildings';
 export * from './i18n';

@@ -36,8 +36,8 @@ describe('External Small: setup', () => {
   it('each mode has its own map; the map decides the mode', () => {
     expect(mapForMode('vs-small')).toBe(DUEL);
     expect(mapForMode('external-small')).toBe(CROSSING);
-    expect(newGame(1, 'easy').mode).toBe('vs-small');
-    expect(newGame(1, 'easy').pressure).toBeUndefined();
+    expect(newGame(1, 'easy', 'duel', { waves: 'shop' }).mode).toBe('vs-small');
+    expect(newGame(1, 'easy', 'duel', { waves: 'shop' }).pressure).toBeUndefined();
     const s = fresh();
     expect(s.mode).toBe('external-small');
     expect(s.pressure).toBe(0);
@@ -73,7 +73,7 @@ describe('External Small: the outside force', () => {
       expect(externalWave(atRound(s, round, 99))).toHaveLength(base + MAX_PRESSURE);
       expect(externalWave(atRound(s, round, 3)).slice(base)).toEqual(['walker', 'walker', 'walker']);
     }
-    expect(externalWave(newGame(1, 'easy'))).toEqual([]);
+    expect(externalWave(newGame(1, 'easy', 'duel', { waves: 'shop' }))).toEqual([]);
   });
 
   it('at the lock both sides face exactly this round’s force', () => {
@@ -140,7 +140,7 @@ describe('External Small: saves', () => {
       expect(isValidState(t)).toBe(false);
     }
     // VS Small never has a pressure.
-    expect(isValidState({ ...clone(newGame(1, 'easy')), pressure: 0 })).toBe(false);
+    expect(isValidState({ ...clone(newGame(1, 'easy', 'duel', { waves: 'shop' })), pressure: 0 })).toBe(false);
   });
 });
 
@@ -166,7 +166,7 @@ describe('wave bounds in saves (review of PR #104, L2)', () => {
 
   it('Duel: a wave is bought kinds plus the levy, at most full capacity plus the full levy', () => {
     const most = BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY + MAX_LEVY;
-    const s = newGame(1, 'normal');
+    const s = newGame(1, 'normal', 'duel', { waves: 'shop' });
     expect(isValidState(withLast(s, 0, Array(most).fill('walker')))).toBe(true);
     expect(isValidState(withLast(s, 0, Array(most + 1).fill('walker')))).toBe(false);
     expect(isValidState(withLast(s, 0, ['walker', 'dragon']))).toBe(false);

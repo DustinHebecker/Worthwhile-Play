@@ -153,6 +153,63 @@ const LEVY_FULL = 34;
 /** Endless: what every standing core loses at the end of this round to the wear-down (0 before WEAR_FROM). */
 export const wearOf = (s: Pick<HoldState, 'round' | 'length'>): number => ((s.length ?? 'rounds') === 'endless' ? Math.max(0, s.round - WEAR_FROM + 1) : 0);
 
+/**
+ * Where a Duel's attack waves come from (owner 2026-11-01, design § 18.2): production buildings that
+ * send their units every round (default), or the shop of § 16, where the wave is bought each round.
+ */
+export const WAVE_SOURCES = ['production', 'shop'] as const;
+export type WaveSource = (typeof WAVE_SOURCES)[number];
+export const DEFAULT_WAVES: WaveSource = 'production';
+
+/** Production buildings (and the Lab) with their price; each takes an own pad. */
+export const PRODUCERS = { barracks: 150, garage: 200, hangar: 225, lab: 150 } as const;
+export type ProducerKind = keyof typeof PRODUCERS;
+export const PRODUCER_KINDS = Object.keys(PRODUCERS) as ProducerKind[];
+export const isProducerKind = (kind: string): kind is ProducerKind => Object.hasOwn(PRODUCERS, kind);
+/** Drill yards (id `barracks`), Garages and Hangars a side may have together (bounds the wave; the Lab is one more). */
+export const MAX_PRODUCERS = 10;
+
+/**
+ * Research (needs a Lab; each item once). Paid when chosen, in effect from the next round: the other
+ * side sees it a round ahead, as it sees new buildings.
+ */
+export const RESEARCH = { shields: 150, repair: 150, raiders: 175, chassis: 200, hangars: 200, siege: 300 } as const;
+export type ResearchId = keyof typeof RESEARCH;
+export const RESEARCH_IDS = Object.keys(RESEARCH) as ResearchId[];
+const isResearchId = (v: unknown): v is ResearchId => typeof v === 'string' && Object.hasOwn(RESEARCH, v);
+/** A Siege crawler joins the produced wave in every third round (rounds 3, 6, … counted from 1). */
+export const SIEGE_EVERY = 3;
+/** Most units one building sends (a Drill yard with Field repair: 3 + 1). */
+const MOST_PER_PRODUCER = 4;
+/** Kinds a production wave can hold. */
+const PRODUCED_KINDS: readonly EnemyKind[] = ['walker', 'shielder', 'mender', 'runner', 'raider', 'brute', 'glider', 'crawler'];
+
+/** What one building of `kind` sends with `research` done, in sending order. */
+export function sendsOf(kind: ProducerKind, research: readonly ResearchId[]): EnemyKind[] {
+  const has = (id: ResearchId) => research.includes(id);
+  switch (kind) {
+    case 'barracks':
+      return [...Array<EnemyKind>(3).fill(has('shields') ? 'shielder' : 'walker'), ...(has('repair') ? (['mender'] as const) : [])];
+    case 'garage':
+      return [...Array<EnemyKind>(2).fill(has('raiders') ? 'raider' : 'runner'), ...(has('chassis') ? (['brute'] as const) : [])];
+    case 'hangar':
+      return Array<EnemyKind>(has('hangars') ? 2 : 1).fill('glider');
+    default:
+      return [];
+  }
+}
+
+/** The wave `side`'s buildings send this round: building by building (oldest first), then the Siege crawler. */
+export function productionOf(s: Pick<HoldState, 'world' | 'sides' | 'round'>, side: number): EnemyKind[] {
+  const research = s.sides[side]!.research ?? [];
+  const buildings = s.world.entities.filter((e) => e.side === side && isProducerKind(e.kind)).sort((a, b) => a.id - b.id);
+  const wave = buildings.flatMap((e) => sendsOf(e.kind as ProducerKind, research));
+  if (research.includes('siege') && (s.round + 1) % SIEGE_EVERY === 0) wave.push('crawler');
+  return wave;
+}
+export const producersOf = (s: Pick<HoldState, 'world'>, side: number, kinds: readonly string[] = ['barracks', 'garage', 'hangar']): number =>
+  s.world.entities.filter((e) => e.side === side && kinds.includes(e.kind)).length;
+
 /** What a unit of the attack wave costs (the Siege crawler is not for sale). */
 export const UNIT_PRICES: Readonly<Partial<Record<EnemyKind, number>>> = { walker: 20, runner: 25, swarm: 6, brute: 90, glider: 45, raider: 60 };
 export const SHOP: readonly EnemyKind[] = ENEMY_KINDS.filter((k) => UNIT_PRICES[k] !== undefined);
@@ -172,6 +229,10 @@ export interface SideState {
   /** The wave this side sent last round (both sides saw it). */
   lastWave: EnemyKind[];
   stats: { killed: number; leaked: number; spent: number };
+  /** Duel with production: the research done (absent in the other variants). */
+  research?: ResearchId[];
+  /** Duel with production: research paid this round; it takes effect when the round ends (both sides see it first). */
+  researching?: ResearchId[];
 }
 
 export type PlanCommand =
@@ -179,9 +240,11 @@ export type PlanCommand =
   | { t: 'extractor'; x: number; y: number }
   | { t: 'buy'; kind: EnemyKind }
   | { t: 'unbuy'; index: number }
-  | { t: 'workshop' };
+  | { t: 'workshop' }
+  | { t: 'produce'; kind: ProducerKind; x: number; y: number }
+  | { t: 'research'; id: ResearchId };
 
-export type Refusal = 'phase' | BuildRefusal | 'capacity' | 'not-for-sale' | 'no-unit' | 'workshops' | 'mode' | 'log-full';
+export type Refusal = 'phase' | BuildRefusal | 'capacity' | 'not-for-sale' | 'no-unit' | 'workshops' | 'mode' | 'log-full' | 'producers' | 'lab' | 'researched';
 /** Commands a side can give in one round (bounds the log a save holds; far above any real plan). */
 export const MAX_PLAN_COMMANDS = 1000;
 
@@ -210,7 +273,12 @@ export interface HoldState {
   length?: Length;
   /** External Small alone against the force: no opponent (side 1 only stands in for the other road's end). */
   solo?: boolean;
+  /** Duel: where the attack waves come from (absent in saves from before the choice: the shop). */
+  waves?: WaveSource;
 }
+
+/** Whether `s` is a Duel whose waves come from production buildings. */
+export const producing = (s: Pick<HoldState, 'mode' | 'waves'>): boolean => s.mode === 'vs-small' && s.waves === 'production';
 
 /** The last round of a game (endless: the safety bound). */
 export const lastRound = (s: Pick<HoldState, 'length'>): number => ((s.length ?? 'rounds') === 'endless' ? MAX_ROUNDS - 1 : ROUNDS - 1);
@@ -245,6 +313,8 @@ export interface GameOptions {
   length?: Length;
   /** External Small only: alone against the outside force, without an opponent. */
   solo?: boolean;
+  /** Duel only: production buildings (default) or the shop. */
+  waves?: WaveSource;
 }
 
 export function newGame(seed: number, difficulty: Difficulty, mapId: string = mapForMode('vs-small').id, options: GameOptions = {}): HoldState {
@@ -267,8 +337,10 @@ export function newGame(seed: number, difficulty: Difficulty, mapId: string = ma
     log: [{ player: [], ai: [] }],
     ...(map.mode === 'external-small' && { pressure: 0 }),
     length: options.length ?? DEFAULT_LENGTH,
-    ...(options.solo && map.mode === 'external-small' && { solo: true })
+    ...(options.solo && map.mode === 'external-small' && { solo: true }),
+    ...(map.mode === 'vs-small' && { waves: options.waves ?? DEFAULT_WAVES })
   };
+  if (producing(s)) for (const side of [...s.sides, ...s.roundStart.sides]) Object.assign(side, { research: [], researching: [] });
   return s;
 }
 
@@ -280,9 +352,22 @@ export function checkPlan(s: HoldState, side: number, cmd: PlanCommand): Refusal
   if (logged && (side === 0 ? logged.player : logged.ai).length >= MAX_PLAN_COMMANDS) return 'log-full';
   const own = s.sides[side]!;
   const map = mapOf(s);
-  // External Small: the waves come from outside; nobody buys units or workshops.
-  if (s.mode === 'external-small' && (cmd.t === 'buy' || cmd.t === 'unbuy' || cmd.t === 'workshop')) return 'mode';
+  // External Small: the waves come from outside; nobody buys units or workshops. A Duel either
+  // buys its waves (shop) or builds and researches (production), never both.
+  const shopping = cmd.t === 'buy' || cmd.t === 'unbuy' || cmd.t === 'workshop';
+  if ((shopping && (s.mode === 'external-small' || producing(s))) || ((cmd.t === 'produce' || cmd.t === 'research') && !producing(s))) return 'mode';
   switch (cmd.t) {
+    case 'produce': {
+      if (!isProducerKind(cmd.kind)) return 'mode';
+      if (!ownPad(map, side, cmd.x, cmd.y)) return 'not-a-pad';
+      if (s.world.entities.some((e) => e.x === cmd.x && e.y === cmd.y)) return 'occupied';
+      if (cmd.kind === 'lab' ? producersOf(s, side, ['lab']) > 0 : producersOf(s, side) >= MAX_PRODUCERS) return cmd.kind === 'lab' ? 'lab' : 'producers';
+      return PRODUCERS[cmd.kind] > own.credits ? 'credits' : null;
+    }
+    case 'research':
+      if (!isResearchId(cmd.id) || [...(own.research ?? []), ...(own.researching ?? [])].includes(cmd.id)) return 'researched';
+      if (producersOf(s, side, ['lab']) === 0) return 'lab';
+      return RESEARCH[cmd.id] > own.credits ? 'credits' : null;
     case 'extractor':
       if (!ownPad(map, side, cmd.x, cmd.y)) return 'not-a-pad';
       if (s.world.entities.some((e) => e.x === cmd.x && e.y === cmd.y)) return 'occupied';
@@ -299,6 +384,8 @@ export function checkPlan(s: HoldState, side: number, cmd: PlanCommand): Refusal
       if (own.workshops >= MAX_WORKSHOPS) return 'workshops';
       return WORKSHOP_PRICE > own.credits ? 'credits' : null;
     default:
+      // The Lab stays while research is under way (else it would cost nothing: sold back the same round).
+      if (cmd.t === 'sell' && (own.researching ?? []).length > 0 && s.world.entities.some((e) => e.id === cmd.id && e.side === side && e.kind === 'lab')) return 'lab';
       return checkBuild(s.world, own, side, cmd, (x, y) => ownPad(map, side, x, y));
   }
 }
@@ -336,6 +423,20 @@ export function applyPlan(s: HoldState, side: number, cmd: PlanCommand): HoldSta
       own.credits -= WORKSHOP_PRICE;
       own.stats.spent += WORKSHOP_PRICE;
       break;
+    case 'produce': {
+      const id = n.world.nextId++;
+      const price = PRODUCERS[cmd.kind];
+      n.world.entities.push(spawn(id, side, archetypeOf(TD_RULESET, cmd.kind)!, cmd.x, cmd.y));
+      own.towers.push({ id, invested: price, fresh: price });
+      own.credits -= price;
+      own.stats.spent += price;
+      break;
+    }
+    case 'research':
+      own.researching = [...(own.researching ?? []), cmd.id];
+      own.credits -= RESEARCH[cmd.id];
+      own.stats.spent += RESEARCH[cmd.id];
+      break;
     default: {
       // A tower command; a sale also covers extractors (refund like any structure).
       const built = applyBuild(n.world, own, side, cmd);
@@ -366,18 +467,20 @@ export function lockRound(s: HoldState, plan: Planner): HoldState {
   let n = s;
   // Alone against the outside force: nobody plans for the other side.
   for (const cmd of s.solo ? [] : plan(seen)) {
-    const real = 'id' in cmd ? { ...cmd, id: ids.get(cmd.id) ?? cmd.id } : cmd;
+    // Commands that name a structure by id (a research id is a name, not a structure).
+    const real = 'id' in cmd && typeof cmd.id === 'number' ? ({ ...cmd, id: ids.get(cmd.id) ?? cmd.id } as PlanCommand) : cmd;
     const [shadowId, realId] = [seen.world.nextId, n.world.nextId];
     seen = applyPlan(seen, 1, cmd);
     n = applyPlan(n, 1, real);
-    if (cmd.t === 'place' || cmd.t === 'extractor') ids.set(shadowId, realId);
+    if (cmd.t === 'place' || cmd.t === 'extractor' || cmd.t === 'produce') ids.set(shadowId, realId);
   }
   n = structuredClone(n);
   if (n.mode === 'external-small') {
     // Both sides face the same force; alone, only the half that comes for you sets off.
     n.sides[1].wave = externalWave(n);
     n.sides[0].wave = n.solo ? [] : externalWave(n);
-  } else for (const side of n.sides) side.wave = [...side.wave, ...levyOf(n)];
+  } else if (producing(n)) n.sides.forEach((side, i) => (side.wave = [...productionOf(n, i), ...levyOf(n)]));
+  else for (const side of n.sides) side.wave = [...side.wave, ...levyOf(n)];
   n.unspent = [n.sides[0].credits, n.sides[1].credits];
   for (const side of n.sides) side.towers = settleAccount(side).towers;
   n.run = { tick: 0, pending: scheduleOf(n.sides), walkers: [] };
@@ -496,6 +599,11 @@ function endRound(s: HoldState): void {
     if (!(s.solo && i === 1)) side.credits = Math.min(MAX_CREDITS, side.credits + incomeOf(s, i) + interestOf(s.unspent[i as 0 | 1]));
     side.lastWave = side.wave;
     side.wave = [];
+    // Research paid this round takes effect now.
+    if (side.researching) {
+      side.research = [...(side.research ?? []), ...side.researching];
+      side.researching = [];
+    }
   });
   s.round++;
   s.phase = 'plan';
@@ -536,6 +644,10 @@ export function isPlanCommand(v: unknown): v is PlanCommand {
       return isInt(v.index, 0, 1000);
     case 'workshop':
       return true;
+    case 'produce':
+      return typeof v.kind === 'string' && isProducerKind(v.kind) && isInt(v.x, 0, 255) && isInt(v.y, 0, 255);
+    case 'research':
+      return isResearchId(v.id);
     default:
       return false;
   }
@@ -548,15 +660,35 @@ export function isPlanCommand(v: unknown): v is PlanCommand {
  */
 const MAX_STAT = 2 * MAX_CREDITS * MAX_ROUNDS;
 
-function isValidSide(v: unknown, s: { world: World; map: DuelMap }, index: number): v is SideState {
+/** Kinds a side's buildings can send with `research` (the Siege crawler only with Siege works). */
+const sentKinds = (research: readonly ResearchId[]): EnemyKind[] => [
+  ...new Set([...(['barracks', 'garage', 'hangar'] as const).flatMap((k) => sendsOf(k, research)), ...(research.includes('siege') ? (['crawler'] as const) : [])])
+];
+
+/** Longest wave of a Duel with production: every building at its most, the Siege crawler and the full levy. */
+export const MOST_PRODUCED = MAX_PRODUCERS * MOST_PER_PRODUCER + 1 + MAX_LEVY;
+
+function isValidSide(v: unknown, s: { world: World; map: DuelMap; production: boolean }, index: number): v is SideState {
   const external = s.map.mode === 'external-small';
-  if (!isRecord(v) || !isInt(v.credits, 0, MAX_CREDITS) || !isInt(v.core, 0, START_CORE) || !isInt(v.workshops, 0, external ? 0 : MAX_WORKSHOPS)) return false;
-  const most = external ? MAX_WAVE : BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY + MAX_LEVY;
-  if (!isArrayOf(v.wave, isKind) || v.wave.length > most || (!external && v.wave.some((k) => UNIT_PRICES[k] === undefined))) return false;
+  const { production } = s;
+  if (!isRecord(v) || !isInt(v.credits, 0, MAX_CREDITS) || !isInt(v.core, 0, START_CORE) || !isInt(v.workshops, 0, external || production ? 0 : MAX_WORKSHOPS)) return false;
+  const most = external ? MAX_WAVE : production ? MOST_PRODUCED : BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY + MAX_LEVY;
+  // A bought wave holds kinds for sale (plus the levy's, which are); a produced one what buildings send.
+  const allowed = (k: EnemyKind) => external || (production ? PRODUCED_KINDS.includes(k) : UNIT_PRICES[k] !== undefined);
+  if (!isArrayOf(v.wave, isKind) || v.wave.length > most || !v.wave.every(allowed)) return false;
   if (!isArrayOf(v.lastWave, isKind) || v.lastWave.length > most) return false;
   if (!isRecord(v.stats) || !['killed', 'leaked', 'spent'].every((k) => isInt((v.stats as Record<string, unknown>)[k], -MAX_STAT, MAX_STAT))) return false;
+  // Research only with production: each item once.
+  if (production) {
+    if (!isArrayOf(v.research, isResearchId) || !isArrayOf(v.researching, isResearchId)) return false;
+    const all = [...v.research, ...v.researching];
+    if (new Set(all).size !== all.length) return false;
+  } else if (v.research !== undefined || v.researching !== undefined) return false;
   const owned = s.world.entities.filter((e) => e.side === index && (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)));
   if (owned.some((e) => !ownPad(s.map, index, e.x, e.y))) return false;
+  // Production buildings only with production: at most MAX_PRODUCERS, and one Lab.
+  const count = (kinds: readonly string[]) => owned.filter((e) => kinds.includes(e.kind)).length;
+  if (production ? count(['barracks', 'garage', 'hangar']) > MAX_PRODUCERS || count(['lab']) > 1 : owned.some((e) => isProducerKind(e.kind))) return false;
   return (
     isArrayOf(v.towers, (r): r is TowerRecord => isRecord(r) && isInt(r.id, 1) && isInt(r.invested, 0, 1_000_000) && isInt(r.fresh, 0, 1_000_000) && (r.fresh as number) <= (r.invested as number)) &&
     v.towers.length === owned.length &&
@@ -582,6 +714,9 @@ function checkState(v: unknown): v is HoldState {
   if (v.length !== undefined && !(LENGTHS as readonly unknown[]).includes(v.length)) return false;
   if (v.solo !== undefined && (v.solo !== true || map.mode !== 'external-small')) return false;
   const solo = v.solo === true;
+  // Production or shop: a Duel's choice (absent: a save from before it, the shop).
+  if (v.waves !== undefined && (map.mode !== 'vs-small' || !(WAVE_SOURCES as readonly unknown[]).includes(v.waves))) return false;
+  const production = map.mode === 'vs-small' && v.waves === 'production';
   const last = lastRound(v as Pick<HoldState, 'length'>);
   // External Small keeps the pressure (none before the first battle; at most both waves got through); VS Small has none.
   // (alone, only one wave can get through).
@@ -591,13 +726,15 @@ function checkState(v: unknown): v is HoldState {
   if (!isValidWorld(v.world, TD_RULESET) || v.world.sides !== 2) return false;
   const world = v.world;
   if (world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.rows.join('')) return false;
-  if (!Array.isArray(v.sides) || v.sides.length !== 2 || !Array.from(v.sides).every((side, i) => isValidSide(side, { world, map }, i))) return false;
+  if (!Array.isArray(v.sides) || v.sides.length !== 2 || !Array.from(v.sides).every((side, i) => isValidSide(side, { world, map, production }, i))) return false;
   // The round's start: the same map and valid sides on it (the computer plans from it).
   const start = v.roundStart;
   if (!isRecord(start) || !isValidWorld(start.world, TD_RULESET) || start.world.sides !== 2 || start.world.map.terrain !== world.map.terrain) return false;
   const startWorld = start.world;
   if (startWorld.entities.some((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind)) || startWorld.projectiles.length > 0) return false;
-  if (!Array.isArray(start.sides) || start.sides.length !== 2 || !Array.from(start.sides).every((side, i) => isValidSide(side, { world: startWorld, map }, i))) return false;
+  if (!Array.isArray(start.sides) || start.sides.length !== 2 || !Array.from(start.sides).every((side, i) => isValidSide(side, { world: startWorld, map, production }, i))) return false;
+  // A round starts with no research under way (what was paid took effect when the last round ended).
+  if (production && (start.sides as SideState[]).some((side) => (side.researching ?? []).length > 0)) return false;
   if (!isArrayOf(v.unspent, (x): x is number => isInt(x, 0, MAX_CREDITS)) || v.unspent.length !== 2) return false;
   const isPlanList = (l: unknown): l is PlanCommand[] => isArrayOf(l, isPlanCommand) && l.length <= MAX_PLAN_COMMANDS;
   if (!isArrayOf(v.log, (e): e is HoldState['log'][number] => isRecord(e) && isPlanList(e.player) && isPlanList(e.ai)) || v.log.length !== (v.round as number) + 1) return false;
@@ -627,7 +764,13 @@ function checkState(v: unknown): v is HoldState {
     // While planning, the computer has done nothing yet: it stands exactly as the round began.
     const startSides = start.sides as [SideState, SideState];
     if (JSON.stringify(foe) !== JSON.stringify(startSides[1]) || foe.wave.length > 0 || own.core !== startSides[0].core) return false;
-    if (map.mode === 'external-small' && own.wave.length > 0) return false;
+    // Waves from outside or from buildings are only made at the lock.
+    if ((map.mode === 'external-small' || production) && own.wave.length > 0) return false;
+    // Research takes effect only when a round ends; research under way needs a standing Lab.
+    if (production) {
+      if (JSON.stringify(own.research) !== JSON.stringify(startSides[0].research)) return false;
+      if ((own.researching ?? []).length > 0 && !world.entities.some((e) => e.side === 0 && e.kind === 'lab')) return false;
+    }
     const foeAt = (w: World) => JSON.stringify(w.entities.filter((e) => e.side === 1).map((e) => [e.id, e.kind, e.x, e.y, e.hp]));
     if (foeAt(world) !== foeAt(startWorld)) return false;
   }
@@ -648,6 +791,8 @@ function checkState(v: unknown): v is HoldState {
       // VS Small: what a side bought, then this round's levy (endless).
       const levy = levyOf(v as unknown as HoldState);
       if (sides.some((side) => JSON.stringify(side.wave.slice(side.wave.length - levy.length)) !== JSON.stringify(levy))) return false;
+      // With production, what was sent ahead of the levy is what buildings send with the side's research.
+      if (production && sides.some((side) => !side.wave.slice(0, side.wave.length - levy.length).every((k) => sentKinds(side.research ?? []).includes(k)))) return false;
     }
     for (const [i, side] of sides.entries()) {
       const schedule = scheduleOf([i === 0 ? side : { wave: [] }, i === 1 ? side : { wave: [] }]);

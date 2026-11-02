@@ -613,6 +613,8 @@ test('relay-command: an asymmetric map for teams in the editor on a phone (Basti
   await expect(page.getByTestId('ed-fair')).toHaveText('Made for teams: base A stands alone against three; it is played only as 1 against 3 or 3 against 1.');
   const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  // The page shows the choice before the host has saved it: reload only once the draft is saved.
+  await expect.poll(async () => ((await saved(page)) as unknown as { edit: { map: { supply?: number[] } } | null } | undefined)?.edit?.map.supply?.[1]).toBe(600);
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(page.getByTestId('ed-supply-1')).toHaveValue('600');

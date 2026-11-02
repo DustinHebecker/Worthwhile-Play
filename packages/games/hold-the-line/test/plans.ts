@@ -1,9 +1,9 @@
 import { createRng } from '@wp/game-core';
 import { BASE_TOWERS, TOWERS } from '@wp/td-core';
 import { DUEL, ownPad } from '../src/maps';
-import { applyPlan, SHOP, type HoldState, type PlanCommand } from '../src/rules';
+import { applyPlan, PRODUCER_KINDS, producing, RESEARCH_IDS, SHOP, type HoldState, type PlanCommand } from '../src/rules';
 
-/** Random legal plan commands for side 0 (deterministic per seed). */
+/** Random plan commands for side 0, applied where legal (deterministic per seed). */
 export function randomPlan(s: HoldState, seed: number, n: number): HoldState {
   const rng = createRng(seed);
   const pads: [number, number][] = [];
@@ -15,6 +15,10 @@ export function randomPlan(s: HoldState, seed: number, n: number): HoldState {
     if (roll < 3) {
       const [x, y] = rng.pick(pads);
       cmd = { t: 'place', kind: rng.pick(BASE_TOWERS), x, y };
+    } else if (roll < 6 && producing(s)) {
+      // Production: buildings, the Lab and research instead of buying.
+      const [x, y] = rng.pick(pads);
+      cmd = roll === 5 ? { t: 'research', id: rng.pick(RESEARCH_IDS) } : { t: 'produce', kind: rng.pick(PRODUCER_KINDS), x, y };
     } else if (roll < 6) cmd = { t: 'buy', kind: rng.pick(SHOP) };
     else if (roll === 6 && own.length > 0) {
       const tower = rng.pick(own);
