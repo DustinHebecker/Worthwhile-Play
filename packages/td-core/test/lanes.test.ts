@@ -574,5 +574,40 @@ describe('defenders on the lanes, in detail', () => {
     expect(orderOf('skimmer', [2, 0], later('glider', 1))).toEqual([2, 1]);
     expect(orderOf('skimmer', [2, 0], later('walker', 0))).toBe('hold');
   });
+
+  it('a hostile defender never keeps the force off the map: the unit enters on its cell; units of its own side still block', () => {
+    const w = world();
+    put(w, 'picket', 0, 2, 0);
+    const entered = tickLanes(w, run([{ at: 0, kind: 'walker', route: 0, side: 1 }]), ROUTES);
+    expect(entered.run.pending).toEqual([]);
+    expect(entered.world.entities.filter((e) => e.kind === 'walker')).toHaveLength(1);
+    const w2 = world();
+    put(w2, 'picket', 1, 2, 0);
+    expect(tickLanes(w2, run([{ at: 0, kind: 'walker', route: 0, side: 1 }]), ROUTES).run.pending).toHaveLength(1);
+    const w3 = world();
+    put(w3, 'walker', 1, 2, 0);
+    expect(tickLanes(w3, run([{ at: 0, kind: 'walker', route: 0, side: 1 }]), ROUTES).run.pending).toHaveLength(1);
+  });
+
+
+  it('a defender off its road (a flying one cutting a corner) holds at the end and for the force close by, not for the force far ahead on the road', () => {
+    const w = world();
+    const d = put(w, 'skimmer', 0, 1, 1);
+    const at = (others: [string, number, number, number][]) => {
+      const v = structuredClone(w);
+      for (const [k, side, x, y] of others) put(v, k, side, x, y);
+      return tickLanes(v, { tick: 1, pending: [], walkers: [{ id: d.id, route: 3, leg: 1 }] }, ROUTES).world.entities.find((e) => e.id === d.id)!.order.type;
+    };
+    expect(at([])).toBe('hold'); // next to the end of its road (2, 0)
+    const far = structuredClone(w);
+    far.entities[0]!.x = 0;
+    far.entities[0]!.y = 4;
+    const order = tickLanes(far, { tick: 1, pending: [], walkers: [{ id: d.id, route: 3, leg: 1 }] }, ROUTES).world.entities.find((e) => e.id === d.id)!.order;
+    expect(order).toMatchObject({ type: 'move', x: 2, y: 0 });
+    far.entities.push(spawn(far.nextId++, 1, archetypeOf(TD_RULESET, 'glider')!, 2, 1));
+    expect(tickLanes(far, { tick: 1, pending: [], walkers: [{ id: d.id, route: 3, leg: 1 }] }, ROUTES).world.entities.find((e) => e.id === d.id)!.order).toMatchObject({ type: 'move' });
+    far.entities.push(spawn(far.nextId++, 1, archetypeOf(TD_RULESET, 'glider')!, 1, 5));
+    expect(tickLanes(far, { tick: 1, pending: [], walkers: [{ id: d.id, route: 3, leg: 1 }] }, ROUTES).world.entities.find((e) => e.id === d.id)!.order.type).toBe('hold');
+  });
 });
 

@@ -13,12 +13,14 @@ import { applyPlan, defendersOf, isValidState, lockRound, MAX_BATTLE_TICKS, MAX_
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const KINDS = ['barracks', 'garage', 'hangar'] as const;
 
-function setup(round: number, kinds: readonly [readonly number[], readonly number[]], research: readonly [readonly string[], readonly string[]], solo: boolean): HoldState {
-  let s = clone(newGame(3, 'normal', CROSSING.id, { solo }));
+function setup(round: number, kinds: readonly [readonly number[], readonly number[]], research: readonly [readonly string[], readonly string[]], solo: boolean, far = false): HoldState {
+  let s = clone(newGame(3, 'normal', CROSSING.id, { solo, length: 'endless' }));
   for (const side of solo ? [0] : [0, 1]) {
     s.sides[side]!.credits = 50_000;
     const free: [number, number][] = [];
     for (let y = 0; y < CROSSING.h; y++) for (let x = 0; x < CROSSING.w; x++) if (ownPad(CROSSING, side, x, y)) free.push([x, y]);
+    // Far pads: those nearest the middle of the map first (where the force comes in).
+    if (far) free.sort((p, q) => Math.abs(p[1] - 8) - Math.abs(q[1] - 8));
     kinds[side]!.forEach((k, i) => (s = applyPlan(s, side, { t: 'produce', kind: KINDS[k]!, x: free[i]![0], y: free[i]![1] })));
     s.sides[side]!.research = [...research[side]!] as never;
   }
@@ -57,9 +59,42 @@ describe('defenders never stall a battle', () => {
         examples: [
           [7, [1], [], [], [], false],
           [6, [1, 2, 2, 0], [], ['raiders', 'hangars'], [], false],
-          [44, [], [], ['siege'], [], false]
+          [44, [], [], ['siege'], [], false],
+          [11, [], [], ['siege'], [], false],
+          // Stalls found while fixing the re-review (CLOSE along the road at a bend; a unit waiting out of contact).
+          [9, [0, 0, 0, 0, 0], [], [], [], false],
+          [16, [0, 0, 1], [], ['shields', 'chassis'], [], false],
+          [11, [], [0, 0], [], ['repair', 'siege'], false],
+          [40, [1, 1, 2, 2, 2, 1, 1, 0], [], ['raiders'], [], false]
         ]
       }
     );
   }, 900_000);
+
+  /** Steps a battle to its end and returns the ticks it took (re-review of PR #111, B1). */
+  const ticksOf = (s: HoldState): number => {
+    let t = lockRound(s, () => []);
+    let ticks = 0;
+    while (t.phase === 'battle') {
+      ticks = t.run!.tick;
+      t = stepBattle(t, 100).state;
+    }
+    return ticks;
+  };
+  const HANGAR = 2;
+
+  it('B1: Hangars against a force with Gliders never park a Skimmer on the entry cell; every battle ends within 2000 ticks', () => {
+    const cases: [round: number, hangars: number, twin: boolean, solo: boolean][] = [
+      [6, 10, false, true],
+      ...[6, 8, 10].flatMap((n) => [[6, n, true, true], [6, n, true, false]] as [number, number, boolean, boolean][]),
+      ...[9, 10, 12, 20].map((r) => [r, 8, true, false] as [number, number, boolean, boolean]),
+      [12, 10, false, false],
+      [20, 10, false, false]
+    ];
+    for (const [round, n, twin, solo] of cases) {
+      const s = setup(round, [Array(n).fill(HANGAR), []], [twin ? ['hangars'] : [], []], solo, true);
+      expect(ticksOf(s), `round ${round + 1}, ${n} Hangars${twin ? ' (twin)' : ''}${solo ? ', alone' : ''}`).toBeLessThanOrEqual(2000);
+    }
+  }, 900_000);
 });
+

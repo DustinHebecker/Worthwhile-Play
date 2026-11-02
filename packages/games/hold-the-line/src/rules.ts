@@ -312,7 +312,8 @@ export function defendersOf(s: Pick<HoldState, 'world' | 'sides' | 'round' | 'mo
   const research = s.sides[side]!.research ?? [];
   const buildings = s.world.entities.filter((e) => e.side === side && isProducerKind(e.kind)).sort((a, b) => a.id - b.id);
   const guards = buildings.flatMap((e) => guardsOf(e.kind as ProducerKind, research));
-  if (research.includes('siege') && (s.round + 1) % SIEGE_EVERY === 0) guards.push('mortar-team');
+  // The Mortar team sets off second (right after the first defender), so it is on the road before a long column jams (re-review of PR #111).
+  if (research.includes('siege') && (s.round + 1) % SIEGE_EVERY === 0) guards.splice(Math.min(1, guards.length), 0, 'mortar-team');
   return guards;
 }
 /** Defender kinds a side's buildings can send with `research` (the Mortar team only with Siege works, in its rounds). */

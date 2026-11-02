@@ -37,7 +37,7 @@ export const ja: Record<MessageKey, string> = {
   'cell.tower.own': '{row}行{col}列：自分の{tower}、耐久 {hp}/{max}',
   'cell.tower.foe': '{row}行{col}列：相手の{tower}、耐久 {hp}/{max}',
   'cell.units': '{cell}。ここにいるユニット：{n}',
-  'cell.defenders': '{cell}、ここの防衛隊：{n}',
+  'cell.defenders': '{cell}。ここの防衛隊：{n}',
   'structure.extractor': '採掘機',
   'structure.barracks': '訓練場',
   'structure.garage': 'ガレージ',

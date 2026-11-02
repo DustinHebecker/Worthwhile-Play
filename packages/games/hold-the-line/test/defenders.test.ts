@@ -45,7 +45,9 @@ describe('defenders: what the buildings send', () => {
     expect(defendersOf(s, 0)).toEqual(['picket', 'picket', 'picket', 'scout', 'scout', 'skimmer']);
     const researched = clone(s);
     researched.sides[0].research = ['shields', 'repair', 'raiders', 'chassis', 'hangars', 'siege'];
-    expect(defendersOf({ ...researched, round: 2 }, 0)).toEqual(['picket-shield', 'picket-shield', 'picket-shield', 'medic', 'gun-car', 'gun-car', 'bulwark', 'skimmer', 'skimmer', 'mortar-team']);
+    // The Mortar team sets off second, so a long column does not keep it off the road.
+    expect(defendersOf({ ...researched, round: 2 }, 0)).toEqual(['picket-shield', 'mortar-team', 'picket-shield', 'picket-shield', 'medic', 'gun-car', 'gun-car', 'bulwark', 'skimmer', 'skimmer']);
+    expect(defendersOf({ ...researched, world: { ...researched.world, entities: researched.world.entities.filter((e) => !['barracks', 'garage', 'hangar'].includes(e.kind)) }, round: 2 }, 0)).toEqual(['mortar-team']);
     expect(defendersOf({ ...researched, round: 0 }, 0)).not.toContain('mortar-team');
     // In the Duel buildings send attackers, never defenders.
     expect(defendersOf(newGame(1, 'normal'), 0)).toEqual([]);

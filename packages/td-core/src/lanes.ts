@@ -104,7 +104,10 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
     for (const p of list) {
       const [x, y] = routes[p.route]!.points[0]!;
       const arch = archetypeOf(TD_RULESET, p.kind)!;
-      const blocked = w.entities.some((e) => e.x === x && e.y === y && archetypeOf(TD_RULESET, e.kind)?.layer === arch.layer);
+      // A hostile defender never keeps the force off the map: the unit enters on its cell and the two
+      // meet there (contact and fire end it). Defenders normally keep clear of the entry (below);
+      // this is the guarantee when they are boxed in around it (re-review of PR #111, B1).
+      const blocked = w.entities.some((e) => e.x === x && e.y === y && archetypeOf(TD_RULESET, e.kind)?.layer === arch.layer && !(isDefenderKind(e.kind) && e.side !== (p.side ?? 1)));
       if (p.at > r.tick || blocked || waiting.some((q) => q.route === p.route && q.at <= r.tick)) {
         waiting.push(p);
         continue;
@@ -134,7 +137,9 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
     if (isDefenderKind(unit.kind)) {
       const layer = archetypeOf(TD_RULESET, unit.kind)?.layer;
       const entry = (x: number, y: number) => entries.has(`${layer}:${x},${y}`);
-      const at = along(points, unit.x, unit.y) ?? 0;
+      // Off its road (a flying defender cutting a corner) it counts as well away from its start.
+      const onRoad = along(points, unit.x, unit.y);
+      const at = onRoad ?? 0;
       // On a spawn cell the force still needs: step back to the first free cell along its road.
       if (entry(unit.x, unit.y)) {
         for (let k = at - 1; k >= 0; k--) {
@@ -153,14 +158,19 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
       // defenders behind it can set off.
       const reach = Math.max(HOLD_LINE, archetypeOf(TD_RULESET, unit.kind)?.weapon?.range ?? UNARMED_REACH);
       const hostile = w.entities.filter((e) => e.side !== unit.side && isEnemyKind(e.kind));
-      // Very close (CLOSE cells) it holds wherever it is: walking into each other, the two would block one another out of reach.
+      // Very close (CLOSE cells, in a straight line) it holds wherever it is: walking into each other,
+      // the two would block one another out of reach. Measured along the road instead, a unit across a
+      // bend would not stop it, but then the two can block each other for good on a one-wide road near
+      // the core (defenders.long counterexamples, re-review of PR #111): kept straight-line on purpose.
       const adjacent = hostile.some((e) => chebyshev(e.x, e.y, unit.x, unit.y) <= CLOSE);
-      const ahead = hostile.some((e) => {
-        const p = along(points, e.x, e.y);
-        return p !== null && p >= at && p - at <= reach;
-      });
+      const ahead =
+        onRoad !== null &&
+        hostile.some((e) => {
+          const p = along(points, e.x, e.y);
+          return p !== null && p >= at && p - at <= reach;
+        });
       const end = walker.leg === points.length - 1 && chebyshev(unit.x, unit.y, hx, hy) <= 1;
-      if (adjacent || (at > SPAWN_CLEAR && (ahead || end))) {
+      if (adjacent || ((onRoad === null || at > SPAWN_CLEAR) && (ahead || end))) {
         if (unit.order.type !== 'hold') commands.push({ side: unit.side, unit: unit.id, order: { type: 'hold' } });
       } else if (unit.order.type !== 'move' || unit.order.x !== hx || unit.order.y !== hy) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: hx, y: hy } });
       continue;
@@ -173,6 +183,9 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
     // A hostile defender on its road ahead: head for the cell just before it (the engine finds no
     // way past it to the waypoint, and would not even close in), so the two meet (§ 18.3).
     const [tx, ty] = guarded ? frontOf(points, unit, w.entities, [gx, gy]) : [gx, gy];
+    // The engine ends a move to its own or a taken cell at once, so at the front the order flips
+    // between move and hold (order-end events only). Waiting there instead was tried in the re-review
+    // of PR #111: in contact it slowed the defenders' set-off, with a taken cell it stalled. Kept.
     if (unit.order.type !== 'move' || unit.order.x !== tx || unit.order.y !== ty) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: tx, y: ty } });
   }
   w.entities = w.entities.filter((e) => !gone.has(e.id));
