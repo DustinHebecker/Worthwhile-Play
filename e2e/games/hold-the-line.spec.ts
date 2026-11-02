@@ -3,6 +3,8 @@ import { expectResumeAfterReload, readSave, startGame } from '../../packages/tes
 
 const root = (page: Page) => page.getByTestId('game-root');
 const game = (page: Page) => root(page).locator('.wp-hold-the-line');
+/** The computer plans at the lock (in its Worker, within its work budget): on a loaded machine that takes a while. */
+const PLANNING = { timeout: 20_000 };
 
 test('hold-the-line: a plan and a paused battle survive a reload at the same tick', async ({ page }) => {
   let tick = '';
@@ -15,7 +17,7 @@ test('hold-the-line: a plan and a paused battle survive a reload at the same tic
     await expect(root(p).getByTestId('credits')).toHaveAttribute('data-value', '50');
     await expect(root(p).getByTestId('production-wave')).toContainText('3 × Walker');
     await root(p).getByTestId('lock').click();
-    await expect(game(p)).toHaveAttribute('data-phase', 'battle');
+    await expect(game(p)).toHaveAttribute('data-phase', 'battle', PLANNING);
     await expect.poll(async () => Number(await game(p).getAttribute('data-tick'))).toBeGreaterThan(10);
     await root(p).getByTestId('play').click();
     tick = (await game(p).getAttribute('data-tick')) ?? '';
@@ -41,17 +43,20 @@ test('hold-the-line: 44 px cells on a 360 px phone and locking by keyboard', asy
   await page.keyboard.press('ArrowDown');
   await expect(root(page).getByTestId('cell-0-1')).toBeFocused();
   await page.keyboard.press(' ');
-  await expect(game(page)).toHaveAttribute('data-phase', 'battle');
+  await expect(game(page)).toHaveAttribute('data-phase', 'battle', PLANNING);
 });
 
 test('hold-the-line: a whole game ends calmly with a result', async ({ page }) => {
+  // Several locks, each waiting for the computer's plan.
+  test.setTimeout(120_000);
   // The shop variant (start-screen choice "Attack waves: Shop").
   await startGame(page, 'hold-the-line', { difficulty: 'easy', settings: { length: 'rounds', waves: 'shop' } });
   for (let round = 0; round < 10; round++) {
     if ((await game(page).getAttribute('data-phase')) !== 'plan') break;
     await root(page).getByTestId('buy-walker').click();
     await root(page).getByTestId('lock').click();
-    await root(page).getByTestId('instant').click();
+    await expect(game(page)).toHaveAttribute('data-phase', /battle|won|lost|draw/, PLANNING);
+    if ((await game(page).getAttribute('data-phase')) === 'battle') await root(page).getByTestId('instant').click();
   }
   await expect(page.getByTestId('finished')).toBeVisible();
   await expect(root(page).getByTestId('status')).toBeVisible();
@@ -60,6 +65,8 @@ test('hold-the-line: a whole game ends calmly with a result', async ({ page }) =
 });
 
 test('hold-the-line: production buildings and research, in effect from the next round, survive a reload', async ({ page }) => {
+  // Several locks, each waiting for the computer's plan.
+  test.setTimeout(120_000);
   await startGame(page, 'hold-the-line', { difficulty: 'easy' });
   await root(page).getByTestId('cell-1-13').click();
   await root(page).getByTestId('build-lab').click();
@@ -68,7 +75,8 @@ test('hold-the-line: production buildings and research, in effect from the next 
   // Two rounds of income for a Drill yard (the Lab and the research took all 300 credits).
   for (const round of ['1', '2']) {
     await root(page).getByTestId('lock').click();
-    await root(page).getByTestId('instant').click();
+    await expect(game(page)).toHaveAttribute('data-phase', /battle|won|lost|draw/, PLANNING);
+    if ((await game(page).getAttribute('data-phase')) === 'battle') await root(page).getByTestId('instant').click();
     await expect(game(page)).toHaveAttribute('data-round', round);
   }
   await expect(root(page).getByTestId('research-done')).toContainText('Armour plates');
@@ -97,7 +105,7 @@ test('hold-the-line: Outside force is chosen on the start screen, needs no shop 
   await root(page).getByTestId('cell-3-9').click();
   await root(page).getByTestId('build-gun').click();
   await root(page).getByTestId('lock').click();
-  await expect(game(page)).toHaveAttribute('data-phase', 'battle');
+  await expect(game(page)).toHaveAttribute('data-phase', 'battle', PLANNING);
   await root(page).getByTestId('instant').click();
   await expect(game(page)).toHaveAttribute('data-round', '1');
   // After a round, what got through is shown with the extra units it brings.
@@ -117,6 +125,8 @@ test('hold-the-line: Outside force is chosen on the start screen, needs no shop 
 });
 
 test('hold-the-line: alone against the outside force, endless until the core falls', async ({ page }) => {
+  // Several locks, each waiting for the computer's plan.
+  test.setTimeout(120_000);
   await startGame(page, 'hold-the-line', { settings: { mode: 'external-solo', length: 'endless' } });
   await expect(root(page).getByTestId('core-foe')).toBeHidden();
   await expect(root(page).getByTestId('round')).not.toContainText('10');
@@ -126,7 +136,7 @@ test('hold-the-line: alone against the outside force, endless until the core fal
   for (let round = 0; round < 10; round++) {
     if ((await game(page).getAttribute('data-phase')) !== 'plan') break;
     await root(page).getByTestId('lock').click();
-    await expect(game(page)).toHaveAttribute('data-phase', /battle|lost/);
+    await expect(game(page)).toHaveAttribute('data-phase', /battle|lost/, PLANNING);
     if ((await game(page).getAttribute('data-phase')) === 'battle') await root(page).getByTestId('instant').click();
     await expect(game(page)).not.toHaveAttribute('data-phase', 'battle');
   }
