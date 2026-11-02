@@ -135,6 +135,12 @@ export function newGame(seed: number, difficulty: Difficulty = DEFAULT_DIFFICULT
 
 export const waveCount = (state: Pick<TdCore, 'mapId'>): number => mapOf(state).waves.length;
 
+/**
+ * The number of waves a game shows as its total: the map's, or for a won game the waves it really
+ * held (a game won before the longer wave plans of state version 2 held fewer than the map has now).
+ */
+export const wavesShown = (state: Pick<TdCore, 'mapId' | 'phase' | 'wave'>): number => (state.phase === 'won' ? state.wave + 1 : waveCount(state));
+
 /** The spawn schedule of a wave as the player sees it in the preview (difficulty applied). */
 export function waveSchedule(state: Pick<TdCore, 'mapId' | 'variants' | 'difficulty'>, wave: number): PendingSpawn[] {
   const map = mapOf(state);
@@ -303,6 +309,38 @@ export function retryWave(state: TdState): TdState {
   if (state.phase !== 'lost' || !state.checkpoint) return state;
   const core = structuredClone(state.checkpoint);
   return { ...core, v: 1, checkpoint: null, log: structuredClone(state.log.slice(0, core.wave + 1)), stats: { ...core.stats, retries: state.stats.retries + 1 } };
+}
+
+/**
+ * Saves of state version 1 (twelve waves on the full maps, six on the Training ground) for the
+ * longer wave plans of version 2 (owner playtest 2026-11-01). The game goes on with the new waves
+ * from where it was: the wave choices of the slots that exist are kept where the new slot has that
+ * many choices, the others (for a full map slots 13–20, which a version-1 save never had) take the first; a wave that was running restarts from its lock (its
+ * units were scheduled by the old plan). Returns undefined for anything that is not a valid save
+ * once migrated.
+ */
+export function migrateState(old: unknown, fromVersion: number): TdState | undefined {
+  if (fromVersion !== 1 || !isRecord(old) || typeof old.mapId !== 'string') return undefined;
+  const map = mapById(old.mapId);
+  if (!map) return undefined;
+  const variants = (v: unknown): number[] =>
+    map.waves.map((slot, i) => {
+      const x = Array.isArray(v) ? v[i] : undefined;
+      return typeof x === 'number' && Number.isInteger(x) && x >= 0 && x < slot.length ? x : 0;
+    });
+  try {
+    const s = structuredClone(old) as Record<string, unknown>;
+    s.variants = variants(s.variants);
+    if (isRecord(s.checkpoint)) s.checkpoint = { ...s.checkpoint, variants: variants(s.checkpoint.variants) };
+    let next = s as unknown as TdState;
+    if (next.phase === 'wave' && next.checkpoint) {
+      const core = structuredClone(next.checkpoint);
+      next = { ...core, v: 1, checkpoint: null, log: structuredClone(next.log.slice(0, core.wave + 1)), stats: { ...core.stats, retries: next.stats.retries } };
+    }
+    return isValidState(next) ? next : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Replays a game from its log (reproduction and tests). */

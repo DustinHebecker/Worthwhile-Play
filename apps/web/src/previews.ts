@@ -11,7 +11,8 @@
  * Skyscrapers is the one deliberate exception: it shows 3D towers (owner decision; the game will show towers too).
  *
  * Photos (PHOTOS below) are the other exception (owner decisions 2026-10-27: Relay Command "ein echtes Bild, das
- * entsprechend arrangiert ist", Lootlings "könnte ein thumbnail update gebrauchen"): a real screen of the game, rendered
+ * entsprechend arrangiert ist", Lootlings "könnte ein thumbnail update gebrauchen"; 2026-11-01 Tower Defense "an der
+ * Originalgrafik angelehnt": an arranged scene drawn with the game's own map and unit renderer): a real screen of the game, rendered
  * by the game itself and saved as `public/previews/<id>-light.webp` and `<id>-dark.webp` (288×192, 3× the 96×64 card;
  * own work, no third-party art). Both files always exist; they may be identical when the game uses one palette in
  * both themes (Lootlings' card art). The card shows them as a decorative `<picture>` (`alt=""`, `aria-hidden`) whose
@@ -123,17 +124,6 @@ const PREVIEWS: Record<string, () => string> = {
       ngon(77, 47, 7, 6, 'o') + T(77, 47.5, 5, 't tsm') +
       C(18, 47, 7.5, 'p1 fn') + T(18, 47.5, 10, 't tsm ts') + C(24, 41, 2, 'o') +
       C(77, 14, 7.5, 'p2 fn') + T(77, 14.5, 10, 't tsm ts') + tri(83.5, 7.5, 2.4, 'o');
-  },
-  // Tower Defense: a winding road over build pads, towers of different shapes beside it (square gun,
-  // diamond laser with its beam, octagonal artillery, round support) and wave units on the road.
-  'tower-defense': () => {
-    const road = R(6, 9, 64, 8, 'c') + R(62, 9, 8, 26, 'c') + R(22, 27, 48, 8, 'c') + R(22, 27, 8, 28, 'c') + R(22, 47, 70, 8, 'c');
-    const pads = R(4, 5, 88, 54, 'e', 3);
-    const towers =
-      R(36, 19.5, 6, 6, 'a') + P('M52 19l3.5 3.5-3.5 3.5-3.5-3.5z', 'a') + ngon(46, 41, 3.8, 8, 'a') + C(76, 40, 3.2, 'o') +
-      L(52, 22.5, 66, 30.5, 'ab');
-    const units = C(14, 13, 2.2, 'p2') + C(26, 13, 2.2, 'p2') + C(66, 20, 2.2, 'p2') + C(66, 31, 2.2, 'p2') + C(50, 31, 2.2, 'p2') + C(26, 42, 2.2, 'p2');
-    return pads + road + towers + units;
   },
   // Hold the Line: the two-lane duel map, your towers below and theirs above, a wave going each way.
   'hold-the-line': () => {
@@ -678,7 +668,7 @@ export const MIRRORED: ReadonlySet<string> = new Set(['ambiguity-detector', 'aud
 const FALLBACK = () => C(28, 34, 11, 'a') + R(40, 22, 22, 22, 'o', 3) + tri(74, 36, 11, 'i');
 
 /** Games whose card shows a picture rendered by the game itself instead of a drawing (see the header comment). */
-export const PHOTOS: ReadonlySet<string> = new Set(['relay-command', 'card-quest']);
+export const PHOTOS: ReadonlySet<string> = new Set(['relay-command', 'card-quest', 'tower-defense']);
 
 /** Same-origin URL of a game's preview photo, under the app's base URL (works at any deploy path and offline). */
 export const photoUrl = (id: string, scheme: 'light' | 'dark'): string => `${import.meta.env.BASE_URL}previews/${id}-${scheme}.webp`;
