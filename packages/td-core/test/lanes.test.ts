@@ -549,5 +549,30 @@ describe('defenders on the lanes, in detail', () => {
     expect(tickAt8([['picket', 0, 2, 4], ['picket', 1, 2, 3]]).out.events.some((e) => e.t === 'hit' && !('shield' in e) && e.damage > 0 && Number.isNaN(e.damage))).toBe(false);
     expect(tickAt8([['bulwark', 0, 2, 4], ['bulwark', 1, 2, 3]]).out.world.entities.every((e) => e.hp === 300)).toBe(true);
   });
+
+  it('a defender never stands on a spawn cell the force still needs on its layer: it stops short, or steps back to a free cell (fuzz on PR #111)', () => {
+    const orderOf = (kind: string, at: [number, number], pending: LaneRun['pending'], others: [string, number, number, number][] = []) => {
+      const w = world();
+      const d = put(w, kind, 0, at[0], at[1]);
+      for (const [k, side, x, y] of others) put(w, k, side, x, y);
+      const out = tickLanes(w, { tick: 1, pending, walkers: [{ id: d.id, route: kind === 'skimmer' ? 3 : 2, leg: 1 }] }, ROUTES);
+      const e = out.world.entities.find((x) => x.id === d.id)!;
+      return e.order.type === 'move' ? [e.order.x, e.order.y] : e.order.type;
+    };
+    const later = (kind: string, route: number): LaneRun['pending'] => [{ at: 100, kind: kind as never, route, side: 1 }];
+    // Heading for the end of its road: the end itself while no force is to come there, else the cell before.
+    expect(orderOf('picket', [2, 5], [])).toEqual([2, 0]);
+    expect(orderOf('picket', [2, 5], later('walker', 0))).toEqual([2, 1]);
+    // Next to that cell it holds there.
+    expect(orderOf('picket', [2, 2], later('walker', 0))).toBe('hold');
+    // On it: back to the first free cell of its own layer.
+    expect(orderOf('picket', [2, 0], later('walker', 0))).toEqual([2, 1]);
+    expect(orderOf('picket', [2, 0], later('walker', 0), [['picket', 0, 2, 1]])).toEqual([2, 2]);
+    expect(orderOf('picket', [2, 0], later('walker', 0), [['skimmer', 0, 2, 1]])).toEqual([2, 1]);
+    // Only for the force's own layer: a flying force does not move a ground defender, and the other way round.
+    expect(orderOf('picket', [2, 0], later('glider', 1))).toBe('hold');
+    expect(orderOf('skimmer', [2, 0], later('glider', 1))).toEqual([2, 1]);
+    expect(orderOf('skimmer', [2, 0], later('walker', 0))).toBe('hold');
+  });
 });
 

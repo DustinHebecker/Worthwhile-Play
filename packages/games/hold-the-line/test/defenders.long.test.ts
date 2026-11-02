@@ -41,7 +41,8 @@ describe('defenders never stall a battle', () => {
         // Every building's defenders set off at the lock (they may fall before a sample below sees them).
         const sent = (t.run!.guards ?? []).length;
         expect(sent).toBe(defendersOf(s, 0).length + (solo ? 0 : defendersOf(s, 1).length));
-        expect(sent > 0).toBe(a.length + (solo ? 0 : b.length) > 0);
+        // Buildings always send some (Siege works alone may send a Mortar team in its rounds).
+        if (a.length + (solo ? 0 : b.length) > 0) expect(sent).toBeGreaterThan(0);
         while (t.phase === 'battle') {
           t = stepBattle(t, 100).state;
           expect(isValidState(clone(t))).toBe(true);
@@ -49,8 +50,16 @@ describe('defenders never stall a battle', () => {
         }
         expect(t.world.entities.some((e) => isDefenderKind(e.kind))).toBe(false);
       }),
-      // The seed of the CI failure on PR #111 (a sampling assertion, now replaced) is among the runs.
-      { numRuns: 60, examples: [[7, [1], [], [], [], false]] }
+      // CI failures on PR #111 among the runs: a sampling assertion (since replaced); a Skimmer holding
+      // on the force's spawn cell (since fixed in td-core); Siege works without buildings.
+      {
+        numRuns: 60,
+        examples: [
+          [7, [1], [], [], [], false],
+          [6, [1, 2, 2, 0], [], ['raiders', 'hangars'], [], false],
+          [44, [], [], ['siege'], [], false]
+        ]
+      }
     );
   }, 900_000);
 });

@@ -122,6 +122,9 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
   const leaks: Leak[] = [];
   const gone = new Set<number>();
   const guarded = w.entities.some((e) => isDefenderKind(e.kind));
+  // Spawn cells the force still needs, per layer: a defender never stands on one (it would hold the
+  // force back before it is even on the map, and the battle would never end; found by the fuzz on PR #111).
+  const entries = guarded ? new Set(r.pending.map((p) => `${archetypeOf(TD_RULESET, p.kind)?.layer}:${routes[p.route]!.points[0]!.join(',')}`)) : new Set<string>();
   for (const walker of r.walkers) {
     const unit = w.entities.find((e) => e.id === walker.id);
     if (!unit) continue;
@@ -129,12 +132,26 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
     while (walker.leg < points.length - 1 && chebyshev(unit.x, unit.y, ...points[walker.leg]!) <= 1) walker.leg++;
     const [gx, gy] = points[walker.leg]!;
     if (isDefenderKind(unit.kind)) {
+      const layer = archetypeOf(TD_RULESET, unit.kind)?.layer;
+      const entry = (x: number, y: number) => entries.has(`${layer}:${x},${y}`);
+      const at = along(points, unit.x, unit.y) ?? 0;
+      // On a spawn cell the force still needs: step back to the first free cell along its road.
+      if (entry(unit.x, unit.y)) {
+        for (let k = at - 1; k >= 0; k--) {
+          const [bx, by] = cellAt(points, k);
+          if (w.entities.some((e) => e.x === bx && e.y === by && archetypeOf(TD_RULESET, e.kind)?.layer === layer)) continue;
+          if (unit.order.type !== 'move' || unit.order.x !== bx || unit.order.y !== by) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: bx, y: by } });
+          break;
+        }
+        continue;
+      }
+      // Its goal, short of such a spawn cell.
+      const [hx, hy] = entry(gx, gy) ? cellAt(points, (along(points, gx, gy) ?? 0) - 1) : [gx, gy];
       // A defender holds where a unit of the force is close ahead *along its road* (its reach or the
       // hold line, whichever is more; measured along the road, not across a bend: review of PR #111,
       // M2), or CLOSE to it, and at the end of its route. It never holds near its start, so the
       // defenders behind it can set off.
       const reach = Math.max(HOLD_LINE, archetypeOf(TD_RULESET, unit.kind)?.weapon?.range ?? UNARMED_REACH);
-      const at = along(points, unit.x, unit.y) ?? 0;
       const hostile = w.entities.filter((e) => e.side !== unit.side && isEnemyKind(e.kind));
       // Very close (CLOSE cells) it holds wherever it is: walking into each other, the two would block one another out of reach.
       const adjacent = hostile.some((e) => chebyshev(e.x, e.y, unit.x, unit.y) <= CLOSE);
@@ -142,10 +159,10 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
         const p = along(points, e.x, e.y);
         return p !== null && p >= at && p - at <= reach;
       });
-      const end = walker.leg === points.length - 1 && chebyshev(unit.x, unit.y, gx, gy) <= 1;
+      const end = walker.leg === points.length - 1 && chebyshev(unit.x, unit.y, hx, hy) <= 1;
       if (adjacent || (at > SPAWN_CLEAR && (ahead || end))) {
         if (unit.order.type !== 'hold') commands.push({ side: unit.side, unit: unit.id, order: { type: 'hold' } });
-      } else if (unit.order.type !== 'move' || unit.order.x !== gx || unit.order.y !== gy) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: gx, y: gy } });
+      } else if (unit.order.type !== 'move' || unit.order.x !== hx || unit.order.y !== hy) commands.push({ side: unit.side, unit: unit.id, order: { type: 'move', x: hx, y: hy } });
       continue;
     }
     if (walker.leg === points.length - 1 && chebyshev(unit.x, unit.y, gx, gy) <= 1) {
