@@ -5,7 +5,8 @@ export const metadata: GameMetadata = {
   id: 'hold-the-line',
   // 2: endless games and playing alone (an older client must not read them as ten-round games).
   // 3: the Duel with production buildings and research.
-  stateVersion: 3,
+  // 4: defenders against the outside force (buildings and research there, defenders in a battle).
+  stateVersion: 4,
   skills: ['strategy', 'planning', 'spatial'],
   // Ten rounds take about 15 minutes; an endless game lasts at most 47 rounds.
   typicalMinutes: [15, 60],
