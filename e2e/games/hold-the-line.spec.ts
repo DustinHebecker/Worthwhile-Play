@@ -43,7 +43,10 @@ test('hold-the-line: 44 px cells on a 360 px phone and locking by keyboard', asy
   await page.keyboard.press('ArrowDown');
   await expect(root(page).getByTestId('cell-0-1')).toBeFocused();
   await page.keyboard.press(' ');
-  await expect(game(page)).toHaveAttribute('data-phase', 'battle', PLANNING);
+  // The round is locked: the battle runs, or (nothing sent on either side) is already over.
+  await expect
+    .poll(async () => (await game(page).getAttribute('data-phase')) === 'battle' || (await game(page).getAttribute('data-round')) === '1', PLANNING)
+    .toBe(true);
 });
 
 test('hold-the-line: a whole game ends calmly with a result', async ({ page }) => {
@@ -75,7 +78,8 @@ test('hold-the-line: production buildings and research, in effect from the next 
   // Two rounds of income for a Drill yard (the Lab and the research took all 300 credits).
   for (const round of ['1', '2']) {
     await root(page).getByTestId('lock').click();
-    await expect(game(page)).toHaveAttribute('data-phase', /battle|won|lost|draw/, PLANNING);
+    // The battle runs, or (nothing sent) is already over.
+    await expect.poll(async () => (await game(page).getAttribute('data-phase')) === 'battle' || (await game(page).getAttribute('data-round')) === round, PLANNING).toBe(true);
     if ((await game(page).getAttribute('data-phase')) === 'battle') await root(page).getByTestId('instant').click();
     await expect(game(page)).toHaveAttribute('data-round', round);
   }
