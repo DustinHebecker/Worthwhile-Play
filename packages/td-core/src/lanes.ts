@@ -71,6 +71,8 @@ export const STUN_BUDGET = 48;
 export const CONTACT_EVERY = 4;
 /** Damage of one contact hit per point of the unit's threat (a Brute: 3 × this). */
 export const CONTACT_DAMAGE = 4;
+/** A defender holds once a hostile wave unit is this close (cells), whatever its reach: the hold line. */
+export const HOLD_LINE = 3;
 /** How far a defender looks for the force when it has no weapon (a Medic stays with the others). */
 const UNARMED_REACH = 2;
 
@@ -124,7 +126,8 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
     if (isDefenderKind(unit.kind)) {
       // A defender holds where the force is within its reach, and at the end of its route.
       const reach = archetypeOf(TD_RULESET, unit.kind)?.weapon?.range ?? UNARMED_REACH;
-      const near = w.entities.some((e) => e.side !== unit.side && isEnemyKind(e.kind) && (e.x - unit.x) ** 2 + (e.y - unit.y) ** 2 <= reach * reach);
+      // Hold a little ahead of the force too (HOLD_LINE): walking into each other, the two would block one another out of reach.
+      const near = w.entities.some((e) => e.side !== unit.side && isEnemyKind(e.kind) && ((e.x - unit.x) ** 2 + (e.y - unit.y) ** 2 <= reach * reach || chebyshev(e.x, e.y, unit.x, unit.y) <= HOLD_LINE));
       const end = walker.leg === points.length - 1 && chebyshev(unit.x, unit.y, gx, gy) <= 1;
       if (near || end) {
         if (unit.order.type !== 'hold') commands.push({ side: unit.side, unit: unit.id, order: { type: 'hold' } });
@@ -144,7 +147,7 @@ export function tickLanes(world: World, run: LaneRun, routes: readonly Route[], 
   const result = runTicks(w, TD_RULESET, commands, 1);
   const next = result.world;
   // 3b. Contact: wave units held up next to a hostile defender wear it down (fixed order: by id).
-  if (r.tick % CONTACT_EVERY === 0 && next.entities.some((e) => isDefenderKind(e.kind))) contact(next, r.tick, result.events);
+  if (r.tick % CONTACT_EVERY === 0 && next.entities.some((e) => isDefenderKind(e.kind))) contact(next, result.events);
   const alive = new Set(next.entities.map((e) => e.id));
   r.walkers = r.walkers.filter((x) => alive.has(x.id));
   // 4. Stop budget: a unit that has been stopped long enough shakes every further stop off.
@@ -175,7 +178,9 @@ export function removeWalkers(world: World, run: LaneRun, ids: ReadonlySet<numbe
  * defender on its own layer hits the defender with the lowest id among them, by its threat ×
  * CONTACT_DAMAGE, the shield first. A defender brought to 0 is removed with a `destroyed` event.
  */
-function contact(w: World, tick: number, events: SimEvent[]): void {
+function contact(w: World, events: SimEvent[]): void {
+  // The world's own clock, as the engine's hits use it (a shield returns `regenDelay` after its last hit).
+  const tick = w.tick - 1;
   const layerOf = (kind: string) => archetypeOf(TD_RULESET, kind)?.layer;
   const attackers = w.entities.filter((e) => isEnemyKind(e.kind)).sort((a, b) => a.id - b.id);
   for (const unit of attackers) {
@@ -188,6 +193,8 @@ function contact(w: World, tick: number, events: SimEvent[]): void {
     if (soaked > 0) target.shield = (target.shield ?? 0) - soaked;
     damage -= soaked;
     target.hp = Math.max(0, target.hp - damage);
+    if (archetypeOf(TD_RULESET, target.kind)?.shield) target.shieldAt = tick;
+    target.hitAt = tick;
     events.push({ t: 'hit', tick, id: target.id, side: target.side, damage, ...(soaked > 0 && { shield: soaked }) });
     if (target.hp === 0) events.push({ t: 'destroyed', tick, id: target.id, side: target.side, kind: target.kind, x: target.x, y: target.y });
   }

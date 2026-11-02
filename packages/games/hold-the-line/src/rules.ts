@@ -5,6 +5,7 @@ import {
   checkBuild,
   ENEMIES,
   ENEMY_KINDS,
+  isDefenderKind,
   isEnemyKind,
   isStructureKind,
   refundOf,
@@ -16,6 +17,9 @@ import {
   TOWERS,
   type BuildCommand,
   type BuildRefusal,
+  type DefenderKind,
+  type GuardSpawn,
+  type Route,
   type EnemyKind,
   type LaneRun,
   type Leak,
@@ -279,6 +283,44 @@ export interface HoldState {
 
 /** Whether `s` is a Duel whose waves come from production buildings. */
 export const producing = (s: Pick<HoldState, 'mode' | 'waves'>): boolean => s.mode === 'vs-small' && s.waves === 'production';
+/** Whether sides build production buildings and research: the Duel with production, and against the outside force (defenders, § 18.3). */
+export const builds = (s: Pick<HoldState, 'mode' | 'waves'>): boolean => producing(s) || s.mode === 'external-small';
+
+/**
+ * Against the outside force (§ 18.3) the production buildings send defenders instead of attackers,
+ * with the research done in the same way: Armour plates shield the Pickets, Field repair adds a
+ * Medic, Armed raiders arm the cars, Heavy chassis adds a Bulwark, Twin hangars a second Skimmer,
+ * Siege works a Mortar team every third round.
+ */
+export function guardsOf(kind: ProducerKind, research: readonly ResearchId[]): DefenderKind[] {
+  const has = (id: ResearchId) => research.includes(id);
+  switch (kind) {
+    case 'barracks':
+      return [...Array<DefenderKind>(3).fill(has('shields') ? 'picket-shield' : 'picket'), ...(has('repair') ? (['medic'] as const) : [])];
+    case 'garage':
+      return [...Array<DefenderKind>(2).fill(has('raiders') ? 'gun-car' : 'scout'), ...(has('chassis') ? (['bulwark'] as const) : [])];
+    case 'hangar':
+      return Array<DefenderKind>(has('hangars') ? 2 : 1).fill('skimmer');
+    default:
+      return [];
+  }
+}
+
+/** The defenders `side`'s buildings send this round against the outside force (oldest building first). */
+export function defendersOf(s: Pick<HoldState, 'world' | 'sides' | 'round' | 'mode'>, side: number): DefenderKind[] {
+  if (s.mode !== 'external-small') return [];
+  const research = s.sides[side]!.research ?? [];
+  const buildings = s.world.entities.filter((e) => e.side === side && isProducerKind(e.kind)).sort((a, b) => a.id - b.id);
+  const guards = buildings.flatMap((e) => guardsOf(e.kind as ProducerKind, research));
+  if (research.includes('siege') && (s.round + 1) % SIEGE_EVERY === 0) guards.push('mortar-team');
+  return guards;
+}
+/** Most defenders a side can have in one battle (bounds what a save may hold). */
+export const MAX_DEFENDERS = MAX_PRODUCERS * MOST_PER_PRODUCER + 1;
+/** Defenders walk the road that comes for them, reversed: routes 2 and 3 of a battle. */
+export const guardRoute = (side: number): number => 2 + (1 - side);
+/** A map's routes in battle: its two lanes, then each reversed (the defenders' roads). */
+export const routesOf = (map: DuelMap): Route[] => [...map.lanes, ...map.lanes.map((l) => ({ ...l, points: [...l.points].reverse() }))];
 
 /** The last round of a game (endless: the safety bound). */
 export const lastRound = (s: Pick<HoldState, 'length'>): number => ((s.length ?? 'rounds') === 'endless' ? MAX_ROUNDS - 1 : ROUNDS - 1);
@@ -340,7 +382,7 @@ export function newGame(seed: number, difficulty: Difficulty, mapId: string = ma
     ...(options.solo && map.mode === 'external-small' && { solo: true }),
     ...(map.mode === 'vs-small' && { waves: options.waves ?? DEFAULT_WAVES })
   };
-  if (producing(s)) for (const side of [...s.sides, ...s.roundStart.sides]) Object.assign(side, { research: [], researching: [] });
+  if (builds(s)) for (const side of [...s.sides, ...s.roundStart.sides]) Object.assign(side, { research: [], researching: [] });
   return s;
 }
 
@@ -355,7 +397,7 @@ export function checkPlan(s: HoldState, side: number, cmd: PlanCommand): Refusal
   // External Small: the waves come from outside; nobody buys units or workshops. A Duel either
   // buys its waves (shop) or builds and researches (production), never both.
   const shopping = cmd.t === 'buy' || cmd.t === 'unbuy' || cmd.t === 'workshop';
-  if ((shopping && (s.mode === 'external-small' || producing(s))) || ((cmd.t === 'produce' || cmd.t === 'research') && !producing(s))) return 'mode';
+  if ((shopping && (s.mode === 'external-small' || producing(s))) || ((cmd.t === 'produce' || cmd.t === 'research') && !builds(s)) || (s.solo && side === 1)) return 'mode';
   switch (cmd.t) {
     case 'produce': {
       if (!isProducerKind(cmd.kind)) return 'mode';
@@ -475,15 +517,18 @@ export function lockRound(s: HoldState, plan: Planner): HoldState {
     if (cmd.t === 'place' || cmd.t === 'extractor' || cmd.t === 'produce') ids.set(shadowId, realId);
   }
   n = structuredClone(n);
+  let guards: GuardSpawn[] = [];
   if (n.mode === 'external-small') {
     // Both sides face the same force; alone, only the half that comes for you sets off.
     n.sides[1].wave = externalWave(n);
     n.sides[0].wave = n.solo ? [] : externalWave(n);
+    guards = (n.solo ? [0] : [0, 1]).flatMap((side) => defendersOf(n, side).map((kind, i): GuardSpawn => ({ at: i * 8, kind, route: guardRoute(side), side })));
   } else if (producing(n)) n.sides.forEach((side, i) => (side.wave = [...productionOf(n, i), ...levyOf(n)]));
   else for (const side of n.sides) side.wave = [...side.wave, ...levyOf(n)];
   n.unspent = [n.sides[0].credits, n.sides[1].credits];
   for (const side of n.sides) side.towers = settleAccount(side).towers;
-  n.run = { tick: 0, pending: scheduleOf(n.sides), walkers: [] };
+  // Defenders (§ 18.3) set off with the force; the field is left out when there are none.
+  n.run = { tick: 0, pending: scheduleOf(n.sides), walkers: [], ...(guards.length > 0 && { guards }) };
   n.phase = 'battle';
   return n;
 }
@@ -515,7 +560,7 @@ export function stepBattle(state: HoldState, ticks: number): BattleStep {
   const leaks: Leak[] = [];
   const map = mapOf(s);
   for (let i = 0; i < ticks && s.phase === 'battle'; i++) {
-    const step = tickLanes(s.world, s.run!, map.lanes);
+    const step = tickLanes(s.world, s.run!, routesOf(map));
     s.world = step.world;
     s.run = step.run;
     take(s, step.leaks, leaks);
@@ -534,19 +579,36 @@ export function stepBattle(state: HoldState, ticks: number): BattleStep {
       }
     }
     if (s.run!.tick >= MAX_BATTLE_TICKS) {
+      // At the bound: what is still on the road or yet to come counts as through (defenders do not).
       const rest = removeWalkers(s.world, s.run!, new Set(s.run!.walkers.map((x) => x.id)));
       s.world = rest.world;
       s.run = rest.run;
       take(s, rest.leaks, leaks);
       for (const p of s.run.pending) take(s, [{ id: 0, kind: p.kind, hp: archetypeOf(TD_RULESET, p.kind)?.hp ?? 1, side: p.side ?? 1 }], leaks);
       s.run.pending = [];
+      delete s.run.guards;
     }
-    if (s.run!.pending.length === 0 && s.run!.walkers.length === 0 && s.world.projectiles.length === 0) endRound(s);
+    // The battle ends when the force is through or destroyed; defenders then leave the road.
+    const forceLeft = s.run!.pending.length > 0 || s.run!.walkers.some((x) => !isDefenderKind(s.world.entities.find((e) => e.id === x.id)?.kind ?? ''));
+    if (!forceLeft && s.world.projectiles.length === 0) {
+      dismiss(s);
+      endRound(s);
+    }
   }
   return { state: s, events, leaks };
 }
 
 export const resolveBattle = (state: HoldState): BattleStep => stepBattle(state, MAX_BATTLE_TICKS + 1);
+
+/** Defenders exist within a battle only (§ 18.3): at its end they leave the road. */
+function dismiss(s: HoldState): void {
+  const guards = new Set(s.world.entities.filter((e) => isDefenderKind(e.kind)).map((e) => e.id));
+  if (guards.size > 0) {
+    s.world.entities = s.world.entities.filter((e) => !guards.has(e.id));
+    s.run!.walkers = s.run!.walkers.filter((x) => !guards.has(x.id));
+  }
+  if (s.run) delete s.run.guards;
+}
 
 /** Units that got through cost the side they attacked core integrity by their threat. */
 function take(s: HoldState, got: readonly Leak[], out: Leak[]): void {
@@ -678,8 +740,8 @@ function isValidSide(v: unknown, s: { world: World; map: DuelMap; production: bo
   if (!isArrayOf(v.wave, isKind) || v.wave.length > most || !v.wave.every(allowed)) return false;
   if (!isArrayOf(v.lastWave, isKind) || v.lastWave.length > most) return false;
   if (!isRecord(v.stats) || !['killed', 'leaked', 'spent'].every((k) => isInt((v.stats as Record<string, unknown>)[k], -MAX_STAT, MAX_STAT))) return false;
-  // Research only with production: each item once.
-  if (production) {
+  // Research only where sides build (production, outside force; absent in outside-force saves from before step C): each item once.
+  if (production || (external && (v.research !== undefined || v.researching !== undefined))) {
     if (!isArrayOf(v.research, isResearchId) || !isArrayOf(v.researching, isResearchId)) return false;
     const all = [...v.research, ...v.researching];
     if (new Set(all).size !== all.length) return false;
@@ -688,7 +750,7 @@ function isValidSide(v: unknown, s: { world: World; map: DuelMap; production: bo
   if (owned.some((e) => !ownPad(s.map, index, e.x, e.y))) return false;
   // Production buildings only with production: at most MAX_PRODUCERS, and one Lab.
   const count = (kinds: readonly string[]) => owned.filter((e) => kinds.includes(e.kind)).length;
-  if (production ? count(['barracks', 'garage', 'hangar']) > MAX_PRODUCERS || count(['lab']) > 1 : owned.some((e) => isProducerKind(e.kind))) return false;
+  if (production || external ? count(['barracks', 'garage', 'hangar']) > MAX_PRODUCERS || count(['lab']) > 1 : owned.some((e) => isProducerKind(e.kind))) return false;
   return (
     isArrayOf(v.towers, (r): r is TowerRecord => isRecord(r) && isInt(r.id, 1) && isInt(r.invested, 0, 1_000_000) && isInt(r.fresh, 0, 1_000_000) && (r.fresh as number) <= (r.invested as number)) &&
     v.towers.length === owned.length &&
@@ -734,12 +796,15 @@ function checkState(v: unknown): v is HoldState {
   if (startWorld.entities.some((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind)) || startWorld.projectiles.length > 0) return false;
   if (!Array.isArray(start.sides) || start.sides.length !== 2 || !Array.from(start.sides).every((side, i) => isValidSide(side, { world: startWorld, map, production }, i))) return false;
   // A round starts with no research under way (what was paid took effect when the last round ended).
-  if (production && (start.sides as SideState[]).some((side) => (side.researching ?? []).length > 0)) return false;
+  if ((production || map.mode === 'external-small') && (start.sides as SideState[]).some((side) => (side.researching ?? []).length > 0)) return false;
   if (!isArrayOf(v.unspent, (x): x is number => isInt(x, 0, MAX_CREDITS)) || v.unspent.length !== 2) return false;
   const isPlanList = (l: unknown): l is PlanCommand[] => isArrayOf(l, isPlanCommand) && l.length <= MAX_PLAN_COMMANDS;
   if (!isArrayOf(v.log, (e): e is HoldState['log'][number] => isRecord(e) && isPlanList(e.player) && isPlanList(e.ai)) || v.log.length !== (v.round as number) + 1) return false;
   const units = world.entities.filter((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind));
-  if (units.some((e) => !isEnemyKind(e.kind))) return false;
+  // Defenders only against the outside force (alone: only yours), at most MAX_DEFENDERS a side.
+  const external = map.mode === 'external-small';
+  if (units.some((e) => !isEnemyKind(e.kind) && !(external && isDefenderKind(e.kind) && !(solo && e.side === 1)))) return false;
+  const force = units.filter((e) => isEnemyKind(e.kind));
   const [own, foe] = v.sides as [SideState, SideState];
   // Results match the cores; a game in progress has its cores standing. Alone, only your core counts:
   // the other side is never attacked.
@@ -767,7 +832,7 @@ function checkState(v: unknown): v is HoldState {
     // Waves from outside or from buildings are only made at the lock.
     if ((map.mode === 'external-small' || production) && own.wave.length > 0) return false;
     // Research takes effect only when a round ends; research under way needs a standing Lab.
-    if (production) {
+    if (production || external) {
       if (JSON.stringify(own.research) !== JSON.stringify(startSides[0].research)) return false;
       if ((own.researching ?? []).length > 0 && !world.entities.some((e) => e.side === 0 && e.kind === 'lab')) return false;
     }
@@ -778,8 +843,17 @@ function checkState(v: unknown): v is HoldState {
     const run = v.run;
     if (!isRecord(run) || !isInt(run.tick, 0, MAX_BATTLE_TICKS)) return false;
     if (!isArrayOf(run.pending, (p): p is PendingSpawn => isRecord(p) && isInt(p.at, 0) && isKind(p.kind) && isInt(p.route, 0, 1) && p.side === p.route)) return false;
-    if (!isArrayOf(run.walkers, (x): x is Walker => isRecord(x) && isInt(x.id, 1) && isInt(x.route, 0, 1) && isInt(x.leg, 1, map.lanes[x.route as number]!.points.length - 1) && (x.stun === undefined || isInt(x.stun, 1, STUN_BUDGET)))) return false;
-    if (run.walkers.length !== units.length || units.some((e) => !(run.walkers as Walker[]).some((x) => x.id === e.id && x.route === e.side))) return false;
+    const routes = routesOf(map);
+    if (!isArrayOf(run.walkers, (x): x is Walker => isRecord(x) && isInt(x.id, 1) && isInt(x.route, 0, external ? 3 : 1) && isInt(x.leg, 1, routes[x.route as number]!.points.length - 1) && (x.stun === undefined || isInt(x.stun, 1, STUN_BUDGET)))) return false;
+    // A wave unit walks its side's lane; a defender the road that comes for its side, reversed.
+    const routeOf = (e: { kind: string; side: number }) => (isDefenderKind(e.kind) ? guardRoute(e.side) : e.side);
+    if (run.walkers.length !== units.length || units.some((e) => !(run.walkers as Walker[]).some((x) => x.id === e.id && x.route === routeOf(e)))) return false;
+    // Defenders yet to set off: of their kinds, on their road, from their side (alone: yours only).
+    if (run.guards !== undefined) {
+      if (!external || !isArrayOf(run.guards, (g): g is GuardSpawn => isRecord(g) && isInt(g.at, 0, 8 * MAX_DEFENDERS) && typeof g.kind === 'string' && isDefenderKind(g.kind) && isInt(g.side, 0, solo ? 0 : 1) && g.route === guardRoute(g.side as number))) return false;
+    }
+    const guardsOn = (side: number) => units.filter((e) => e.side === side && isDefenderKind(e.kind)).length + ((run.guards as GuardSpawn[] | undefined) ?? []).filter((g) => g.side === side).length;
+    if (guardsOn(0) > MAX_DEFENDERS || guardsOn(1) > MAX_DEFENDERS) return false;
     if (new Set(run.walkers.map((x) => x.id)).size !== run.walkers.length) return false;
     // What is still to come is the tail of each side's bought wave, in order; what runs is of the bought kinds.
     const sides = v.sides as SideState[];
@@ -802,7 +876,7 @@ function checkState(v: unknown): v is HoldState {
       // Spawns are made at their tick or later, never earlier: whatever is not yet due is still pending.
       if (rest.length < schedule.filter((p) => p.at >= (run.tick as number)).length) return false;
       const sent = side.wave.slice(0, side.wave.length - rest.length);
-      const running = units.filter((e) => e.side === i);
+      const running = force.filter((e) => e.side === i);
       if (running.length > sent.length) return false;
       const left = [...sent];
       for (const e of running) {

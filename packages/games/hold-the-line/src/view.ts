@@ -1,6 +1,6 @@
 import { bcp47Tag, normalizeSeed, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { archetypeOf, type Entity, type SimEvent } from '@wp/strategy-engine';
-import { BASE_TOWERS, drawFrame, drawTerrain, isStructureKind, Motion, readPalette, TD_RULESET, TICKS_PER_SECOND, TOWER_PRIORITIES, TOWERS, type EnemyKind, type Palette, type TowerPriority } from '@wp/td-core';
+import { BASE_TOWERS, drawFrame, drawTerrain, isDefenderKind, isStructureKind, Motion, readPalette, TD_RULESET, TICKS_PER_SECOND, TOWER_PRIORITIES, TOWERS, type EnemyKind, type Palette, type TowerPriority } from '@wp/td-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import { planRound } from './ai';
 import { mapForMode, ownPad } from './maps';
@@ -15,6 +15,8 @@ import {
   externalWave,
   incomeOf,
   isProducerKind,
+  builds,
+  defendersOf,
   levyOf,
   MAX_PRODUCERS,
   PRODUCER_KINDS,
@@ -143,7 +145,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   /** Lists in the language's own way ("a, b and c"; "a、b、c"). */
   const listFormat = new Intl.ListFormat(bcp47Tag(t.locale), { style: 'long', type: 'conjunction' });
   const nameOf = (kind: string): string => (isStructureKind(kind) ? t(`structure.${kind}`) : t(`tower.${kind}`));
-  const unitName = (kind: string): string => t(`enemy.${kind}`);
+  const unitName = (kind: string): string => (isDefenderKind(kind) ? t(`defender.${kind}`) : t(`enemy.${kind}`));
   const about = (kind: string): string =>
     kind === 'extractor'
       ? t('about.extractor', { n: EXTRACTOR_INCOME })
@@ -160,9 +162,9 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const me = () => state.sides[PLAYER];
   const map = () => mapOf(state);
   const structureAt = (x: number, y: number) => state.world.entities.find((e) => e.x === x && e.y === y && (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)));
-  const listOf = (wave: readonly EnemyKind[]): string => {
+  const listOf = (wave: readonly string[]): string => {
     if (wave.length === 0) return t('intel.none');
-    const counts = new Map<EnemyKind, number>();
+    const counts = new Map<string, number>();
     for (const k of wave) counts.set(k, (counts.get(k) ?? 0) + 1);
     return listFormat.format([...counts].map(([k, n]) => t('intel.item', { n, enemy: unitName(k) })));
   };
@@ -285,7 +287,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
       const short = EXTRACTOR_PRICE > me().credits;
       list.append(option(t('panel.price', { name: nameOf('extractor'), n: EXTRACTOR_PRICE }), 'build-extractor', () => onPlan({ t: 'extractor', x, y }), short, short ? `${about('extractor')} ${t('panel.short')}` : about('extractor')));
       // Duel with production: the buildings that send your wave, and the Lab.
-      if (producing(state)) {
+      if (builds(state)) {
         for (const kind of PRODUCER_KINDS) {
           const refusal = checkPlan(state, PLAYER, { t: 'produce', kind, x, y });
           const note = refusal === 'credits' ? `${about(kind)} ${t('panel.short')}` : refusal === 'lab' ? `${about(kind)} ${t('panel.oneLab')}` : refusal === 'producers' ? `${about(kind)} ${t('panel.maxProducers', { n: MAX_PRODUCERS })}` : about(kind);
@@ -344,14 +346,16 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   const renderProduction = (): void => {
     const planning = state.phase === 'plan';
     const levy = levyOf(state);
-    const sent = planning ? productionOf(state, PLAYER) : me().wave.slice(0, me().wave.length - levy.length);
+    // Against the outside force the buildings send defenders (§ 18.3); in the Duel, the attack wave.
+    const defending = external();
+    const sent = defending ? defendersOf(state, PLAYER) : planning ? productionOf(state, PLAYER) : me().wave.slice(0, me().wave.length - levy.length);
     shop.append(
-      h('h3', { class: 'td-subtitle' }, t('production.title')),
-      h('p', { 'data-testid': 'production-wave' }, t('production.wave', { list: listOf(sent) })),
+      h('h3', { class: 'td-subtitle' }, t(defending ? 'production.titleDefence' : 'production.title')),
+      h('p', { 'data-testid': 'production-wave' }, t(defending ? 'production.defenders' : 'production.wave', { list: listOf(sent) })),
       h('p', { class: 'wp-muted', 'data-testid': 'producers' }, t('production.count', { n: producersOf(state, PLAYER), max: MAX_PRODUCERS }))
     );
     if (levy.length > 0) shop.append(h('p', { 'data-testid': 'levy' }, t('shop.levy', { list: listOf(levy) })));
-    shop.append(h('p', { class: 'wp-muted' }, t('production.note')));
+    shop.append(h('p', { class: 'wp-muted' }, t(defending ? 'production.noteDefenders' : 'production.note')));
     // Research: needs a Lab; each item once.
     const done = me().research ?? [];
     shop.append(h('h4', { class: 'td-subtitle' }, t('research.title')));
@@ -371,9 +375,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   const renderShop = (): void => {
     clear(shop);
-    shop.hidden = external();
-    if (external()) return;
-    if (producing(state)) return renderProduction();
+    shop.hidden = false;
+    if (builds(state)) return renderProduction();
     const side = me();
     const planning = state.phase === 'plan';
     const max = capacityOf(side);

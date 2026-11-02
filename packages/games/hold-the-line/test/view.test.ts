@@ -17,11 +17,14 @@ function show(state: HoldState) {
 const atRound = (s: HoldState, round: number): HoldState => ({ ...s, round, log: Array.from({ length: round + 1 }, () => ({ player: [], ai: [] })) });
 
 describe('Hold the Line view: the outside force', () => {
-  it('shows this round’s force instead of the shop, and no pressure before the first battle', () => {
+  it('shows this round’s force and your defenders instead of the shop, and no pressure before the first battle', () => {
     const s = newGame(1, 'normal', CROSSING.id);
-    const { el, instance } = show(s);
+    const { el, instance, root } = show(s);
     expect(el('outside')!.hidden).toBe(false);
-    expect(el('shop')!.hidden).toBe(true);
+    // The panel of buildings sends defenders here (§ 18.3); nothing is bought.
+    expect(el('shop')!.hidden).toBe(false);
+    expect(el('production-wave')!.textContent).toContain('defenders');
+    expect(root.querySelector('[data-testid="buy-walker"]')).toBeNull();
     expect(el('outside-wave')!.textContent).toContain('each side faces');
     expect(el('outside-wave')!.textContent).toContain(`${externalWave(s).length} × Walker`);
     expect(el('outside-pressure')).toBeNull();
@@ -141,3 +144,16 @@ describe('Hold the Line view: the Duel with production (design § 18.2)', () => 
     other.instance.dispose();
   });
 });
+
+describe('Hold the Line view: defenders against the outside force (design § 18.3)', () => {
+  it('a pad offers the buildings; built, they list the defenders they send this round', () => {
+    const { el, instance, root } = show(newGame(1, 'normal', CROSSING.id, { solo: true }));
+    const pad = [...root.querySelectorAll<HTMLElement>('[data-testid^="cell-"]')].find((c) => (c.getAttribute('aria-label') ?? '').includes('free build pad in your half'))!;
+    pad.click();
+    el('build-barracks')!.click();
+    expect(el('production-wave')!.textContent).toContain('3 × Picket');
+    expect(root.textContent).toContain('Against the outside force');
+    instance.dispose();
+  });
+});
+

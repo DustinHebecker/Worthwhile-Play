@@ -691,7 +691,7 @@ External Large (mobile defenders meet the outside force before the split) needs 
 
 ---
 
-## 18. Hold the Line, revision after the owner's playtest (2026-11-01) — steps A and B built
+## 18. Hold the Line, revision after the owner's playtest (2026-11-01) — steps A, B and C built
 
 Owner playtest of VS Small and the owner's answers (2026-11-01):
 
@@ -718,7 +718,7 @@ Order of work: Tower Defense polish from the same playtest first (smooth movemen
 - **Saves:** `stateVersion` 2 (identity migration from 1), so an older client does not read endless or solo saves as ten-round games. Solo saves must leave the other side untouched (no towers, plans, credits or core loss); their pressure is at most one wave.
 - **Review items from PR #104 folded in:** pressure is 0 before the first battle and at most 2 × `MAX_WAVE` (L1); each round's pressure is pinned to that round's leaks (M2); `isValidState` never throws, also on sparse arrays or throwing getters (L9).
 
-Step B: § 18.2. Still to come: Step C (your own defenders against the outside force).
+Step B: § 18.2. Step C: § 18.3.
 
 ### 18.2 Step B as built: the Duel with production and research
 
@@ -752,3 +752,26 @@ Default for the Duel; buying the wave each round (§ 16) is the start-screen opt
 - **Pictures:** own canvas drawings with their own silhouettes (td-core `buildings.ts`): Drill yard (hut with a pennant), Garage (ribbed roller door), Hangar (arched roof), Lab (dome with a flask).
 - **Saves:** research and research under way only with production, each item once; a round starts with none under way; buildings only with production (at most 10 plus one Lab); while planning no side has a wave; a produced wave holds only kinds the side's buildings can send with its research, plus the levy at its end; while planning, research equals the round's start and research under way needs a standing Lab.
 - **Names** (review of PR #110, product rule on borrowed names): the building is a *Drill yard* and the first research *Armour plates*; "Barracks" (and "Shield plates" for its units) echoed C&C and StarCraft. The internal id stays `barracks`.
+
+
+### 18.3 Step C as built: defenders against the outside force
+
+Owner, 2026-11-01: "the units produced help each round", also alone. Orchestrator decision (2026-11-02): contact damage as a lanes rule in td-core (extension **E5b**, no engine change), own defender archetypes with generic names, production buildings sending defenders in Outside force and alone.
+
+- **Buildings and research** work as in the Duel (§ 18.2: Drill yard, Garage, Hangar, at most 10, one Lab; research paid now, in effect next round). Against the outside force they send **defenders** at every lock instead of attackers:
+
+  | Building | Sends | with research |
+  |---|---|---|
+  | Drill yard | 3 Pickets (infantry, short gun) | Armour plates: Shielded pickets; Field repair: + a Medic (repairs defenders around it) |
+  | Garage | 2 Scout cars (fast, light gun) | Armed raiders: Gun cars; Heavy chassis: + a Bulwark (heavy, 300 health) |
+  | Hangar | 1 Skimmer (flying, fires at air and ground) | Twin hangars: 2 Skimmers |
+  | Siege works | a Mortar team every third round | |
+
+  Alone, only your side builds; the other side stays untouched (as in § 18.1).
+- **On the road** (td-core `lanes.ts`): defenders set off with the force from their own core along the road that comes for them, reversed. A defender **holds** once a unit of the force is within its weapon's reach or 3 cells (the *hold line*; walking into each other, the two would otherwise block one another out of reach), and at the road's end; it never leaks. It blocks units on its layer (ground or air; the other layer passes), fires with its weapon, and is worn down by **contact**: every 4 ticks each unit of the force next to a hostile defender on its layer hits the one with the lowest id by its threat × 4, shield first (the shield then returns after its delay, as after any hit). A blocked unit stays on the road, alive, and keeps trying; it is never ended as unreachable, removed, leaked or counted as killed.
+- **Lifetime:** defenders exist within a battle only: they set off from `run.guards` at the lock and leave when the force is through or destroyed (or at the bound); none is carried across rounds or held in `roundStart`. A battle ends when no unit of the force is left or to come. At `MAX_BATTLE_TICKS` what is still on the road or to come counts as through, defenders never.
+- **No effect without defenders:** with no defender in the world the lanes rule does nothing. TD goldens unchanged; an A/B against main (107 saves of production and shop Duels, the short game, outside force, alone) is valid and continues byte-identically, and Duels play byte-identically.
+- **Computer:** its leakage simulation includes its defenders; Normal and Hard consider Drill yard, Garage and Hangar (on the least exposed pad) among the defence candidates, and from three buildings build a Lab and one research item per round (a fixed order that helps a building they have). Measured: per credit defenders are usually a little weaker than towers in a single round (a Hangar is better against round 6's force), so the computer builds them now and then; Hard > Normal > Easy and mirror draws still hold (`ai.long.test.ts`). The planner stays within `WORK_BUDGET`, in its Worker.
+- **Saves:** `stateVersion` 4 (identity migration from 1–3; outside-force saves from before have no research lists). Defenders only against the outside force (alone: yours only), on their side's reversed road (routes 2 and 3), at most `MAX_DEFENDERS` = 41 per side; tamper tests and a fuzz that `isValidState` never throws. Long suite `defenders.long.test.ts`: random buildings and research on both sides in any round, every battle ends below half the bound and every save on the way is valid.
+- **Pictures:** a defender borrows a force silhouette and carries a **pennant**, in its side's colour even where the force is drawn in ink: it differs by shape, not by colour alone.
+- **Names:** Picket, Shielded picket, Medic, Scout car, Gun car, Bulwark, Skimmer, Mortar team (generic; nothing from commercial games).

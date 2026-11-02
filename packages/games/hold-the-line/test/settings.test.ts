@@ -26,7 +26,8 @@ describe('Hold the Line settings', () => {
     expect(game.migrateState?.(shop, 1)).toEqual(shop);
     expect(game.migrateState?.({ ...shop, waves: 'shop' }, 2)).toBeUndefined();
     expect(game.migrateState?.(JSON.parse(JSON.stringify(newGame(1, 'normal'))), 2)).toBeUndefined();
-    expect(game.migrateState?.(shop, 3)).toBeUndefined();
+    expect(game.migrateState?.(shop, 3)).toEqual(shop);
+    expect(game.migrateState?.(shop, 4)).toBeUndefined();
   });
 });
 
