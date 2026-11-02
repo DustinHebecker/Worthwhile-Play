@@ -683,7 +683,7 @@ Measured (Node, seed 1; long suite `ai.long.test.ts`):
 
 A Hard planner that also looked one round ahead (the next force is known) did worse: it bought for the next force at the cost of the current one.
 
-**Planning time.** The planner's simulations now skip the per-tick copy in `tickLanes` (`owned`) and stop a candidate as soon as it can no longer be chosen (the bound is exact, so decisions are unchanged). Measured worst per round in a game: Normal 0.9 s, Hard 0.5 s. With 3000 credits in round 10 (not reached in measured games): Normal 1.7 s, Hard 5 s. The view shows "thinking" first. A Web Worker, or the engine hook E4 (one copy per wave instead of two per tick), are the next steps if this matters on phones.
+**Planning time.** The planner's simulations now skip the per-tick copy in `tickLanes` (`owned`) and stop a candidate as soon as it can no longer be chosen (the bound is exact, so decisions are unchanged). Measured gain from both (review of PR #104; an earlier note said "about 3× faster", which overstated it): Normal 2.5×, Hard 1.58× per plan, and 1.3–1.6× in the rich case below. Measured worst per round in a game: Normal 0.9 s, Hard 0.5 s. With 3000 credits in round 10 (not reached in measured games): Normal 1.7 s, Hard 5 s before the work budget. Since PR #105/#107 the planner runs in a Web Worker and its work is bounded by `WORK_BUDGET` (150 000 entity-ticks, a hard bound except for the first simulation of a round; about 2 s in Node, 1.2–3.8 s measured on a loaded machine), including Hard's probing of attack waves. The engine hook E4 (one copy per wave instead of two per tick) remains the next step if this matters on phones.
 
 ### 17.3 Next
 

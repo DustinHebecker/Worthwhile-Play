@@ -126,6 +126,9 @@ export const WORK_BUDGET = 150_000;
  * choice). The planner's first simulation of a round runs without that limit, so it always knows
  * where it stands (review of PR #107; it peaks at about 13 000).
  */
+/** Longest simulation of one wave (ticks). */
+export const LEAKAGE_TICKS = 1500;
+
 export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity, meter?: Meter, limit = WORK_BUDGET): number {
   const route = mapOf(s).lanes[1 - side]!;
   // Only the attacking side's units run; its route index here is 0 of a one-route list.
@@ -142,7 +145,7 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
   let loss = 0;
   // Stops once the loss is clearly above the bound (the epsilon keeps rounding from cutting a run
   // whose loss only equals the bound).
-  for (let i = 0; i < 1500 && (run.pending.length > 0 || run.walkers.length > 0) && loss <= bound + 1e-9; i++) {
+  for (let i = 0; i < LEAKAGE_TICKS && (run.pending.length > 0 || run.walkers.length > 0) && loss <= bound + 1e-9; i++) {
     const step = tickLanes(w, run, [route], true);
     if (meter) {
       meter.used += step.world.entities.length;
@@ -152,7 +155,11 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
     run = step.run;
     for (const l of step.leaks) loss += (ENEMIES[l.kind].threat * l.hp) / (archetypeOf(TD_RULESET, l.kind)?.hp ?? 1);
   }
-  // Whatever is still on its way at the cap counts as through (a long wave is not a held wave).
+  // Whatever is still on its way at the cap (LEAKAGE_TICKS) counts as through, health-weighted like a
+  // leak; whatever has not set off counts in full (a long wave is not a held wave). This holds for both
+  // modes, but a Duel wave cannot reach the cap: its longest (8 bought + 12 more with workshops + the
+  // levy's 40 = 60 units) empties an undefended road in 672 ticks, and slowing towers act only on the
+  // walk, not on the 480 ticks of sending. The outside force can: 120 Brutes take 1396 ticks unslowed.
   for (const x of run.walkers) {
     const unit = w.entities.find((e) => e.id === x.id);
     const kind = unit?.kind as EnemyKind | undefined;
