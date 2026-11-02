@@ -181,7 +181,9 @@ export type PlanCommand =
   | { t: 'unbuy'; index: number }
   | { t: 'workshop' };
 
-export type Refusal = 'phase' | BuildRefusal | 'capacity' | 'not-for-sale' | 'no-unit' | 'workshops' | 'mode';
+export type Refusal = 'phase' | BuildRefusal | 'capacity' | 'not-for-sale' | 'no-unit' | 'workshops' | 'mode' | 'log-full';
+/** Commands a side can give in one round (bounds the log a save holds; far above any real plan). */
+export const MAX_PLAN_COMMANDS = 1000;
 
 export type Phase = 'plan' | 'battle' | 'won' | 'lost' | 'draw';
 
@@ -273,6 +275,9 @@ export function newGame(seed: number, difficulty: Difficulty, mapId: string = ma
 /** Why `side` cannot do `cmd` now, or null. Never throws. */
 export function checkPlan(s: HoldState, side: number, cmd: PlanCommand): Refusal | null {
   if (s.phase !== 'plan') return 'phase';
+  // Buying and removing the same unit over and over must not outgrow what a save may hold.
+  const logged = s.log[s.round];
+  if (logged && (side === 0 ? logged.player : logged.ai).length >= MAX_PLAN_COMMANDS) return 'log-full';
   const own = s.sides[side]!;
   const map = mapOf(s);
   // External Small: the waves come from outside; nobody buys units or workshops.
@@ -458,10 +463,18 @@ function endRound(s: HoldState): void {
     e.status = [];
   }
   // Endless: the wear-down (alone, the other side is never attacked and does not wear down either).
-  const wear = wearOf(s);
-  s.sides.forEach((side, i) => {
-    if (side.core > 0 && !(s.solo && i === 1)) side.core = Math.max(0, side.core - wear);
-  });
+  // A core that fell in battle decides the game: then nothing wears down. When the wear-down empties
+  // both cores, the side that had more before it keeps 1, so the better defence still wins (review of
+  // PR #107, B2); equal cores make a draw.
+  const fellInBattle = s.sides[0].core === 0 || (!s.solo && s.sides[1].core === 0);
+  if (!fellInBattle) {
+    const wear = wearOf(s);
+    const before = s.sides.map((side) => side.core);
+    s.sides.forEach((side, i) => {
+      if (!(s.solo && i === 1)) side.core = Math.max(0, side.core - wear);
+    });
+    if (!s.solo && s.sides[0].core === 0 && s.sides[1].core === 0 && before[0] !== before[1]) s.sides[before[0]! > before[1]! ? 0 : 1].core = 1;
+  }
   const [a, b] = [s.sides[0].core, s.sides[1].core];
   const last = s.round >= lastRound(s);
   if (s.solo) {
@@ -586,7 +599,7 @@ function checkState(v: unknown): v is HoldState {
   if (startWorld.entities.some((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind)) || startWorld.projectiles.length > 0) return false;
   if (!Array.isArray(start.sides) || start.sides.length !== 2 || !Array.from(start.sides).every((side, i) => isValidSide(side, { world: startWorld, map }, i))) return false;
   if (!isArrayOf(v.unspent, (x): x is number => isInt(x, 0, MAX_CREDITS)) || v.unspent.length !== 2) return false;
-  const isPlanList = (l: unknown): l is PlanCommand[] => isArrayOf(l, isPlanCommand) && l.length <= 1000;
+  const isPlanList = (l: unknown): l is PlanCommand[] => isArrayOf(l, isPlanCommand) && l.length <= MAX_PLAN_COMMANDS;
   if (!isArrayOf(v.log, (e): e is HoldState['log'][number] => isRecord(e) && isPlanList(e.player) && isPlanList(e.ai)) || v.log.length !== (v.round as number) + 1) return false;
   const units = world.entities.filter((e) => !Object.hasOwn(TOWERS, e.kind) && !isStructureKind(e.kind));
   if (units.some((e) => !isEnemyKind(e.kind))) return false;

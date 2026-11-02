@@ -122,9 +122,11 @@ export const WORK_BUDGET = 150_000;
  * Threat of `wave` that would get through `side`'s current defence, weighted by health kept. With
  * `bound`, the simulation stops once that much is through (the caller only needs to know it is
  * at least that), and the result is then at least `bound`. With a `meter`, a simulation that would
- * use more than WORK_BUDGET stops there, and the result is Infinity (unknown: never the best choice).
+ * use more than `limit` (WORK_BUDGET) stops there, and the result is Infinity (unknown: never the best
+ * choice). The planner's first simulation of a round runs without that limit, so it always knows
+ * where it stands (review of PR #107; it peaks at about 13 000).
  */
-export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity, meter?: Meter): number {
+export function leakage(world: World, s: HoldState, side: number, wave: readonly EnemyKind[], bound = Infinity, meter?: Meter, limit = WORK_BUDGET): number {
   const route = mapOf(s).lanes[1 - side]!;
   // Only the attacking side's units run; its route index here is 0 of a one-route list.
   // Only what can matter: the defender's towers and extractors (the attacker's own structures never
@@ -144,7 +146,7 @@ export function leakage(world: World, s: HoldState, side: number, wave: readonly
     const step = tickLanes(w, run, [route], true);
     if (meter) {
       meter.used += step.world.entities.length;
-      if (meter.used >= WORK_BUDGET) return Infinity;
+      if (meter.used >= limit) return Infinity;
     }
     w = step.world;
     run = step.run;
@@ -201,15 +203,15 @@ export function planRound(state: HoldState, side = 1, difficulty: Difficulty = s
   const wave = expectedWave(s, side);
   const budget = defenceSims(profile, s.mode);
   let sims = 0;
-  const threat = (st: HoldState, bound = Infinity): number => {
+  const threat = (st: HoldState, bound = Infinity, limit = WORK_BUDGET): number => {
     sims++;
-    return leakage(st.world, st, side, wave, bound, meter);
+    return leakage(st.world, st, side, wave, bound, meter, limit);
   };
   if (!profile.lookahead) {
     const [x, y] = padsNear(s, side, incoming, 3)[0] ?? [-1, -1];
     apply({ t: 'place', kind: 'gun', x, y });
   } else {
-    let loss = threat(s);
+    let loss = threat(s, Infinity, Infinity);
     for (let step = 0; step < profile.steps && loss > 0; step++) {
       const candidates: PlanCommand[] = [];
       for (const kind of BASE_TOWERS) {

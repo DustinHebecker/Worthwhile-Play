@@ -16,6 +16,7 @@ import {
   incomeOf,
   levyOf,
   MAX_PRESSURE,
+  MAX_ROUNDS,
   wearOf,
   WEAR_FROM,
   DEFAULT_LENGTH,
@@ -61,6 +62,9 @@ export const startOf = (choice: unknown, length: unknown): { mapId: string; opti
 const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
 const hpMax = (kind: string): number => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
 const splashOf = (kind: string): number => archetypeOf(TD_RULESET, kind)?.weapon?.splash ?? 0;
+
+/** Rounds ahead of the wear-down that the HUD announces it (review of PR #107). */
+const WEAR_NOTICE = 5;
 
 export function createHoldTheLine(context: GameContext): GameInstance<HoldState> {
   const { t, root } = context;
@@ -159,10 +163,10 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     const [fx, fy] = m.lanes[0]!.points.at(-1)!;
     if (s) label = t(s.side === PLAYER ? 'cell.tower.own' : 'cell.tower.foe', { ...p, tower: nameOf(s.kind), hp: s.hp, max: hpMax(s.kind) });
     else if (x === ox && y === oy) label = t('cell.core.own', p);
-    else if (x === fx && y === fy) label = t('cell.core.foe', p);
+    else if (x === fx && y === fy) label = t(state.solo ? 'cell.core.idle' : 'cell.core.foe', p);
     else {
       const code = m.rows[y]![x];
-      label = code === '=' ? t('cell.road', p) : code === 'b' ? t(ownPad(m, PLAYER, x, y) ? 'cell.pad.own' : 'cell.pad.foe', p) : t('cell.rock', p);
+      label = code === '=' ? t('cell.road', p) : code === 'b' ? t(ownPad(m, PLAYER, x, y) ? 'cell.pad.own' : state.solo ? 'cell.pad.idle' : 'cell.pad.foe', p) : t('cell.rock', p);
     }
     const n = state.world.entities.filter((e) => e.x === x && e.y === y && !Object.hasOwn(TOWERS, e.kind) && e.kind !== 'extractor').length;
     return n > 0 ? t('cell.units', { cell: label, n }) : label;
@@ -200,7 +204,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
 
   // --- Rendering -------------------------------------------------------------------------------
   const renderHud = (): void => {
-    round.textContent = (state.length ?? 'rounds') === 'endless' ? t('hud.roundEndless', { n: state.round + 1 }) : t('hud.round', { n: state.round + 1, total: ROUNDS });
+    round.textContent = (state.length ?? 'rounds') === 'endless' ? t('hud.roundEndless', { n: state.round + 1, total: MAX_ROUNDS }) : t('hud.round', { n: state.round + 1, total: ROUNDS });
     phase.textContent = state.phase === 'plan' ? t('hud.plan') : state.phase === 'battle' ? t(playing && !hostPaused ? 'hud.battle' : 'hud.paused') : '';
     credits.textContent = t('hud.credits', { n: me().credits });
     credits.dataset.value = String(me().credits);
@@ -211,10 +215,12 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     coreFoe.dataset.value = String(state.sides[1].core);
     income.hidden = state.phase !== 'plan';
     income.textContent = t('hud.income', { n: incomeOf(state, PLAYER), p: INTEREST_PERCENT });
-    // Endless: the wear-down from round WEAR_FROM + 1 (said in the rules; shown while it applies).
-    const worn = state.phase === 'plan' || state.phase === 'battle' ? wearOf(state) : 0;
-    wear.hidden = worn === 0;
-    wear.textContent = worn > 0 ? t('hud.wear', { n: worn, from: WEAR_FROM + 1 }) : '';
+    // Endless: the wear-down from round WEAR_FROM + 1, announced WEAR_NOTICE rounds ahead and shown while it applies.
+    const running = state.phase === 'plan' || state.phase === 'battle';
+    const worn = running ? wearOf(state) : 0;
+    const soon = running && worn === 0 && (state.length ?? 'rounds') === 'endless' && state.round >= WEAR_FROM - WEAR_NOTICE;
+    wear.hidden = worn === 0 && !soon;
+    wear.textContent = worn > 0 ? t('hud.wear', { n: worn, from: WEAR_FROM + 1 }) : soon ? t('hud.wearSoon', { from: WEAR_FROM + 1 }) : '';
     container.dataset.phase = state.phase;
     container.dataset.round = String(state.round);
     container.dataset.tick = String(state.run?.tick ?? 0);

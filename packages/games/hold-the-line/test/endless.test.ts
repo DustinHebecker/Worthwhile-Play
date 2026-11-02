@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ENEMIES, type EnemyKind } from '@wp/td-core';
 import { planRound } from '../src/ai';
+import { turtlePlan } from './turtle';
 import {
   applyPlan,
   EXTERNAL_WAVES,
@@ -30,6 +31,12 @@ import {
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const idle: Planner = () => [];
 const atRound = (s: HoldState, round: number): HoldState => ({ ...s, round, log: Array.from({ length: round + 1 }, () => ({ player: [], ai: [] })) });
+/** A round of `s` at `round` whose battle has nothing left to run: it ends on the next tick. */
+const emptyBattleAt = (s: HoldState, round: number): HoldState => {
+  const at = atRound(s, round);
+  const locked = lockRound({ ...at, roundStart: { ...at.roundStart, sides: at.sides } }, idle);
+  return { ...locked, run: { ...locked.run!, pending: [] } };
+};
 
 describe('length', () => {
   it('new games are endless unless the short game is chosen; old saves count as short', () => {
@@ -213,12 +220,7 @@ describe('alone against the outside force', () => {
 });
 
 describe('the wear-down (endless)', () => {
-  /** A round of `s` at `round` whose battle has nothing left to run: it ends on the next tick. */
-  const emptyBattle = (s: HoldState, round: number): HoldState => {
-    const at = atRound(s, round);
-    const locked = lockRound({ ...at, roundStart: { ...at.roundStart, sides: at.sides } }, idle);
-    return { ...locked, run: { ...locked.run!, pending: [] } };
-  };
+  const emptyBattle = emptyBattleAt;
 
   it('starts at round WEAR_FROM + 1 and takes one more each round; none in the short game', () => {
     const s = newGame(1, 'normal');
@@ -263,6 +265,55 @@ describe('the wear-down (endless)', () => {
     even.sides[1].core = 4;
     expect(stepBattle(even, 1).state.phase).toBe('draw');
   });
+});
+
+describe('the wear-down never undoes a decided game (review of PR #107, B2)', () => {
+  const endOf = (round: number, own: number, foe: number): HoldState => {
+    const t = emptyBattleAt(newGame(1, 'normal'), round);
+    t.sides[0].core = own;
+    t.sides[1].core = foe;
+    return stepBattle(t, 1).state;
+  };
+
+  it('a clear lead wins even when the wear-down empties both cores', () => {
+    // Round 47 (wear 8 > both cores): 7 against 2 is a win, not a draw.
+    const end = endOf(WEAR_FROM + 7, 7, 2);
+    expect(end.phase).toBe('won');
+    expect(end.sides.map((x) => x.core)).toEqual([1, 0]);
+    expect(isValidState(clone(end))).toBe(true);
+    const mirrored = endOf(WEAR_FROM + 7, 2, 7);
+    expect(mirrored.phase).toBe('lost');
+    expect(mirrored.sides.map((x) => x.core)).toEqual([0, 1]);
+    // Equal cores emptied together: a draw.
+    expect(endOf(WEAR_FROM + 7, 4, 4).phase).toBe('draw');
+  });
+
+  it('a core that fell in battle decides the game: the other one does not wear down', () => {
+    // Round 47: the player's core falls in battle, theirs (5) would fall to the wear-down too.
+    const late = endOf(WEAR_FROM + 7, 0, 5);
+    expect(late.phase).toBe('lost');
+    expect(late.sides.map((x) => x.core)).toEqual([0, 5]);
+    // Round 42 (wear 2): 0 against 2 stays a loss, not a draw.
+    const early = endOf(WEAR_FROM + 2, 0, 2);
+    expect(early.phase).toBe('lost');
+    expect(early.sides.map((x) => x.core)).toEqual([0, 2]);
+    expect(isValidState(clone(early))).toBe(true);
+    expect(endOf(WEAR_FROM + 2, 2, 0).phase).toBe('won');
+  });
+
+  it('the core falling in a real battle (levy through, no defence) is a loss, whatever the wear-down', () => {
+    // Round 47: no towers on your side, a full defence on theirs; the levy breaks your core in battle.
+    const s = atRound(newGame(1, 'normal'), WEAR_FROM + 7);
+    s.sides[0].core = 3;
+    s.sides[1].core = 5;
+    s.sides[1].credits = MAX_CREDITS;
+    s.roundStart = { ...s.roundStart, sides: clone(s.sides) };
+    const end = resolveBattle(lockRound(s, (seen) => turtlePlan(seen, 1, ['focus-2']))).state;
+    expect(end.sides[0].core).toBe(0);
+    expect(end.sides[1].core).toBeGreaterThan(0);
+    expect(end.phase).toBe('lost');
+    expect(isValidState(clone(end))).toBe(true);
+  }, 30_000);
 });
 
 describe('credits stay within what a save may hold (review of PR #107)', () => {

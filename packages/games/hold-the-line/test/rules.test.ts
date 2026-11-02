@@ -16,6 +16,7 @@ import {
   interestOf,
   isValidState,
   lockRound,
+  MAX_PLAN_COMMANDS,
   seenBy,
   MAX_WORKSHOPS,
   newGame,
@@ -402,3 +403,17 @@ describe('what the computer sees', () => {
     expect(seenLog).toEqual([{ player: [], ai: [] }]);
   });
 });
+
+describe('the plan log stays within what a save may hold (review of PR #107)', () => {
+  it('after MAX_PLAN_COMMANDS commands in a round, a side can give no more until the next round', () => {
+    let s = newGame(1, 'normal', 'duel', { length: 'rounds' });
+    for (let i = 0; i < MAX_PLAN_COMMANDS / 2; i++) s = applyPlan(applyPlan(s, 0, { t: 'buy', kind: 'walker' }), 0, { t: 'unbuy', index: 0 });
+    expect(s.log[0]!.player).toHaveLength(MAX_PLAN_COMMANDS);
+    expect(checkPlan(s, 0, { t: 'buy', kind: 'walker' })).toBe('log-full');
+    expect(applyPlan(s, 0, { t: 'buy', kind: 'walker' })).toBe(s);
+    expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    // The other side is not affected.
+    expect(checkPlan(s, 1, { t: 'buy', kind: 'walker' })).toBeNull();
+  });
+});
+

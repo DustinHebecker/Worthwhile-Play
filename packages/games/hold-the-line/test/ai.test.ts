@@ -400,10 +400,20 @@ describe('bounded planning work', () => {
     expect(leakage(s.world, s, 1, wave, Infinity, near)).toBe(Infinity);
     expect(near.used).toBeGreaterThanOrEqual(WORK_BUDGET);
     expect(near.used - WORK_BUDGET).toBeLessThan(200);
-    // A whole plan started just below the bound ends within one tick's work of it.
+    // Past the first simulation, a plan started just below the bound adds nothing beyond that one.
+    const first: Meter = { used: 0 };
+    leakage(s.world, s, 1, Array.from({ length: 8 }, () => 'walker' as const), Infinity, first, Infinity);
     const m: Meter = { used: WORK_BUDGET - 500 };
     planRound(s, 1, 'normal', m);
-    expect(m.used - WORK_BUDGET).toBeLessThan(200);
+    expect(m.used - WORK_BUDGET).toBeLessThanOrEqual(first.used);
+  });
+
+  it('the first simulation of a round always runs, so the computer still defends with the budget nearly spent', () => {
+    const s = atRound(newGame(1, 'normal'), 3);
+    const m: Meter = { used: WORK_BUDGET - 1 };
+    planRound(s, 1, 'normal', m);
+    // It measured where it stands (well past the bound), and tried no candidate after that.
+    expect(m.used).toBeGreaterThan(WORK_BUDGET + 200);
   });
 
   it('Hard keeps Walkers once the budget is used up', () => {
