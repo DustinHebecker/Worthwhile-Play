@@ -141,6 +141,23 @@ describe('unit pictures', () => {
     expect(drawUnit(g, 'gun', 0, 0, 10, { colour: '#00f', ink: '#000', surface: '#fff', facing: 1, phase: 0, moving: false })).toBe(false);
   });
 
+  it('defenders borrow a silhouette and carry a pennant, so they differ from the force by shape (design § 18.3)', async () => {
+    const { drawUnit, PENNANT_KINDS } = await import('../src/units');
+    const { DEFENDER_KINDS } = await import('../src/ruleset');
+    expect([...PENNANT_KINDS].sort()).toEqual([...DEFENDER_KINDS].sort());
+    const look = { colour: '#00f', ink: '#000', surface: '#fff', facing: 1 as const, phase: 0, moving: false };
+    const pathOf = (kind: string) => {
+      const { g, calls } = recorder();
+      expect(drawUnit(g, kind, 20, 20, 40, look), kind).toBe(true);
+      return calls.filter((c) => !c.includes('=')).join('|');
+    };
+    const shapes = new Set(DEFENDER_KINDS.map(pathOf));
+    expect(shapes.size).toBe(DEFENDER_KINDS.length);
+    // Not the same drawing as the force unit whose body it borrows.
+    expect(pathOf('picket')).not.toBe(pathOf('walker'));
+    expect(pathOf('bulwark')).not.toBe(pathOf('brute'));
+  });
+
   it('production buildings each have their own picture (design § 18.2); other kinds have none', async () => {
     const { drawBuilding, BUILDING_KINDS } = await import('../src/buildings');
     const { STRUCTURES } = await import('../src/ruleset');

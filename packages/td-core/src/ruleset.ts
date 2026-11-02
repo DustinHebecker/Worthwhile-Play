@@ -220,6 +220,27 @@ const ENEMY_ARCHETYPES: readonly Archetype[] = [
   enemy('mender', 50, 'infantry', 2, null, { aura: { radius: 2, heal: { hp: 3, every: 8 } } })
 ];
 
+/**
+ * Defenders (Hold the Line, design § 18.3): a side's own units, sent by its production buildings
+ * against the outside force. They walk the incoming road towards the force, hold where the force is
+ * in reach, block the road for units on their layer and fire; units held up by them wear them down
+ * by contact (lanes.ts). Own generic names, no unit of the force and no tower.
+ */
+export const DEFENDER_KINDS = ['picket', 'picket-shield', 'medic', 'scout', 'gun-car', 'bulwark', 'skimmer', 'mortar-team'] as const;
+export type DefenderKind = (typeof DEFENDER_KINDS)[number];
+export const isDefenderKind = (kind: string): kind is DefenderKind => (DEFENDER_KINDS as readonly string[]).includes(kind);
+
+const DEFENDER_ARCHETYPES: readonly Archetype[] = [
+  enemy('picket', 50, 'infantry', 2, weapon({ damage: 4, range: 2, cooldown: 4, vs: vs(100, 100, 40, 50) })),
+  enemy('picket-shield', 50, 'infantry', 2, weapon({ damage: 4, range: 2, cooldown: 4, vs: vs(100, 100, 40, 50) }), { shield: { hp: 60, regenDelay: 24 } }),
+  enemy('medic', 40, 'infantry', 2, null, { aura: { radius: 2, heal: { hp: 3, every: 8 } } }),
+  enemy('scout', 40, 'light', 4, weapon({ damage: 3, range: 3, cooldown: 3, vs: vs(100, 100, 30, 60) })),
+  enemy('gun-car', 80, 'light', 3, weapon({ damage: 8, range: 3, cooldown: 4, vs: vs(100, 100, 70, 40) })),
+  enemy('bulwark', 300, 'heavy', 2, weapon({ damage: 6, range: 2, cooldown: 6, vs: vs(100, 100, 100, 0) })),
+  enemy('skimmer', 40, 'air', 3, weapon({ damage: 5, range: 3, cooldown: 4, vs: vs(80, 80, 40, 120) })),
+  enemy('mortar-team', 120, 'heavy', 2, weapon({ damage: 20, range: 4, minRange: 1, cooldown: 12, delivery: 'ballistic', flight: 3, splash: 1, vs: vs(100, 90, 60, 0) }))
+];
+
 export const ENEMIES: Readonly<Record<EnemyKind, EnemyDef>> = {
   walker: { kind: 'walker', threat: 1, bounty: 4 },
   runner: { kind: 'runner', threat: 1, bounty: 4 },
@@ -249,7 +270,7 @@ export const TD_RULESET: Ruleset = {
   id: 'td-1',
   ticksPerTurn: TICKS_PER_SECOND,
   terrain: TD_TERRAIN,
-  archetypes: Object.fromEntries([...Object.keys(TOWER_WEAPONS).map((k) => tower(k, TOWER_WEAPONS[k] as WeaponSpec)), ...Object.keys(TOWER_AURAS).map((k) => tower(k, null, TOWER_AURAS[k])), ...ENEMY_ARCHETYPES, ...STRUCTURE_ARCHETYPES].map((a) => [a.id, a])),
+  archetypes: Object.fromEntries([...Object.keys(TOWER_WEAPONS).map((k) => tower(k, TOWER_WEAPONS[k] as WeaponSpec)), ...Object.keys(TOWER_AURAS).map((k) => tower(k, null, TOWER_AURAS[k])), ...ENEMY_ARCHETYPES, ...DEFENDER_ARCHETYPES, ...STRUCTURE_ARCHETYPES].map((a) => [a.id, a])),
   commandNetwork: false,
   relayHillBonus: 0,
   fog: false,

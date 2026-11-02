@@ -28,6 +28,8 @@ export interface UnitLook {
 
 /** Kinds with a picture of their own. */
 export const UNIT_KINDS = ['walker', 'runner', 'swarm', 'brute', 'glider', 'raider', 'crawler', 'shielder', 'mender'] as const;
+/** Defenders drawn with a borrowed silhouette and a pennant (§ 18.3). */
+export const PENNANT_KINDS = ['picket', 'picket-shield', 'medic', 'scout', 'gun-car', 'bulwark', 'skimmer', 'mortar-team'] as const;
 
 const TAU = Math.PI * 2;
 
@@ -42,7 +44,9 @@ function rr(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: num
  * without a picture (the caller draws its fallback).
  */
 export function drawUnit(g: CanvasRenderingContext2D, kind: string, cx: number, cy: number, size: number, look: UnitLook): boolean {
-  const paint = PAINTERS[kind];
+  // Defenders (§ 18.3) borrow a silhouette and carry a pennant: told apart from the force by shape, not colour.
+  const base = DEFENDER_BASE[kind];
+  const paint = PAINTERS[base ?? kind];
   if (!paint) return false;
   const u = size / 44;
   g.save();
@@ -64,8 +68,39 @@ export function drawUnit(g: CanvasRenderingContext2D, kind: string, cx: number, 
   g.lineWidth = 2;
   g.strokeStyle = look.ink;
   paint(g, { ...look, dark, light });
+  if (base) pennant(g, { ...look, dark, light });
   g.restore();
   return true;
+}
+
+/** The silhouette each defender borrows (heavier ones a heavier body). */
+const DEFENDER_BASE: Readonly<Record<string, string>> = {
+  picket: 'walker',
+  'picket-shield': 'shielder',
+  medic: 'mender',
+  scout: 'runner',
+  'gun-car': 'raider',
+  bulwark: 'brute',
+  skimmer: 'glider',
+  'mortar-team': 'crawler'
+};
+
+/** A pennant on a pole over the unit, pointing the way it faces: the defenders' mark. */
+function pennant(g: CanvasRenderingContext2D, p: Paint): void {
+  g.lineWidth = 2;
+  g.strokeStyle = p.ink;
+  g.beginPath();
+  g.moveTo(-6, -12);
+  g.lineTo(-6, -24);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(-6, -24);
+  g.lineTo(5, -21);
+  g.lineTo(-6, -18);
+  g.closePath();
+  g.fillStyle = p.light;
+  g.fill();
+  g.stroke();
 }
 
 interface Paint extends UnitLook {

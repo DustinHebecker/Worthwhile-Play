@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { createWorld, spawn, archetypeOf, type World } from '@wp/strategy-engine';
-import { chebyshev, removeWalkers, STUN_BUDGET, tickLanes, type LaneRun, type Route } from '../src/lanes';
-import { TD_RULESET } from '../src/ruleset';
+import { createWorld, spawn, archetypeOf, type SimEvent, type World } from '@wp/strategy-engine';
+import { chebyshev, CONTACT_DAMAGE, removeWalkers, STUN_BUDGET, tickLanes, type LaneRun, type Route } from '../src/lanes';
+import { DEFENDER_KINDS, isEnemyKind, TD_RULESET } from '../src/ruleset';
 
 /** A straight road down column 2 of a 5 × 8 map, plus an air route along it. */
 const ROWS = ['bb=bb', 'bb=bb', 'bb=bb', 'bb=bb', 'bb=bb', 'bb=bb', 'bb=bb', 'bb=bb'];
 const ROUTES: Route[] = [
   { layer: 'ground', points: [[2, 0], [2, 7]] },
   { layer: 'air', points: [[2, 0], [2, 7]] },
-  { layer: 'ground', points: [[2, 7], [2, 0]] }
+  { layer: 'ground', points: [[2, 7], [2, 0]] },
+  // Route 3: the air route reversed (flying defenders).
+  { layer: 'air', points: [[2, 7], [2, 0]] }
 ];
 const world = (): World => createWorld({ map: { w: 5, h: 8, terrain: ROWS.join('') }, sides: 2, entities: [], seed: 1 }, TD_RULESET);
 const run = (pending: LaneRun['pending']): LaneRun => ({ tick: 0, pending, walkers: [] });
@@ -206,5 +208,86 @@ describe('tickLanes(…, owned) (review of PR #104, L7)', () => {
     const mine = tickLanes(w, r, ROUTES, true);
     expect(mine.run).toBe(r);
     expect(r.tick).toBe(1);
+  });
+});
+
+describe('defenders on the lanes (design § 18.3, E5b)', () => {
+  /** A force walker coming down column 2 (route 0), a defender walking up it (route 2) from the other end. */
+  const meeting = (defender: string, force: 'walker' | 'brute' | 'glider' = 'walker'): LaneRun => ({
+    tick: 0,
+    pending: [{ at: 0, kind: force, route: force === 'glider' ? 1 : 0, side: 1 }],
+    walkers: [],
+    guards: [{ at: 0, kind: defender as never, route: 2, side: 0 }]
+  });
+  const step = (w: World, r: LaneRun, n: number) => {
+    const events: SimEvent[] = [];
+    const leaks = [];
+    for (let i = 0; i < n; i++) {
+      const s = tickLanes(w, r, ROUTES);
+      [w, r] = [s.world, s.run];
+      events.push(...s.events);
+      leaks.push(...s.leaks);
+    }
+    return { w, r, events, leaks };
+  };
+
+  it('a defender sets off from its route, never leaks, and holds where the force is within its reach', () => {
+    const { w, r, leaks } = step(world(), { tick: 0, pending: [], walkers: [], guards: [{ at: 0, kind: 'picket', route: 2, side: 0 }] }, 200);
+    // Alone it walks to the end of its route and holds there.
+    const d = w.entities.find((e) => e.kind === 'picket')!;
+    expect(chebyshev(d.x, d.y, 2, 0)).toBeLessThanOrEqual(1);
+    expect(d.order.type).toBe('hold');
+    expect(leaks).toEqual([]);
+    expect(r.walkers).toHaveLength(1);
+    expect(r.guards).toEqual([]);
+  });
+
+  it('a wave unit blocked by a defender stays on the road, alive, and keeps trying; it is never leaked or removed', () => {
+    // A Bulwark with no damage against... a Brute: neither falls quickly; the Brute must stay blocked, not vanish.
+    let { w, r, leaks } = step(world(), meeting('bulwark', 'brute'), 60);
+    const brute = () => w.entities.find((e) => e.kind === 'brute');
+    expect(brute()).toBeDefined();
+    const bulwark = w.entities.find((e) => e.kind === 'bulwark')!;
+    expect(brute()!.y).toBeLessThan(bulwark.y);
+    expect(leaks).toEqual([]);
+    // Many ticks later the Brute is still on the road column (never sent round over the pads).
+    ({ w, r, leaks } = step(w, r, 40));
+    if (brute()) expect(brute()!.x).toBe(2);
+    expect(r.walkers.some((x) => x.id === brute()?.id) || !brute()).toBe(true);
+  });
+
+  it('contact: units next to a defender wear it down by threat x CONTACT_DAMAGE every CONTACT_EVERY ticks, the shield first', () => {
+    const { events } = step(world(), meeting('medic', 'brute'), 400);
+    const hits = events.filter((e) => e.t === 'hit' && e.side === 0);
+    expect(hits.length).toBeGreaterThan(0);
+    // An unarmed Medic cannot hurt the Brute: the Brute wears it down and goes on.
+    expect(events.some((e) => e.t === 'destroyed' && e.kind === 'medic')).toBe(true);
+    expect(hits.every((e) => e.t === 'hit' && e.damage + (e.shield ?? 0) === 3 * CONTACT_DAMAGE)).toBe(true);
+    const shielded = step(world(), meeting('picket-shield', 'brute'), 200).events.filter((e) => e.t === 'hit' && e.side === 0);
+    expect(shielded[0]).toMatchObject({ shield: 3 * CONTACT_DAMAGE, damage: 0 });
+  });
+
+  it('every head-on meeting ends: the defender falls or the unit does, well before the bound (no stall)', () => {
+    for (const defender of DEFENDER_KINDS) {
+      for (const force of ['walker', 'brute', 'glider'] as const) {
+        const { w, r } = step(world(), meeting(defender, force), 1500);
+        const forceLeft = r.pending.length + r.walkers.filter((x) => isEnemyKind(w.entities.find((e) => e.id === x.id)?.kind ?? '')).length;
+        expect(forceLeft, `${defender} vs ${force}`).toBe(0);
+      }
+    }
+  });
+
+  it('flying units pass ground defenders and the other way round; contact needs the same layer', () => {
+    const { events, leaks } = step(world(), meeting('bulwark', 'glider'), 300);
+    expect(leaks.map((l) => l.kind)).toEqual(['glider']);
+    expect(events.some((e) => e.t === 'hit' && e.side === 0)).toBe(false);
+  });
+
+  it('without defenders nothing changes: the same run gives the same world as without the rule', () => {
+    const r0 = run([{ at: 0, kind: 'brute', route: 0 }, { at: 3, kind: 'walker', route: 0 }]);
+    const a = step(world(), r0, 120);
+    const b = step(world(), { ...r0, guards: [] }, 120);
+    expect(b.w).toEqual(a.w);
+    expect(b.events).toEqual(a.events);
   });
 });

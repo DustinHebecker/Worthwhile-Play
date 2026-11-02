@@ -2,7 +2,7 @@ import type { Entity, World } from '@wp/strategy-engine';
 import { drawIcon, drawTerrainMap, type TerrainColours } from '@wp/strategy-art';
 import type { Placed } from './motion';
 import { drawBuilding } from './buildings';
-import { isStructureKind, TOWERS, type Family } from './ruleset';
+import { isDefenderKind, isStructureKind, TOWERS, type Family } from './ruleset';
 import { drawUnit } from './units';
 
 /**
@@ -251,8 +251,9 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
 
   // Wave units.
   const outside = { own: false, colour: palette.ink, surface: palette.surface, view: 'profile' as const };
-  const unitStyle = (side: number) => (f.neutralUnits ? outside : styleOf(side));
-  const unitColour = (side: number) => (f.neutralUnits ? palette.ink : colourOf(side));
+  // An outside force is drawn in ink; defenders (§ 18.3) always in their side's colour, with a pennant.
+  const unitStyle = (side: number, kind: string) => (f.neutralUnits && !isDefenderKind(kind) ? outside : styleOf(side));
+  const unitColour = (side: number, kind: string) => (f.neutralUnits && !isDefenderKind(kind) ? palette.ink : colourOf(side));
   for (const e of f.world.entities) {
     if (Object.hasOwn(TOWERS, e.kind) || isStructureKind(e.kind)) continue;
     const [cx, by] = pos(e);
@@ -263,15 +264,15 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     const [icon, size] = ENEMY_ICON[e.kind] ?? ['rifles', 0.8];
     const s = cell * size;
     const facing: 1 | -1 = placed.dx < 0 ? -1 : 1;
-    const drawn = drawUnit(g, e.kind, cx, cy, s, { colour: unitColour(e.side), ink: palette.ink, surface: palette.surface, facing, phase: progress, moving: progress < 1 });
-    if (!drawn && !drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, unitStyle(e.side))) {
+    const drawn = drawUnit(g, e.kind, cx, cy, s, { colour: unitColour(e.side, e.kind), ink: palette.ink, surface: palette.surface, facing, phase: progress, moving: progress < 1 });
+    if (!drawn && !drawIcon(g, icon, cx - s / 2, cy - s / 2, (k * s) / cell, unitStyle(e.side, e.kind))) {
       g.beginPath();
       g.arc(cx, cy, s * 0.3, 0, TAU);
-      g.fillStyle = unitColour(e.side);
+      g.fillStyle = unitColour(e.side, e.kind);
       g.fill();
     }
     if (e.kind === 'crawler') {
-      g.strokeStyle = unitColour(e.side);
+      g.strokeStyle = unitColour(e.side, e.kind);
       g.lineWidth = 2;
       g.beginPath();
       g.arc(cx, cy, s * 0.55, 0, TAU);
@@ -288,7 +289,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
     }
     if ((e.shield ?? 0) > 0) {
       // Shield: a hexagon around the unit, as long as any shield is left.
-      g.strokeStyle = unitColour(e.side);
+      g.strokeStyle = unitColour(e.side, e.kind);
       g.lineWidth = 2;
       g.beginPath();
       for (let i = 0; i <= 6; i++) {
@@ -337,7 +338,7 @@ export function drawFrame(g: CanvasRenderingContext2D, width: number, palette: P
       g.stroke();
     }
     const max = f.hpMax(e.kind);
-    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, unitColour(e.side), palette.muted);
+    if (e.hp < max) bar(g, cx, cy - s * 0.5, cell * 0.5, e.hp / max, unitColour(e.side, e.kind), palette.muted);
   }
 
   // Blasts.
