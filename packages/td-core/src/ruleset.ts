@@ -220,6 +220,36 @@ const ENEMY_ARCHETYPES: readonly Archetype[] = [
   enemy('mender', 50, 'infantry', 2, null, { aura: { radius: 2, heal: { hp: 3, every: 8 } } })
 ];
 
+/**
+ * Defenders (Hold the Line, design § 18.3): a side's own units, sent by its production buildings
+ * against the outside force. They walk the incoming road towards the force, hold where the force is
+ * in reach, block the road for units on their layer and fire; units held up by them wear them down
+ * by contact (lanes.ts). Own generic names, no unit of the force and no tower.
+ */
+export const DEFENDER_KINDS = ['picket', 'picket-shield', 'medic', 'scout', 'gun-car', 'bulwark', 'skimmer', 'mortar-team'] as const;
+export type DefenderKind = (typeof DEFENDER_KINDS)[number];
+export const isDefenderKind = (kind: string): kind is DefenderKind => (DEFENDER_KINDS as readonly string[]).includes(kind);
+
+/**
+ * Defenders carry the armour class `structure`: towers cannot engage it (every tower's row is 0
+ * there), so the opponent's towers never shoot the defenders of the other side (review of PR #111,
+ * M1); armed wave units (Raiders, Siege crawlers) can. Their layer is set apart from the armour.
+ */
+const guard = (id: string, hp: number, layer: 'ground' | 'air', speed: number, w: WeaponSpec | null = null, extra: Pick<Archetype, 'aura' | 'shield'> = {}): Archetype => ({
+  ...enemy(id, hp, 'structure', speed, w, extra),
+  layer
+});
+const DEFENDER_ARCHETYPES: readonly Archetype[] = [
+  guard('picket', 50, 'ground', 2, weapon({ damage: 6, range: 3, cooldown: 4, vs: vs(100, 100, 40, 50) })),
+  guard('picket-shield', 50, 'ground', 2, weapon({ damage: 6, range: 3, cooldown: 4, vs: vs(100, 100, 40, 50) }), { shield: { hp: 60, regenDelay: 24 } }),
+  guard('medic', 40, 'ground', 2, null, { aura: { radius: 2, heal: { hp: 3, every: 8 } } }),
+  guard('scout', 40, 'ground', 4, weapon({ damage: 5, range: 4, cooldown: 3, vs: vs(100, 100, 30, 60) })),
+  guard('gun-car', 80, 'ground', 3, weapon({ damage: 12, range: 4, cooldown: 4, vs: vs(100, 100, 70, 40) })),
+  guard('bulwark', 300, 'ground', 2, weapon({ damage: 8, range: 2, cooldown: 6, vs: vs(100, 100, 100, 0) })),
+  guard('skimmer', 40, 'air', 3, weapon({ damage: 8, range: 4, cooldown: 4, vs: vs(80, 80, 40, 120) })),
+  guard('mortar-team', 120, 'ground', 2, weapon({ damage: 20, range: 5, minRange: 1, cooldown: 12, delivery: 'ballistic', flight: 3, splash: 1, vs: vs(100, 90, 60, 0) }))
+];
+
 export const ENEMIES: Readonly<Record<EnemyKind, EnemyDef>> = {
   walker: { kind: 'walker', threat: 1, bounty: 4 },
   runner: { kind: 'runner', threat: 1, bounty: 4 },
@@ -249,7 +279,7 @@ export const TD_RULESET: Ruleset = {
   id: 'td-1',
   ticksPerTurn: TICKS_PER_SECOND,
   terrain: TD_TERRAIN,
-  archetypes: Object.fromEntries([...Object.keys(TOWER_WEAPONS).map((k) => tower(k, TOWER_WEAPONS[k] as WeaponSpec)), ...Object.keys(TOWER_AURAS).map((k) => tower(k, null, TOWER_AURAS[k])), ...ENEMY_ARCHETYPES, ...STRUCTURE_ARCHETYPES].map((a) => [a.id, a])),
+  archetypes: Object.fromEntries([...Object.keys(TOWER_WEAPONS).map((k) => tower(k, TOWER_WEAPONS[k] as WeaponSpec)), ...Object.keys(TOWER_AURAS).map((k) => tower(k, null, TOWER_AURAS[k])), ...ENEMY_ARCHETYPES, ...DEFENDER_ARCHETYPES, ...STRUCTURE_ARCHETYPES].map((a) => [a.id, a])),
   commandNetwork: false,
   relayHillBonus: 0,
   fog: false,

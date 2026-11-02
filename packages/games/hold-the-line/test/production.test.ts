@@ -63,7 +63,9 @@ describe('production: setup', () => {
     for (const cmd of [{ t: 'buy', kind: 'walker' }, { t: 'unbuy', index: 0 }, { t: 'workshop' }] as PlanCommand[]) expect(checkPlan(fresh(), 0, cmd)).toBe('mode');
     expect(checkPlan(shop, 0, { t: 'produce', kind: 'barracks', x, y })).toBe('mode');
     expect(checkPlan(shop, 0, { t: 'research', id: 'shields' })).toBe('mode');
-    expect(checkPlan(newGame(1, 'normal', 'crossing'), 0, { t: 'produce', kind: 'barracks', x: 0, y: 16 })).toBe('mode');
+    // Against the outside force buildings send defenders (§ 18.3); alone, the other side builds nothing.
+    expect(checkPlan(newGame(1, 'normal', 'crossing'), 0, { t: 'produce', kind: 'barracks', x: 0, y: 16 })).toBeNull();
+    expect(checkPlan(newGame(1, 'normal', 'crossing', { solo: true }), 1, { t: 'produce', kind: 'barracks', x: 0, y: 0 })).toBe('mode');
   });
 });
 
