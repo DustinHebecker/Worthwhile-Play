@@ -71,18 +71,18 @@ export const canBeNeutral = (arch: Archetype | undefined): boolean => !!arch && 
 export const teamOf = (world: Pick<World, 'teams'>, side: number): number => (side === NEUTRAL ? NEUTRAL : (world.teams?.[side] ?? side));
 
 /**
- * Whether units of side `a` treat side `b` as an enemy (targets, jamming, attack orders). Sides
- * of one team are not hostile to each other; a neutral post is hostile to every side (it can be
- * fired on) but never acts itself. Every hostility check goes through here (teams, later, only
- * change the data).
- */
-/**
  * Whether `weapon` can engage targets of archetype `target` at all: its armor class (`vs` > 0) and,
  * on the air layer, flying targets as such (`vs.air` > 0), whatever armor class the flyer carries
  * (orchestrator finding 2026-11-02: a flyer with armor 'structure' was hit by ground-only weapons).
  */
 export const canEngage = (weapon: WeaponSpec, target: Pick<Archetype, 'armor' | 'layer'>): boolean => weapon.vs[target.armor] > 0 && (target.layer !== 'air' || weapon.vs.air > 0);
 
+/**
+ * Whether units of side `a` treat side `b` as an enemy (targets, jamming, attack orders). Sides
+ * of one team are not hostile to each other; a neutral post is hostile to every side (it can be
+ * fired on) but never acts itself. Every hostility check goes through here (teams, later, only
+ * change the data).
+ */
 export const hostile = (world: Pick<World, 'teams'>, a: number, b: number): boolean =>
   a !== b && (a === NEUTRAL || b === NEUTRAL || teamOf(world, a) !== teamOf(world, b));
 
