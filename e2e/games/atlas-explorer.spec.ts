@@ -93,8 +93,14 @@ test('atlas-explorer: tapping the target on the map is "On target"; the review e
   }).toPass({ timeout: 20_000 });
   await page.getByTestId('ae-check').click();
   await expect(page.getByTestId('ae-root')).toHaveAttribute('data-phase', 'find-review');
-  const done = await current<FindItem>(page);
-  expect(done.band).not.toBeNull();
+  // The page shows the review before the host has saved it: wait for the saved verdict.
+  let done = await current<FindItem>(page);
+  await expect
+    .poll(async () => {
+      done = await current<FindItem>(page);
+      return done.band;
+    })
+    .not.toBeNull();
   // A river's label point can lie a little off the line; everything else is hit exactly — up to the
   // click's pixel rounding, which can land a tiny country's label point just outside its border.
   const east = await clientPoint(page, lon + 1, lat);

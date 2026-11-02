@@ -16,6 +16,7 @@ import {
   interestOf,
   isValidState,
   lockRound,
+  MAX_PLAN_COMMANDS,
   seenBy,
   MAX_WORKSHOPS,
   newGame,
@@ -35,7 +36,7 @@ import {
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const idle: Planner = () => [];
 const ai: Planner = (s) => planRound(s);
-const fresh = (): HoldState => newGame(1, 'normal');
+const fresh = (): HoldState => newGame(1, 'normal', 'duel', { waves: 'shop' });
 
 
 describe('map', () => {
@@ -62,7 +63,7 @@ describe('map', () => {
 
 describe('planning', () => {
   it('starts both sides equal; the computer plans at the lock from the round start only', () => {
-    const s = newGame(5, 'normal');
+    const s = newGame(5, 'normal', 'duel', { waves: 'shop' });
     expect(s.phase).toBe('plan');
     expect(s.sides.map((x) => [x.credits, x.core])).toEqual([
       [START_CREDITS, START_CORE],
@@ -177,8 +178,9 @@ describe('battle', () => {
     expect(end.sides[1].wave).toEqual([]);
   });
 
-  it('the game ends after the last round or when a core falls; the higher core wins', () => {
-    let s = fresh();
+  it('a short game ends after its last round or when a core falls; the higher core wins', () => {
+    const short = () => newGame(1, 'normal', 'duel', { length: 'rounds', waves: 'shop' });
+    let s = short();
     for (let round = 0; round < ROUNDS && s.phase === 'plan'; round++) {
       s = applyPlan(s, 0, { t: 'buy', kind: 'walker' });
       s = resolveBattle(lockRound(s, idle)).state;
@@ -188,7 +190,7 @@ describe('battle', () => {
     expect(s.sides[1].core).toBe(START_CORE - ROUNDS);
     expect(isValidState(clone(s))).toBe(true);
     // Both silent: a draw.
-    let quiet = fresh();
+    let quiet = short();
     while (quiet.phase === 'plan') quiet = resolveBattle(lockRound(quiet, idle)).state;
     expect(quiet.phase).toBe('draw');
   });
@@ -208,8 +210,8 @@ describe('properties', () => {
   it('determinism: the same plans give the same game', () => {
     fc.assert(
       fc.property(arb, ({ seed, build, n }) => {
-        const a = resolveBattle(lockRound(randomPlan(newGame(seed, 'normal'), build, n), ai)).state;
-        const b = resolveBattle(lockRound(randomPlan(newGame(seed, 'normal'), build, n), ai)).state;
+        const a = resolveBattle(lockRound(randomPlan(newGame(seed, 'normal', 'duel', { waves: 'shop' }), build, n), ai)).state;
+        const b = resolveBattle(lockRound(randomPlan(newGame(seed, 'normal', 'duel', { waves: 'shop' }), build, n), ai)).state;
         expect(worldHash(a.world)).toBe(worldHash(b.world));
         expect(a).toEqual(b);
       }),
@@ -220,7 +222,7 @@ describe('properties', () => {
   it('save and restore at any tick of a battle continues exactly; saves stay valid', () => {
     fc.assert(
       fc.property(arb, fc.integer({ min: 0, max: 300 }), ({ seed, build, n }, at) => {
-        const start = lockRound(randomPlan(newGame(seed, 'normal'), build, n), ai);
+        const start = lockRound(randomPlan(newGame(seed, 'normal', 'duel', { waves: 'shop' }), build, n), ai);
         const mid = stepBattle(start, at).state;
         expect(isValidState(clone(mid))).toBe(true);
         expect(resolveBattle(clone(mid)).state).toEqual(resolveBattle(mid).state);
@@ -232,7 +234,7 @@ describe('properties', () => {
   it('credits never go negative and cores stay within range', () => {
     fc.assert(
       fc.property(arb, ({ seed, build, n }) => {
-        let s = newGame(seed, 'normal');
+        let s = newGame(seed, 'normal', 'duel', { waves: 'shop' });
         for (let r = 0; r < 3 && s.phase === 'plan'; r++) {
           s = randomPlan(s, build + r, n);
           for (const side of s.sides) expect(side.credits).toBeGreaterThanOrEqual(0);
@@ -249,7 +251,7 @@ describe('properties', () => {
 
   it('a battle saved after a core reached 0 is valid and resumes exactly (orchestrator review)', () => {
     // A player who never plans: the computer's waves break the core while units still run.
-    let s = newGame(2, 'hard');
+    let s = newGame(2, 'hard', 'duel', { waves: 'shop' });
     let mid: HoldState | null = null;
     while (s.phase === 'plan' && !mid) {
       s = lockRound(s, ai);
@@ -321,9 +323,11 @@ describe('properties', () => {
       tamper(t);
       expect(isValidState(t)).toBe(false);
     }
-    // A finished game at the last round with equal cores is a draw, and valid.
-    const end = { ...clone(s), round: ROUNDS - 1, phase: 'draw' as const, log: Array.from({ length: ROUNDS }, () => ({ player: [], ai: [] })) };
+    // A finished short game at the last round with equal cores is a draw, and valid; an endless one
+    // cannot have ended there with both cores standing.
+    const end = { ...clone(s), length: 'rounds' as const, round: ROUNDS - 1, phase: 'draw' as const, log: Array.from({ length: ROUNDS }, () => ({ player: [], ai: [] })) };
     expect(isValidState(end)).toBe(true);
+    expect(isValidState({ ...end, length: 'endless' })).toBe(false);
   });
 
   it('isValidState never throws and rejects junk and tampered saves', () => {
@@ -399,3 +403,17 @@ describe('what the computer sees', () => {
     expect(seenLog).toEqual([{ player: [], ai: [] }]);
   });
 });
+
+describe('the plan log stays within what a save may hold (review of PR #107)', () => {
+  it('after MAX_PLAN_COMMANDS commands in a round, a side can give no more until the next round', () => {
+    let s = newGame(1, 'normal', 'duel', { length: 'rounds', waves: 'shop' });
+    for (let i = 0; i < MAX_PLAN_COMMANDS / 2; i++) s = applyPlan(applyPlan(s, 0, { t: 'buy', kind: 'walker' }), 0, { t: 'unbuy', index: 0 });
+    expect(s.log[0]!.player).toHaveLength(MAX_PLAN_COMMANDS);
+    expect(checkPlan(s, 0, { t: 'buy', kind: 'walker' })).toBe('log-full');
+    expect(applyPlan(s, 0, { t: 'buy', kind: 'walker' })).toBe(s);
+    expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    // The other side is not affected.
+    expect(checkPlan(s, 1, { t: 'buy', kind: 'walker' })).toBeNull();
+  });
+});
+

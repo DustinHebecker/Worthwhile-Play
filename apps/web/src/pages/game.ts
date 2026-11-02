@@ -146,7 +146,8 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
    * What a save tells about the settings it was started with (difficulty under `difficulty`), and whether that
    * covers every setting the start screen would show for it. The game's `settingsOf(state)` is the source of truth
    * for the difficulty (e.g. renamed by a state migration) and stands in for the settings of saves written before
-   * the envelope kept them. Without it, the envelope's difficulty counts when it is one of the game's difficulties.
+   * the envelope kept them, or for settings a game added later (the envelope's own values win where it has them).
+   * Without it, the envelope's difficulty counts when it is one of the game's difficulties.
    */
   const fromSave = (save: GameSave<unknown>): { chosen: Record<string, unknown>; known: boolean } => {
     let derived: Record<string, unknown> = {};
@@ -159,7 +160,8 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     const { difficulty: derivedDifficulty, ...derivedSettings } = derived;
     // A game that implements settingsOf tells the difficulty itself (none: the state has no valid one).
     const difficulty = module?.settingsOf ? validDifficulty(derivedDifficulty) : validDifficulty(save.difficulty);
-    const chosen: Record<string, unknown> = { ...(save.settings ?? derivedSettings), ...(difficulty !== undefined ? { difficulty } : {}) };
+    // What the envelope kept wins; settingsOf fills in settings added after the save was written.
+    const chosen: Record<string, unknown> = { ...derivedSettings, ...(save.settings ?? {}), ...(difficulty !== undefined ? { difficulty } : {}) };
     const list = specs();
     const { visible } = resolveSettings(list, metadata, chosen);
     const known = list.every((spec) => {

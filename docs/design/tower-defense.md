@@ -683,7 +683,7 @@ Measured (Node, seed 1; long suite `ai.long.test.ts`):
 
 A Hard planner that also looked one round ahead (the next force is known) did worse: it bought for the next force at the cost of the current one.
 
-**Planning time.** The planner's simulations now skip the per-tick copy in `tickLanes` (`owned`) and stop a candidate as soon as it can no longer be chosen (the bound is exact, so decisions are unchanged). Measured worst per round in a game: Normal 0.9 s, Hard 0.5 s. With 3000 credits in round 10 (not reached in measured games): Normal 1.7 s, Hard 5 s. The view shows "thinking" first. A Web Worker, or the engine hook E4 (one copy per wave instead of two per tick), are the next steps if this matters on phones.
+**Planning time.** The planner's simulations now skip the per-tick copy in `tickLanes` (`owned`) and stop a candidate as soon as it can no longer be chosen (the bound is exact, so decisions are unchanged). Measured gain from both (review of PR #104; an earlier note said "about 3× faster", which overstated it): Normal 2.5×, Hard 1.58× per plan, and 1.3–1.6× in the rich case below. Measured worst per round in a game: Normal 0.9 s, Hard 0.5 s. With 3000 credits in round 10 (not reached in measured games): Normal 1.7 s, Hard 5 s before the work budget. Since PR #105/#107 the planner runs in a Web Worker and its work is bounded by `WORK_BUDGET` (150 000 entity-ticks, a hard bound except for the first simulation of a round; about 2 s in Node, 1.2–3.8 s measured on a loaded machine), including Hard's probing of attack waves. The engine hook E4 (one copy per wave instead of two per tick) remains the next step if this matters on phones.
 
 ### 17.3 Next
 
@@ -691,11 +691,11 @@ External Large (mobile defenders meet the outside force before the split) needs 
 
 ---
 
-## 18. Hold the Line, revision after the owner's playtest (2026-11-01) — decided, not yet built
+## 18. Hold the Line, revision after the owner's playtest (2026-11-01) — steps A and B built
 
 Owner playtest of VS Small and the owner's answers (2026-11-01):
 
-1. **Duel: automatic waves from production and research (decided).** You build **production buildings** on your own pads (e.g. Barracks → Walkers, Garage → Runners/Brutes, Hangar → Gliders); each sends its units automatically every round. A **research** building unlocks stronger tiers (e.g. Walker → Shield bearer, Brute → Siege crawler) and upgrades (+health, +speed). Buying the wave per round (the VS Small shop as built, § 16) stays only as a **game option**.
+1. **Duel: automatic waves from production and research (decided).** You build **production buildings** on your own pads (e.g. a drill yard → Walkers, Garage → Runners/Brutes, Hangar → Gliders); each sends its units automatically every round. A **research** building unlocks stronger tiers (e.g. Walker → Shield bearer, Brute → Siege crawler) and upgrades (+health, +speed). Buying the wave per round (the VS Small shop as built, § 16) stays only as a **game option**.
 2. **Endless is the default (decided).** The game ends when a core falls; you win by bringing the opponent's core down, not on points. Attackers get automatically stronger every round, so every game ends. "10 rounds on points" stays as the short-game option.
 3. **Outside force (§ 17) is the intended mode (confirmed)**, extended:
    - **Endless** here too (the force keeps growing until a core falls).
@@ -703,3 +703,52 @@ Owner playtest of VS Small and the owner's answers (2026-11-01):
    - **Produced units help**: your production buildings send defenders that move out on the road and fight the outside force every round. This needs unit-versus-unit combat on the road (the "External Large" step of § 13.2).
 
 Order of work: Tower Defense polish from the same playtest first (smooth movement and better unit pictures, which Hold the Line shares; more waves with a gentler ramp; the card picture), then Duel with production and research and Endless, then Outside force with Solo, Endless and defenders.
+
+### 18.1 Step A as built: Endless, the short game, playing alone
+
+- **Start screen:** *Mode* — Duel, Outside force, Outside force alone; *Length* — Endless (default), Ten rounds. Saves from before the choice have no `length` and stay ten-round games.
+- **Endless:** a game ends when a core falls (both in the same battle: a draw). It ends by round 47 at the latest, whatever the defence (review of PR #107: the first version could be held forever, and long games outgrew the save bounds):
+  - **Duel:** the *levy* — each side sends, on top of what it bought, free units: a Walker every second round and from round 12 one more per round, every fourth a Brute, up to 40 units (round 35). From then on it grows heavier instead: every round two more of its Walkers become Brutes. The shop shows the levy apart from what was bought, and the summary of the last round lists it once.
+  - **Outside force:** after the table's ten rounds every round adds two Brutes, a Shield bearer, a Raider, a Glider and a Siege crawler. Past 108 units per half (plus up to 12 Walkers for what got through) the lightest units give way first (Gliders, Shield bearers, Raiders, then Brutes; never Siege crawlers), so every round brings one more Siege crawler and a higher total threat than the one before (pinned for every round up to the last in `endless.test.ts`).
+  - **Wear-down (all modes):** from round 40 every standing core loses 1, 2, 3, … at the end of each round, on top of what gets through; alone, only your core. A full core (30) is gone after eight such rounds, so round 47 (`MAX_ROUNDS`) is the last possible round. Both sides wear down equally, and it never undoes a decided game (review of PR #107, B2): a core that fell in battle decides the game and nothing wears down in that round; when the wear-down empties both cores, the side that had more before it keeps 1 and wins (equal cores: a draw). The HUD announces the wear-down from round 35 and shows each round's loss while it applies; the endless round counter reads "Round n of at most 47"; rules and the length hint say it up front.
+  - **Credits** are capped at 1,000,000 (income, interest, bounties and refunds stop there); alone, the other side earns nothing. Long suite `endless.long.test.ts`: a defence with every pad filled and upgraded and the maximum credits from the start falls by round 47 alone, against the outside force and in the Duel (turtle against turtle), and every save along the way (after each plan step, every 150 battle ticks) is valid. Measured with the strongest of a sweep over every level-3 kind alone and two mixes: against the outside force such a defence falls by round 23 (Focus lasers everywhere; alone and with an opponent), so there the growing force ends the game. In the Duel two such defences hold against the levy until the wear-down ends the game in round 47 (draw): the wear-down is what bounds a Duel between two all-out defences.
+- **Alone (Outside force only):** only the half that comes for you sets off; nobody plans for the other side, its core is never attacked and is hidden. Endless: you hold as long as you can; when your core falls the game ends with its own wording ("The outside force broke through your line.", outcome `completed`, stats without an opponent) and the end text says in which round. The outside-force panel speaks of you alone. Ten rounds: you win if your core still stands after round 10.
+- **Start screen alone:** no difficulty (nobody plans against you and the force is fixed); the other half's cells are read out as unused.
+- **Plan log:** at most 1000 commands per side and round (`MAX_PLAN_COMMANDS`; buying and removing the same unit over and over could outgrow what a save may hold).
+- **Saves:** `stateVersion` 2 (identity migration from 1), so an older client does not read endless or solo saves as ten-round games. Solo saves must leave the other side untouched (no towers, plans, credits or core loss); their pressure is at most one wave.
+- **Review items from PR #104 folded in:** pressure is 0 before the first battle and at most 2 × `MAX_WAVE` (L1); each round's pressure is pinned to that round's leaks (M2); `isValidState` never throws, also on sparse arrays or throwing getters (L9).
+
+Step B: § 18.2. Still to come: Step C (your own defenders against the outside force).
+
+### 18.2 Step B as built: the Duel with production and research
+
+Default for the Duel; buying the wave each round (§ 16) is the start-screen option *Attack waves: Production / Shop* (setting `waves`, shown for the Duel only). Saves from before the choice have no `waves` and stay Duels with the shop (`stateVersion` 3, identity migration from 1 and 2).
+
+- **Production buildings** on your own pads (like the Extractor: they take a pad, 120 health, armed units can destroy them, they sell for the usual refund). Each sends its units at every lock, the round it is built included; at most 10 Drill yards, Garages and Hangars together, and one Lab:
+
+  | Building | Price | Sends every round |
+  |---|---|---|
+  | Drill yard (`barracks`) | 150 | 3 Walkers |
+  | Garage | 200 | 2 Runners |
+  | Hangar | 225 | 1 Glider |
+  | Lab | 150 (one per side) | nothing; allows research |
+
+  The planned prices (100/150/175) made games between two computer sides end in round 7–9; with these and research taking effect a round later (below) they last 11–20 rounds.
+
+- **Research** (needs a Lab; each item once; paid when chosen, **in effect from the next round**, so the other side sees it a round ahead, like new buildings; shown to both sides in the summary of the last round). Research that took effect stays when the Lab is lost. The Lab cannot be sold while research is under way (review of PR #110: built, used and sold back the same round, it would have cost nothing).
+
+  | Research | Price | Effect |
+  |---|---|---|
+  | Armour plates | 150 | Drill yards send Shield bearers instead of Walkers |
+  | Field repair | 150 | every Drill yard also sends a Mender |
+  | Armed raiders | 175 | Garages send Raiders instead of Runners |
+  | Heavy chassis | 200 | every Garage also sends a Brute |
+  | Twin hangars | 200 | every Hangar sends 2 Gliders |
+  | Siege works | 300 | a Siege crawler in every third round |
+
+- **The wave** = what the buildings send (building by building, oldest first; then the Siege crawler) + the endless levy. No shop, no workshops. Longest possible wave: 10 × 4 + 1 + 40 = 81 units (`MOST_PRODUCED`, within the save bound of 120).
+- **Computer:** defends first (all but its kept share may go to defence, as against the outside force), then builds one production building per round on its pad least exposed to the incoming road: the kind whose units are worth most per credit against your towers (Easy: Drill yards; Hard: by simulating the wave it would send, within the work budget). From three buildings on it builds a Lab and researches one item per round, the one adding most threat per credit. It expects your buildings' wave plus the levy (or your last wave, if that was stronger).
+- **Balance** (long suite `ai.long.test.ts`, endless): mirror matches are draws on every level; Hard beats Normal beats Easy from either seat, with a fallen core before the wear-down; Normal and Hard build at least three buildings and research; a player who never plans loses to every level. Measured (seed 1): Easy–Easy round 17, Normal–Normal 12, Hard–Hard 20, Hard–Normal 18, Normal–Easy 14, Hard–Easy 11.
+- **Pictures:** own canvas drawings with their own silhouettes (td-core `buildings.ts`): Drill yard (hut with a pennant), Garage (ribbed roller door), Hangar (arched roof), Lab (dome with a flask).
+- **Saves:** research and research under way only with production, each item once; a round starts with none under way; buildings only with production (at most 10 plus one Lab); while planning no side has a wave; a produced wave holds only kinds the side's buildings can send with its research, plus the levy at its end; while planning, research equals the round's start and research under way needs a standing Lab.
+- **Names** (review of PR #110, product rule on borrowed names): the building is a *Drill yard* and the first research *Armour plates*; "Barracks" (and "Shield plates" for its units) echoed C&C and StarCraft. The internal id stays `barracks`.

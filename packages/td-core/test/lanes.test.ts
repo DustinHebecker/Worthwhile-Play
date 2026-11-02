@@ -164,3 +164,47 @@ describe('wave lanes', () => {
     expect(chebyshev(1, 1, 1, 1)).toBe(0);
   });
 });
+
+describe('tickLanes(…, owned) (review of PR #104, L7)', () => {
+  /** A world with a gun beside the road and a mixed wave, so towers fire, units move, die and leak. */
+  const busy = (): { w: World; r: LaneRun } => {
+    const w = world();
+    w.entities.push(spawn(w.nextId++, 0, archetypeOf(TD_RULESET, 'gun')!, 1, 4));
+    const r = run([
+      { at: 0, kind: 'walker', route: 0 },
+      { at: 4, kind: 'glider', route: 1 },
+      { at: 8, kind: 'brute', route: 0 },
+      { at: 12, kind: 'runner', route: 2, side: 0 }
+    ]);
+    return { w, r };
+  };
+
+  it('gives the same results as the copying path, tick by tick', () => {
+    let a = busy();
+    let b = busy();
+    for (let i = 0; i < 400; i++) {
+      const copied = tickLanes(a.w, a.r, ROUTES);
+      const owned = tickLanes(b.w, b.r, ROUTES, true);
+      expect(owned.world, `tick ${i}`).toEqual(copied.world);
+      expect(owned.run, `tick ${i}`).toEqual(copied.run);
+      expect(owned.leaks, `tick ${i}`).toEqual(copied.leaks);
+      expect(owned.events, `tick ${i}`).toEqual(copied.events);
+      a = { w: copied.world, r: copied.run };
+      b = { w: owned.world, r: owned.run };
+    }
+  });
+
+  it('by default leaves its inputs unchanged; owned works on them in place', () => {
+    const { w, r } = busy();
+    const [w0, r0] = [structuredClone(w), structuredClone(r)];
+    const step = tickLanes(w, r, ROUTES);
+    expect(w).toEqual(w0);
+    expect(r).toEqual(r0);
+    expect(step.world).not.toBe(w);
+    expect(step.run).not.toBe(r);
+    // Owned: no copy of the run is made (the caller's run advances with it).
+    const mine = tickLanes(w, r, ROUTES, true);
+    expect(mine.run).toBe(r);
+    expect(r.tick).toBe(1);
+  });
+});

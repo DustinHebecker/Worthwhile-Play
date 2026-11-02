@@ -494,6 +494,13 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
   line with its player; a person who helped gets their own roll button and text.
 - Saves stay valid: a save in the middle of fleeing continues with the helper's rolls.
 
+### 10.5d Late pictures no longer redraw the screen (2026-11-02)
+
+- Found while chasing a rare e2e failure under load: a world's pictures load lazily, and when they arrived the game
+  redrew everything. A redraw between pressing and releasing a key or button replaced that control, so the press was
+  lost (seen as a coach switch that did not switch, and once as an Equip that did not equip). Late pictures are now
+  put into the existing tiles, card detail and reveal in place; no control is replaced.
+
 ### 10.5 Owner feedback after the first play-test (2026-10-15) — backlog
 
 - **B1 Card text while choosing cards to give away or sell.** In the give-away and sell modes a tap selects the card, so its description cannot be read before choosing. Fix: an info button on every tile (or a long press) that opens the card detail in every mode; selection stays on the tile itself.

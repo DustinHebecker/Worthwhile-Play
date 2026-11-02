@@ -11,8 +11,13 @@ import {
   externalWave,
   isValidState,
   lockRound,
+  BASE_CAPACITY,
+  MAX_LEVY,
   MAX_PRESSURE,
+  MAX_WAVE,
+  MAX_WORKSHOPS,
   newGame,
+  WORKSHOP_CAPACITY,
   resolveBattle,
   ROUNDS,
   stepBattle,
@@ -31,8 +36,8 @@ describe('External Small: setup', () => {
   it('each mode has its own map; the map decides the mode', () => {
     expect(mapForMode('vs-small')).toBe(DUEL);
     expect(mapForMode('external-small')).toBe(CROSSING);
-    expect(newGame(1, 'easy').mode).toBe('vs-small');
-    expect(newGame(1, 'easy').pressure).toBeUndefined();
+    expect(newGame(1, 'easy', 'duel', { waves: 'shop' }).mode).toBe('vs-small');
+    expect(newGame(1, 'easy', 'duel', { waves: 'shop' }).pressure).toBeUndefined();
     const s = fresh();
     expect(s.mode).toBe('external-small');
     expect(s.pressure).toBe(0);
@@ -68,7 +73,7 @@ describe('External Small: the outside force', () => {
       expect(externalWave(atRound(s, round, 99))).toHaveLength(base + MAX_PRESSURE);
       expect(externalWave(atRound(s, round, 3)).slice(base)).toEqual(['walker', 'walker', 'walker']);
     }
-    expect(externalWave(newGame(1, 'easy'))).toEqual([]);
+    expect(externalWave(newGame(1, 'easy', 'duel', { waves: 'shop' }))).toEqual([]);
   });
 
   it('at the lock both sides face exactly this round’s force', () => {
@@ -135,7 +140,43 @@ describe('External Small: saves', () => {
       expect(isValidState(t)).toBe(false);
     }
     // VS Small never has a pressure.
-    expect(isValidState({ ...clone(newGame(1, 'easy')), pressure: 0 })).toBe(false);
+    expect(isValidState({ ...clone(newGame(1, 'easy', 'duel', { waves: 'shop' })), pressure: 0 })).toBe(false);
+  });
+});
+
+describe('wave bounds in saves (review of PR #104, L2)', () => {
+  const withLast = (base: HoldState, side: 0 | 1, wave: string[]): HoldState => {
+    const t = clone(base);
+    t.sides[side].lastWave = wave as HoldState['sides'][0]['lastWave'];
+    t.roundStart.sides[side].lastWave = wave as HoldState['sides'][0]['lastWave'];
+    return t;
+  };
+
+  it('External Small: last round\'s force is real kinds, at most MAX_WAVE units', () => {
+    const s = atRound(fresh(), 2);
+    s.roundStart = clone(fresh().roundStart);
+    for (const side of [0, 1] as const) {
+      expect(isValidState(withLast(s, side, Array(MAX_WAVE).fill('brute'))), `side ${side}`).toBe(true);
+      expect(isValidState(withLast(s, side, Array(MAX_WAVE + 1).fill('brute'))), `side ${side}`).toBe(false);
+      expect(isValidState(withLast(s, side, ['brute', 'dragon'])), `side ${side}`).toBe(false);
+      // The force may hold kinds that are not for sale (it is not bought).
+      expect(isValidState(withLast(s, side, ['crawler', 'mender'])), `side ${side}`).toBe(true);
+    }
+  });
+
+  it('Duel: a wave is bought kinds plus the levy, at most full capacity plus the full levy', () => {
+    const most = BASE_CAPACITY + MAX_WORKSHOPS * WORKSHOP_CAPACITY + MAX_LEVY;
+    const s = newGame(1, 'normal', 'duel', { waves: 'shop' });
+    expect(isValidState(withLast(s, 0, Array(most).fill('walker')))).toBe(true);
+    expect(isValidState(withLast(s, 0, Array(most + 1).fill('walker')))).toBe(false);
+    expect(isValidState(withLast(s, 0, ['walker', 'dragon']))).toBe(false);
+    // Kinds that are not for sale cannot be in a bought wave, one bad unit is enough.
+    const locked = lockRound(applyPlan(s, 0, { t: 'buy', kind: 'walker' }), idle);
+    const bad = clone(locked);
+    bad.sides[0].wave = ['walker', 'crawler'];
+    expect(isValidState(bad)).toBe(false);
+    const ok = clone(locked);
+    expect(isValidState(ok)).toBe(true);
   });
 });
 

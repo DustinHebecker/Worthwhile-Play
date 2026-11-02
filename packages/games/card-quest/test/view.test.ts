@@ -295,6 +295,34 @@ describe('view', () => {
     instance.dispose();
   });
 
+  it('pictures that arrive late are put in place without replacing any control (a press during a redraw was lost)', async () => {
+    // A fresh module, so this game's world pictures are certainly still to load.
+    vi.resetModules();
+    const fresh = (await import('../src/index')).default;
+    await fresh.preload?.('en');
+    const ctx = createTestContext(fresh as GameModule<unknown>, 'en');
+    const instance = fresh.create(ctx.context as never);
+    instance.newGame({ seed: 3, settings: { worlds: 'pick', 'world-sl': true, 'world-of': true } });
+    const root = ctx.context.root;
+    const tiles = () => [...root.querySelectorAll<HTMLElement>('[data-testid="hand"] .cq-tile')];
+    expect(tiles().some((t) => t.querySelector('svg.cq-il'))).toBe(false);
+    tiles()[0]!.click();
+    const coach = root.querySelector('[data-testid="coach"]');
+    const firstTile = tiles()[0]!;
+    const detail = root.querySelector('[data-testid="detail"]')!;
+    const close = q(root, 'detail-close');
+    expect(detail.querySelector('[data-testid="detail-pic"]')).toBeNull();
+    await vi.waitFor(() => expect(tiles().every((t) => t.querySelector('svg.cq-il'))).toBe(true), { timeout: 15_000, interval: 50 });
+    // Same elements as before: the checkbox, the tile and the detail's Close button were not redrawn.
+    expect(root.querySelector('[data-testid="coach"]')).toBe(coach);
+    expect(tiles()[0]).toBe(firstTile);
+    expect(q(root, 'detail-close')).toBe(close);
+    // The detail now shows the large picture on top instead of the small one.
+    expect(detail.firstElementChild?.getAttribute('data-testid')).toBe('detail-pic');
+    expect(detail.querySelector('.cq-detail-head .cq-art')).toBeNull();
+    instance.dispose();
+  });
+
   describe('owner feedback 2026-10-17', () => {
     const mount = (state: CardQuestState) => {
       const ctx = createTestContext(game as GameModule<unknown>, 'en');
