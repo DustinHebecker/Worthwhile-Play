@@ -389,7 +389,24 @@ describe('bounded planning work', () => {
     expect(m.used).toBeLessThan(WORK_BUDGET);
   });
 
-  it('Hard keeps the first attack order tried once the budget is used up', () => {
+  it('the budget is a hard bound: a simulation that would pass it stops there and is never chosen (review of PR #107)', () => {
+    const s = atRound(newGame(1, 'normal'), 3);
+    const wave = Array.from({ length: 20 }, () => 'brute' as const);
+    const full: Meter = { used: 0 };
+    const through = leakage(s.world, s, 1, wave, Infinity, full);
+    expect(Number.isFinite(through)).toBe(true);
+    // The same simulation with less budget left than it needs: unknown, and the meter stops at the bound.
+    const near: Meter = { used: WORK_BUDGET - Math.floor(full.used / 2) };
+    expect(leakage(s.world, s, 1, wave, Infinity, near)).toBe(Infinity);
+    expect(near.used).toBeGreaterThanOrEqual(WORK_BUDGET);
+    expect(near.used - WORK_BUDGET).toBeLessThan(200);
+    // A whole plan started just below the bound ends within one tick's work of it.
+    const m: Meter = { used: WORK_BUDGET - 500 };
+    planRound(s, 1, 'normal', m);
+    expect(m.used - WORK_BUDGET).toBeLessThan(200);
+  });
+
+  it('Hard keeps Walkers once the budget is used up', () => {
     const s = newGame(1, 'hard');
     expect(probeOrder(s, 1, 0, { used: WORK_BUDGET })).toEqual([SHOP[0]]);
     expect(probeOrder(s, 1, 0, { used: 0 })).toEqual(probeOrder(s, 1, 0));
