@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isDefenderKind } from '@wp/td-core';
 import { CROSSING, ownPad } from '../src/maps';
-import { applyPlan, isValidState, lockRound, MAX_BATTLE_TICKS, MAX_PRODUCERS, newGame, RESEARCH_IDS, stepBattle, type HoldState } from '../src/rules';
+import { applyPlan, defendersOf, isValidState, lockRound, MAX_BATTLE_TICKS, MAX_PRODUCERS, newGame, RESEARCH_IDS, stepBattle, type HoldState } from '../src/rules';
 
 /**
  * No stall (design § 18.3, orchestrator's condition 3): whatever buildings and research both sides
@@ -38,16 +38,19 @@ describe('defenders never stall a battle', () => {
         const s = setup(round, [a, solo ? [] : b], [ra, solo ? [] : rb], solo);
         expect(isValidState(clone(s))).toBe(true);
         let t = lockRound(s, () => []);
-        let sawDefenders = false;
+        // Every building's defenders set off at the lock (they may fall before a sample below sees them).
+        const sent = (t.run!.guards ?? []).length;
+        expect(sent).toBe(defendersOf(s, 0).length + (solo ? 0 : defendersOf(s, 1).length));
+        expect(sent > 0).toBe(a.length + (solo ? 0 : b.length) > 0);
         while (t.phase === 'battle') {
           t = stepBattle(t, 100).state;
-          sawDefenders ||= t.world.entities.some((e) => isDefenderKind(e.kind));
           expect(isValidState(clone(t))).toBe(true);
           if (t.phase === 'battle') expect(t.run!.tick).toBeLessThan(MAX_BATTLE_TICKS / 2);
         }
-        expect(sawDefenders || a.length + (solo ? 0 : b.length) === 0).toBe(true);
+        expect(t.world.entities.some((e) => isDefenderKind(e.kind))).toBe(false);
       }),
-      { numRuns: 60 }
+      // The seed of the CI failure on PR #111 (a sampling assertion, now replaced) is among the runs.
+      { numRuns: 60, examples: [[7, [1], [], [], [], false]] }
     );
   }, 900_000);
 });
