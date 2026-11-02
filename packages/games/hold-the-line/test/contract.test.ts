@@ -10,7 +10,7 @@ const click = (root: HTMLElement, testId: string) => {
 
 runGameContract(game, {
   interact: (root) => {
-    // Duel with production (the default): a Gun and a Barracks in the own half.
+    // Duel with production (the default): a Gun and a Drill yard in the own half.
     click(root, 'cell-5-12');
     click(root, 'build-gun');
     click(root, 'cell-1-13');

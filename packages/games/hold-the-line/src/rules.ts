@@ -166,7 +166,7 @@ export const PRODUCERS = { barracks: 150, garage: 200, hangar: 225, lab: 150 } a
 export type ProducerKind = keyof typeof PRODUCERS;
 export const PRODUCER_KINDS = Object.keys(PRODUCERS) as ProducerKind[];
 export const isProducerKind = (kind: string): kind is ProducerKind => Object.hasOwn(PRODUCERS, kind);
-/** Barracks, Garages and Hangars a side may have together (bounds the wave; the Lab is one more). */
+/** Drill yards (id `barracks`), Garages and Hangars a side may have together (bounds the wave; the Lab is one more). */
 export const MAX_PRODUCERS = 10;
 
 /**
@@ -179,7 +179,7 @@ export const RESEARCH_IDS = Object.keys(RESEARCH) as ResearchId[];
 const isResearchId = (v: unknown): v is ResearchId => typeof v === 'string' && Object.hasOwn(RESEARCH, v);
 /** A Siege crawler joins the produced wave in every third round (rounds 3, 6, … counted from 1). */
 export const SIEGE_EVERY = 3;
-/** Most units one building sends (Barracks with Field repair: 3 + 1). */
+/** Most units one building sends (a Drill yard with Field repair: 3 + 1). */
 const MOST_PER_PRODUCER = 4;
 /** Kinds a production wave can hold. */
 const PRODUCED_KINDS: readonly EnemyKind[] = ['walker', 'shielder', 'mender', 'runner', 'raider', 'brute', 'glider', 'crawler'];
@@ -384,6 +384,8 @@ export function checkPlan(s: HoldState, side: number, cmd: PlanCommand): Refusal
       if (own.workshops >= MAX_WORKSHOPS) return 'workshops';
       return WORKSHOP_PRICE > own.credits ? 'credits' : null;
     default:
+      // The Lab stays while research is under way (else it would cost nothing: sold back the same round).
+      if (cmd.t === 'sell' && (own.researching ?? []).length > 0 && s.world.entities.some((e) => e.id === cmd.id && e.side === side && e.kind === 'lab')) return 'lab';
       return checkBuild(s.world, own, side, cmd, (x, y) => ownPad(map, side, x, y));
   }
 }
@@ -658,6 +660,11 @@ export function isPlanCommand(v: unknown): v is PlanCommand {
  */
 const MAX_STAT = 2 * MAX_CREDITS * MAX_ROUNDS;
 
+/** Kinds a side's buildings can send with `research` (the Siege crawler only with Siege works). */
+const sentKinds = (research: readonly ResearchId[]): EnemyKind[] => [
+  ...new Set([...(['barracks', 'garage', 'hangar'] as const).flatMap((k) => sendsOf(k, research)), ...(research.includes('siege') ? (['crawler'] as const) : [])])
+];
+
 /** Longest wave of a Duel with production: every building at its most, the Siege crawler and the full levy. */
 export const MOST_PRODUCED = MAX_PRODUCERS * MOST_PER_PRODUCER + 1 + MAX_LEVY;
 
@@ -759,6 +766,11 @@ function checkState(v: unknown): v is HoldState {
     if (JSON.stringify(foe) !== JSON.stringify(startSides[1]) || foe.wave.length > 0 || own.core !== startSides[0].core) return false;
     // Waves from outside or from buildings are only made at the lock.
     if ((map.mode === 'external-small' || production) && own.wave.length > 0) return false;
+    // Research takes effect only when a round ends; research under way needs a standing Lab.
+    if (production) {
+      if (JSON.stringify(own.research) !== JSON.stringify(startSides[0].research)) return false;
+      if ((own.researching ?? []).length > 0 && !world.entities.some((e) => e.side === 0 && e.kind === 'lab')) return false;
+    }
     const foeAt = (w: World) => JSON.stringify(w.entities.filter((e) => e.side === 1).map((e) => [e.id, e.kind, e.x, e.y, e.hp]));
     if (foeAt(world) !== foeAt(startWorld)) return false;
   }
@@ -779,6 +791,8 @@ function checkState(v: unknown): v is HoldState {
       // VS Small: what a side bought, then this round's levy (endless).
       const levy = levyOf(v as unknown as HoldState);
       if (sides.some((side) => JSON.stringify(side.wave.slice(side.wave.length - levy.length)) !== JSON.stringify(levy))) return false;
+      // With production, what was sent ahead of the levy is what buildings send with the side's research.
+      if (production && sides.some((side) => !side.wave.slice(0, side.wave.length - levy.length).every((k) => sentKinds(side.research ?? []).includes(k)))) return false;
     }
     for (const [i, side] of sides.entries()) {
       const schedule = scheduleOf([i === 0 ? side : { wave: [] }, i === 1 ? side : { wave: [] }]);

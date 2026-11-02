@@ -125,7 +125,7 @@ describe('Hold the Line view: the Duel with production (design § 18.2)', () => 
     s = applyPlan(applyPlan(s, 0, { t: 'produce', kind: 'barracks', x: 1, y: 13 }), 0, { t: 'produce', kind: 'lab', x: 2, y: 13 });
     const { el, instance } = show(s);
     el('research-shields')!.click();
-    expect(el('research-next')!.textContent).toContain('Shield plates');
+    expect(el('research-next')!.textContent).toContain('Armour plates');
     expect(el('research-shields')).toBeNull();
     // Still Walkers this round.
     expect(el('production-wave')!.textContent).toContain('3 × Walker');

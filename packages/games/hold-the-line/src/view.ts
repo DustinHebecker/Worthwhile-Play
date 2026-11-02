@@ -140,6 +140,8 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
   );
 
   // --- Helpers ---------------------------------------------------------------------------------
+  /** Lists in the language's own way ("a, b and c"; "a、b、c"). */
+  const listFormat = new Intl.ListFormat(bcp47Tag(t.locale), { style: 'long', type: 'conjunction' });
   const nameOf = (kind: string): string => (isStructureKind(kind) ? t(`structure.${kind}`) : t(`tower.${kind}`));
   const unitName = (kind: string): string => t(`enemy.${kind}`);
   const about = (kind: string): string =>
@@ -162,7 +164,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     if (wave.length === 0) return t('intel.none');
     const counts = new Map<EnemyKind, number>();
     for (const k of wave) counts.set(k, (counts.get(k) ?? 0) + 1);
-    return [...counts].map(([k, n]) => t('intel.item', { n, enemy: unitName(k) })).join(', ');
+    return listFormat.format([...counts].map(([k, n]) => t('intel.item', { n, enemy: unitName(k) })));
   };
   const commit = (next: HoldState, message?: string): void => {
     if (next === state) return;
@@ -353,9 +355,9 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     // Research: needs a Lab; each item once.
     const done = me().research ?? [];
     shop.append(h('h4', { class: 'td-subtitle' }, t('research.title')));
-    shop.append(h('p', { 'data-testid': 'research-done' }, t('research.done', { list: done.length > 0 ? done.map((id) => t(`research.${id}`)).join(', ') : t('intel.none') })));
+    shop.append(h('p', { 'data-testid': 'research-done' }, t('research.done', { list: done.length > 0 ? listFormat.format(done.map((id) => t(`research.${id}`))) : t('intel.none') })));
     const next = me().researching ?? [];
-    if (next.length > 0) shop.append(h('p', { 'data-testid': 'research-next' }, t('research.next', { list: next.map((id) => t(`research.${id}`)).join(', ') })));
+    if (next.length > 0) shop.append(h('p', { 'data-testid': 'research-next' }, t('research.next', { list: listFormat.format(next.map((id) => t(`research.${id}`))) })));
     if (!planning) return;
     if (producersOf(state, PLAYER, ['lab']) === 0) return void shop.append(h('p', { class: 'wp-muted' }, t('research.needLab')));
     const list = h('div', { class: 'td-options' });
@@ -417,7 +419,7 @@ export function createHoldTheLine(context: GameContext): GameInstance<HoldState>
     // Their buildings stand on the map; their research is told here (both sides see it).
     if (producing(state)) {
       const theirs = state.sides[1].research ?? [];
-      intel.append(h('p', { 'data-testid': 'intel-research' }, t('intel.research', { list: theirs.length > 0 ? theirs.map((id) => t(`research.${id}`)).join(', ') : t('intel.none') })));
+      intel.append(h('p', { 'data-testid': 'intel-research' }, t('intel.research', { list: theirs.length > 0 ? listFormat.format(theirs.map((id) => t(`research.${id}`))) : t('intel.none') })));
     }
   };
 

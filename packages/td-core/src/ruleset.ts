@@ -238,7 +238,7 @@ export const isTowerKind = (kind: string): boolean => Object.hasOwn(TOWERS, kind
 /**
  * Economy structures (strategy/TD hybrid): built on a pad like a tower, no weapon; armed units can
  * shoot them like any structure. An Extractor adds income every round. Production buildings (Hold the
- * Line, design § 18.2) send units every round: Barracks, Garage, Hangar; a Lab allows research.
+ * Line, design § 18.2) send units every round: Drill yard (id `barracks`), Garage, Hangar; a Lab allows research.
  */
 export const STRUCTURES = ['extractor', 'barracks', 'garage', 'hangar', 'lab'] as const;
 export type StructureKind = (typeof STRUCTURES)[number];

@@ -695,7 +695,7 @@ External Large (mobile defenders meet the outside force before the split) needs 
 
 Owner playtest of VS Small and the owner's answers (2026-11-01):
 
-1. **Duel: automatic waves from production and research (decided).** You build **production buildings** on your own pads (e.g. Barracks → Walkers, Garage → Runners/Brutes, Hangar → Gliders); each sends its units automatically every round. A **research** building unlocks stronger tiers (e.g. Walker → Shield bearer, Brute → Siege crawler) and upgrades (+health, +speed). Buying the wave per round (the VS Small shop as built, § 16) stays only as a **game option**.
+1. **Duel: automatic waves from production and research (decided).** You build **production buildings** on your own pads (e.g. a drill yard → Walkers, Garage → Runners/Brutes, Hangar → Gliders); each sends its units automatically every round. A **research** building unlocks stronger tiers (e.g. Walker → Shield bearer, Brute → Siege crawler) and upgrades (+health, +speed). Buying the wave per round (the VS Small shop as built, § 16) stays only as a **game option**.
 2. **Endless is the default (decided).** The game ends when a core falls; you win by bringing the opponent's core down, not on points. Attackers get automatically stronger every round, so every game ends. "10 rounds on points" stays as the short-game option.
 3. **Outside force (§ 17) is the intended mode (confirmed)**, extended:
    - **Endless** here too (the force keeps growing until a core falls).
@@ -724,30 +724,31 @@ Step B: § 18.2. Still to come: Step C (your own defenders against the outside f
 
 Default for the Duel; buying the wave each round (§ 16) is the start-screen option *Attack waves: Production / Shop* (setting `waves`, shown for the Duel only). Saves from before the choice have no `waves` and stay Duels with the shop (`stateVersion` 3, identity migration from 1 and 2).
 
-- **Production buildings** on your own pads (like the Extractor: they take a pad, 120 health, armed units can destroy them, they sell for the usual refund). Each sends its units at every lock, the round it is built included; at most 10 Barracks, Garages and Hangars together, and one Lab:
+- **Production buildings** on your own pads (like the Extractor: they take a pad, 120 health, armed units can destroy them, they sell for the usual refund). Each sends its units at every lock, the round it is built included; at most 10 Drill yards, Garages and Hangars together, and one Lab:
 
   | Building | Price | Sends every round |
   |---|---|---|
-  | Barracks | 150 | 3 Walkers |
+  | Drill yard (`barracks`) | 150 | 3 Walkers |
   | Garage | 200 | 2 Runners |
   | Hangar | 225 | 1 Glider |
   | Lab | 150 (one per side) | nothing; allows research |
 
   The planned prices (100/150/175) made games between two computer sides end in round 7–9; with these and research taking effect a round later (below) they last 11–20 rounds.
 
-- **Research** (needs a Lab; each item once; paid when chosen, **in effect from the next round**, so the other side sees it a round ahead, like new buildings; shown to both sides in the summary of the last round). Research that took effect stays when the Lab is lost.
+- **Research** (needs a Lab; each item once; paid when chosen, **in effect from the next round**, so the other side sees it a round ahead, like new buildings; shown to both sides in the summary of the last round). Research that took effect stays when the Lab is lost. The Lab cannot be sold while research is under way (review of PR #110: built, used and sold back the same round, it would have cost nothing).
 
   | Research | Price | Effect |
   |---|---|---|
-  | Shield plates | 150 | Barracks send Shield bearers instead of Walkers |
-  | Field repair | 150 | every Barracks also sends a Mender |
+  | Armour plates | 150 | Drill yards send Shield bearers instead of Walkers |
+  | Field repair | 150 | every Drill yard also sends a Mender |
   | Armed raiders | 175 | Garages send Raiders instead of Runners |
   | Heavy chassis | 200 | every Garage also sends a Brute |
   | Twin hangars | 200 | every Hangar sends 2 Gliders |
   | Siege works | 300 | a Siege crawler in every third round |
 
 - **The wave** = what the buildings send (building by building, oldest first; then the Siege crawler) + the endless levy. No shop, no workshops. Longest possible wave: 10 × 4 + 1 + 40 = 81 units (`MOST_PRODUCED`, within the save bound of 120).
-- **Computer:** defends first (all but its kept share may go to defence, as against the outside force), then builds one production building per round on its pad least exposed to the incoming road: the kind whose units are worth most per credit against your towers (Easy: Barracks; Hard: by simulating the wave it would send, within the work budget). From three buildings on it builds a Lab and researches one item per round, the one adding most threat per credit. It expects your buildings' wave plus the levy (or your last wave, if that was stronger).
+- **Computer:** defends first (all but its kept share may go to defence, as against the outside force), then builds one production building per round on its pad least exposed to the incoming road: the kind whose units are worth most per credit against your towers (Easy: Drill yards; Hard: by simulating the wave it would send, within the work budget). From three buildings on it builds a Lab and researches one item per round, the one adding most threat per credit. It expects your buildings' wave plus the levy (or your last wave, if that was stronger).
 - **Balance** (long suite `ai.long.test.ts`, endless): mirror matches are draws on every level; Hard beats Normal beats Easy from either seat, with a fallen core before the wear-down; Normal and Hard build at least three buildings and research; a player who never plans loses to every level. Measured (seed 1): Easy–Easy round 17, Normal–Normal 12, Hard–Hard 20, Hard–Normal 18, Normal–Easy 14, Hard–Easy 11.
-- **Pictures:** own canvas drawings with their own silhouettes (td-core `buildings.ts`): Barracks (hut with a pennant), Garage (ribbed roller door), Hangar (arched roof), Lab (dome with a flask).
-- **Saves:** research and research under way only with production, each item once; a round starts with none under way; buildings only with production (at most 10 plus one Lab); while planning no side has a wave; a produced wave holds only kinds buildings send, plus the levy at its end.
+- **Pictures:** own canvas drawings with their own silhouettes (td-core `buildings.ts`): Drill yard (hut with a pennant), Garage (ribbed roller door), Hangar (arched roof), Lab (dome with a flask).
+- **Saves:** research and research under way only with production, each item once; a round starts with none under way; buildings only with production (at most 10 plus one Lab); while planning no side has a wave; a produced wave holds only kinds the side's buildings can send with its research, plus the levy at its end; while planning, research equals the round's start and research under way needs a standing Lab.
+- **Names** (review of PR #110, product rule on borrowed names): the building is a *Drill yard* and the first research *Armour plates*; "Barracks" (and "Shield plates" for its units) echoed C&C and StarCraft. The internal id stays `barracks`.

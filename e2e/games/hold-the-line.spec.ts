@@ -9,7 +9,7 @@ test('hold-the-line: a plan and a paused battle survive a reload at the same tic
   await expectResumeAfterReload(page, 'hold-the-line', async (p) => {
     await root(p).getByTestId('cell-5-12').click();
     await root(p).getByTestId('build-gun').click();
-    // The Duel produces by default: a Barracks sends three Walkers at every lock.
+    // The Duel produces by default: a Drill yard sends three Walkers at every lock.
     await root(p).getByTestId('cell-1-13').click();
     await root(p).getByTestId('build-barracks').click();
     await expect(root(p).getByTestId('credits')).toHaveAttribute('data-value', '50');
@@ -64,18 +64,18 @@ test('hold-the-line: production buildings and research, in effect from the next 
   await root(page).getByTestId('cell-1-13').click();
   await root(page).getByTestId('build-lab').click();
   await root(page).getByTestId('research-shields').click();
-  await expect(root(page).getByTestId('research-next')).toContainText('Shield plates');
-  // Two rounds of income for a Barracks (the Lab and the research took all 300 credits).
+  await expect(root(page).getByTestId('research-next')).toContainText('Armour plates');
+  // Two rounds of income for a Drill yard (the Lab and the research took all 300 credits).
   for (const round of ['1', '2']) {
     await root(page).getByTestId('lock').click();
     await root(page).getByTestId('instant').click();
     await expect(game(page)).toHaveAttribute('data-round', round);
   }
-  await expect(root(page).getByTestId('research-done')).toContainText('Shield plates');
+  await expect(root(page).getByTestId('research-done')).toContainText('Armour plates');
   await root(page).getByTestId('cell-2-13').click();
   await root(page).getByTestId('build-barracks').click();
   await expect(root(page).getByTestId('production-wave')).toContainText('3 × Shield bearer');
-  // Wait for the save that holds the Barracks, then reload.
+  // Wait for the save that holds the Drill yard, then reload.
   await expect
     .poll(async () => {
       const saved = (await readSave(page, 'hold-the-line')) as { state?: { world?: { entities?: { kind: string; side: number }[] }; sides?: { research?: string[] }[] } } | undefined;

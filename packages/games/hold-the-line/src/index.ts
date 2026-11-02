@@ -11,7 +11,8 @@ export default defineGame<HoldState>({
   isValidState,
   // Saves of versions 1 (before endless and solo) and 2 (before production) are valid as they are:
   // without `length` they are ten-round games, without `waves` Duels with the shop.
-  migrateState: (state, fromVersion) => ((fromVersion === 1 || fromVersion === 2) && isValidState(state) ? state : undefined),
+  migrateState: (state, fromVersion) =>
+    (fromVersion === 1 || fromVersion === 2) && isValidState(state) && (state as { waves?: unknown }).waves === undefined ? state : undefined,
   settings: [
     { kind: 'choice', id: 'mode', labelKey: 'mode.label', valueKey: 'mode', values: [...MODE_CHOICES], default: 'vs-small', display: 'radio', hintKey: 'mode.hint' },
     { kind: 'choice', id: 'waves', labelKey: 'waves.label', valueKey: 'waves', values: [...WAVE_SOURCES], default: DEFAULT_WAVES, display: 'radio', hintKey: 'waves.hint', when: { mode: ['vs-small'] } },

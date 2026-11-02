@@ -3,7 +3,7 @@ import { mix } from '@wp/strategy-art';
 /**
  * Pictures of Hold the Line's production buildings (design § 18.2): own canvas drawings in the flat
  * style of the unit pictures (units.ts), each with its own silhouette so it reads without colour:
- * Barracks (long hut with a door and a pennant), Garage (box with a ribbed roller door), Hangar
+ * Drill yard (id `barracks`: long hut with a door and a pennant), Garage (box with a ribbed roller door), Hangar
  * (arched roof over a wide opening), Lab (dome with a flask mark).
  */
 export const BUILDING_KINDS = ['barracks', 'garage', 'hangar', 'lab'] as const;

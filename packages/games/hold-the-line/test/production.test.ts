@@ -242,3 +242,49 @@ describe('production: bounds and fuzz', () => {
   }, 120_000);
 });
 
+describe('production: review of PR #110', () => {
+  const withLab = (): HoldState => {
+    const free = pads();
+    return play(rich(fresh()), [
+      { t: 'produce', kind: 'barracks', x: free[0]![0], y: free[0]![1] },
+      { t: 'produce', kind: 'lab', x: free[1]![0], y: free[1]![1] }
+    ]);
+  };
+  const labId = (s: HoldState) => s.world.entities.find((e) => e.side === 0 && e.kind === 'lab')!.id;
+
+  it('the Lab cannot be sold while research is under way (it would cost nothing); before and after, it can', () => {
+    const s = withLab();
+    expect(checkPlan(s, 0, { t: 'sell', id: labId(s) })).toBeNull();
+    const researching = play(s, [{ t: 'research', id: 'siege' }]);
+    expect(checkPlan(researching, 0, { t: 'sell', id: labId(researching) })).toBe('lab');
+    expect(applyPlan(researching, 0, { t: 'sell', id: labId(researching) })).toBe(researching);
+    // Other buildings still sell.
+    const barracks = researching.world.entities.find((e) => e.side === 0 && e.kind === 'barracks')!.id;
+    expect(checkPlan(researching, 0, { t: 'sell', id: barracks })).toBeNull();
+    // Next round the research is done and the Lab may go.
+    const next = resolveBattle(lockRound(researching, idle)).state;
+    expect(next.sides[0].research).toEqual(['siege']);
+    expect(checkPlan(next, 0, { t: 'sell', id: labId(next) })).toBeNull();
+  });
+
+  it('rejects research under way without a Lab, research changed while planning, and sent kinds the research does not allow', () => {
+    const s = play(withLab(), [{ t: 'research', id: 'shields' }]);
+    const noLab = clone(s);
+    noLab.world.entities = noLab.world.entities.filter((e) => e.kind !== 'lab');
+    noLab.sides[0].towers = noLab.sides[0].towers.filter((r) => s.world.entities.some((e) => e.id === r.id && e.kind !== 'lab'));
+    expect(isValidState(noLab)).toBe(false);
+    const changed = clone(s);
+    changed.sides[0].research = ['raiders'];
+    changed.sides[0].researching = [];
+    expect(isValidState(changed)).toBe(false);
+    const locked = lockRound(s, idle);
+    expect(isValidState(clone(locked))).toBe(true);
+    // Shield bearers before Armour plates took effect, or a Siege crawler without Siege works.
+    for (const kind of ['shielder', 'crawler'] as const) {
+      const bad = clone(locked);
+      bad.sides[0].wave = [kind, ...bad.sides[0].wave.slice(1)];
+      expect(isValidState(bad), kind).toBe(false);
+    }
+  });
+});
+

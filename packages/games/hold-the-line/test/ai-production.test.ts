@@ -51,7 +51,7 @@ describe('what the computer expects in the Duel with production', () => {
 });
 
 describe('the computer’s production', () => {
-  it('Easy builds one Barracks per round on its least exposed pad, keeping its share', () => {
+  it('Easy builds one Drill yard per round on its least exposed pad, keeping its share', () => {
     const s = newGame(1, 'easy');
     const plan = produceOrder(s, 1, PROFILES.easy, 0);
     expect(plan).toHaveLength(PRODUCERS_PER_ROUND);
@@ -77,7 +77,7 @@ describe('the computer’s production', () => {
     expect(plan[0]).toMatchObject({ t: 'produce', kind: 'lab' });
     const research = plan.filter((c) => c.t === 'research');
     expect(research).toHaveLength(1);
-    // Barracks only: Shield plates (+1 threat per Walker) beats Field repair (+1 per Barracks) per credit.
+    // Drill yards only: Armour plates (+1 threat per Walker) beats Field repair (+1 per Drill yard) per credit.
     expect(research[0]).toEqual({ t: 'research', id: 'shields' });
     legal(three, 1, plan);
     // Two buildings: no Lab yet.
@@ -111,7 +111,7 @@ describe('the computer’s production', () => {
     expect(produceOrder(withBuildings(open, 1, []), 1, PROFILES.normal, 0)[0]).toMatchObject({ kind: 'barracks' });
   });
 
-  it('Hard simulates the wave each kind would send; out of budget it builds Barracks', () => {
+  it('Hard simulates the wave each kind would send; out of budget it builds Drill yards', () => {
     const s = newGame(1, 'hard');
     const plan = produceOrder(s, 1, PROFILES.hard, 0);
     expect(plan).toHaveLength(1);

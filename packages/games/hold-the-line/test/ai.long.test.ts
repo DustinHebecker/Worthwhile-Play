@@ -41,11 +41,11 @@ describe('the computer opponent', () => {
     expect(match('passive', level).phase).toBe('lost');
   }, LONG);
 
-  it('the computer never issues a refused command', () => {
+  it.each(['shop', 'production'] as const)('the computer never issues a refused command (%s)', (waves) => {
     const arb = fc.record({ seed: fc.integer({ min: 0, max: 2 ** 31 }), build: fc.integer({ min: 0, max: 1000 }), n: fc.integer({ min: 0, max: 10 }) });
     fc.assert(
       fc.property(arb, ({ seed, build, n }) => {
-        let s = newGame(seed, 'hard', 'duel', { waves: 'shop' });
+        let s = newGame(seed, 'hard', 'duel', { waves });
         for (let r = 0; r < 3 && s.phase === 'plan'; r++) {
           // At the lock, after the player's own plan: every command of the computer is carried out.
           let planned = 0;
