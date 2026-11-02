@@ -533,7 +533,7 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
 
 ### 15.7 Maps, pace and the first balance pass (2026-10-31)
 
-- **Maps:** Training ground (7 × 13, 6 waves), Fork (two lanes around a rocky middle), Long bend (one long serpentine, 30 % more units), Twin approach (two entries, two air routes, 50 more start credits). Every 12-wave map uses the same wave plan; its second variant per wave sends each group to the other lane, so the seed changes where the pressure comes from, never how much. The map is chosen on the start screen (ADR 0017 setting `map`).
+- **Maps:** Training ground (7 × 13, 6 waves; 8 since § 15.10), Fork (two lanes around a rocky middle), Long bend (one long serpentine, 30 % more units), Twin approach (two entries, two air routes, 50 more start credits). Every 12-wave map (20 waves since § 15.10) uses the same wave plan; its second variant per wave sends each group to the other lane, so the seed changes where the pressure comes from, never how much. The map is chosen on the start screen (ADR 0017 setting `map`).
 - **Pace:** road cost 16, so a Walker moves one cell per second at 1× (8 ticks per second) and slowed units half that. The first numbers (3 cells per second) gave towers too little time.
 - **Economy:** start 300 credits (Twin 350), wave income 65–120, bounties, **10 % interest** on credits unspent at wave start (D6).
 - **Balance harness** (`test/balance.long.test.ts`, CI long job, about 2½ minutes). A planner bot looks one wave ahead: before each wave it tries every family on the best pads and every upgrade, and keeps the action that saves the most threat per credit. It grades leaks by threat × health kept, so wearing a Siege crawler down counts. Asserted:
@@ -592,6 +592,18 @@ Review follow-ups (orchestrator, PR #102):
 - **Names:** no further names close to commercial strategy games; "Prism" stays (the spec names it, the mechanic differs).
 
 **Balance (seed 7, standard; core left of 20):** mixed planner Fork 20, Long bend 20, Twin 20 (relaxed 30/20/30); Hard: Fork and Long bend won with 1 left, Twin lost in wave 12; random building loses all three; single families: Gun 8–10, Laser ≤ 9, the rest lose. **The look-ahead planner never picks a branch-C tower**: their value (lines of units, clusters, focus fire) builds up over more than one wave, which its one-wave look-ahead cannot see. Unit tests prove each one does what its text says (`td-core/test/ruleset.test.ts`); whether they are worth their price is a playtest question. The hybrid's computer opponent sees them as upgrade candidates but, for the same reason, has not chosen them in its measured games.
+
+### 15.10 Owner playtest of Tower Defense (2026-11-01)
+
+The owner played TD and reported four things; all are addressed:
+
+1. **Clicks on the second map hit other cells** (lower part). Cause: "New game" reuses the game instance, and the canvas buffer was resized only when the width changed. All maps are 7 wide, so Fork after Training kept a 13-row buffer stretched over 15 rows. Fixed in TD and Hold the Line (PR #105), e2e reproduces it.
+2. **Movement looked turn-based; units should look better.** The engine still moves whole cells. The view now glides every step over the time the unit takes for a cell (`td-core/src/motion.ts`; the picture trails the simulation by up to a cell, nothing in the rules depends on it), with a small hop per step, facing the walking direction and a spark when hit; beams run between where shooter and target are drawn. Every unit kind has its own picture (`td-core/src/units.ts`): biped Walker, long-legged Runner, beetle-like Swarm unit, armoured Brute, delta-wing Glider, armed buggy Raider, tracked Siege crawler, Shield bearer behind its plate, hovering Mender with a cross; legs, wheels and treads move with the step. Reduced motion keeps units on their cells.
+3. **Too few waves, climbing too fast.** Full maps now have **20 waves**, the Training ground **8**. New kinds come one at a time and few at first (Runners 3, Swarms 5, a Brute 7, Gliders 8, Raiders 11, Shield bearers 12, Menders 14, the Siege crawler 20); waves 1–10 stay gentle, and from wave 11 every wave brings 15 % more units than authored (`LATE_PERCENT`; wave 20: 2.5 ×). Income climbs steadily (70 + 5 per wave). Long bend keeps 130 % of the units but has less money (250 start, 30 less per wave): with more units its long road only paid out more bounty.
+   - **Balance (seed 7):** the mixed planner wins every map on Relaxed and Standard with the full core; on Hard it wins Twin (12 left) and reaches wave 20 on Fork and Long bend; random building loses all three full maps; a single family ends ≥ 8 core behind the mix on at least two of three full maps (Gun 10/7/10 left, Laser 10/18/9: on Long bend's straights lasers come close), the others lose. The balance suite asserts exactly these (Hard: reaches wave 15 or wins).
+   - **Saves:** state version 2. Version-1 saves are migrated (`migrateState`): wave choices kept where the new slot has them, a running wave restarts from its lock (its units came from the old plan); the game goes on with the new waves.
+   - The golden replays are updated deliberately; the full replay now buys every branch C and wins all 20 waves on Fork (relaxed) with 18 core.
+4. **The card picture was too poor.** The card now shows a picture drawn by the game itself (like Relay Command's): an arranged 6 × 4 scene of the real map and unit renderer, light and dark, 288 × 192 WebP (`apps/web/public/previews/tower-defense-*.webp`).
 
 ---
 

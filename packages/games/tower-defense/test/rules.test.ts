@@ -13,6 +13,7 @@ import {
   isPad,
   isValidState,
   mapOf,
+  migrateState,
   MAX_WAVE_TICKS,
   STUN_BUDGET,
   newGame,
@@ -72,7 +73,7 @@ describe('new game', () => {
     expect(isValidState(s)).toBe(true);
   });
 
-  it.each(MAPS.filter((m) => m.waves.length === 12).map((m) => m.id))('map %s: the seed varies most waves', (id) => {
+  it.each(MAPS.filter((m) => m.waves.length === 20).map((m) => m.id))('map %s: the seed varies most waves', (id) => {
     const map = MAPS.find((m) => m.id === id)!;
     expect(map.waves.filter((slot) => slot.length > 1).length).toBeGreaterThanOrEqual(8);
   });
@@ -258,14 +259,12 @@ describe('waves', () => {
       [{ t: 'place', kind: 'artillery', x: 3, y: 5 }],
       [{ t: 'upgrade', id: 1, kind: 'cannon' }],
       [{ t: 'place', kind: 'specialist', x: 4, y: 7 }],
-      [
-        { t: 'upgrade', id: 5, kind: 'interceptor' },
-        { t: 'place', kind: 'gun', x: 4, y: 8 }
-      ]
+      [{ t: 'place', kind: 'gun', x: 4, y: 8 }],
+      [{ t: 'upgrade', id: 2, kind: 'gatling' }]
     ];
-    for (const cmds of plan) {
-      for (const c of cmds) s = applyCommand(s, c);
-      if (s.phase === 'build') s = resolveWave(startWave(s)).state;
+    for (let wave = 0; s.phase === 'build'; wave++) {
+      for (const c of plan[wave] ?? []) s = applyCommand(s, c);
+      s = resolveWave(startWave(s)).state;
     }
     expect(s.phase).toBe('won');
   });
@@ -547,5 +546,90 @@ describe('properties', () => {
       if (t.phase === 'won') continue; // a won build phase is structurally fine; covered by the run checks
       expect(isValidState(t)).toBe(false);
     }
+  });
+});
+
+describe('saves from state version 1 (twelve waves on the full maps, six on Training)', () => {
+  const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+  /** A version-1 save: the same state with the old number of wave slots. */
+  const asV1 = (s: ReturnType<typeof newGame>, slots: number) => {
+    const old = clone(s) as unknown as Record<string, unknown> & { variants: number[]; checkpoint: { variants: number[] } | null };
+    old.variants = old.variants.slice(0, slots).map(() => 1);
+    if (old.checkpoint) old.checkpoint.variants = old.checkpoint.variants.slice(0, slots).map(() => 1);
+    return old;
+  };
+
+  it('a game between waves goes on with the new waves from where it was', () => {
+    let s = newGame(5, 'standard', 'fork');
+    s = applyCommand(s, { t: 'place', kind: 'gun', x: 3, y: 4 });
+    s = resolveWave(startWave(s)).state;
+    const old = asV1(s, 12);
+    expect(isValidState(old)).toBe(false);
+    const migrated = migrateState(old, 1)!;
+    expect(migrated).toBeDefined();
+    expect(isValidState(migrated)).toBe(true);
+    expect(migrated.variants).toHaveLength(20);
+    // Kept where the new slot has that choice, the first choice elsewhere.
+    const fork = MAPS.find((m) => m.id === 'fork')!;
+    migrated.variants.forEach((v, i) => expect(v).toBe(i < 12 && fork.waves[i]!.length > 1 ? 1 : 0));
+    expect(migrated.wave).toBe(s.wave);
+    expect(migrated.credits).toBe(s.credits);
+    expect(migrated.world).toEqual(s.world);
+  });
+
+  it('a running wave restarts from its lock; the Training ground keeps working too', () => {
+    let s = newGame(5, 'standard');
+    s = applyCommand(s, { t: 'place', kind: 'gun', x: 2, y: 2 });
+    const locked = startWave(s);
+    const running = stepWave(locked, 40).state;
+    expect(running.phase).toBe('wave');
+    const migrated = migrateState(asV1(running, 6), 1)!;
+    expect(migrated.phase).toBe('build');
+    expect(migrated.wave).toBe(0);
+    expect(migrated.checkpoint).toBeNull();
+    expect(migrated.world.entities.filter((e) => e.side === 1)).toHaveLength(0);
+    expect(migrated.world.entities.some((e) => e.kind === 'gun')).toBe(true);
+    expect(isValidState(migrated)).toBe(true);
+  });
+
+  it('a running wave restarts with the retries the game already had', () => {
+    let s = newGame(5, 'standard', 'fork');
+    s = applyCommand(s, { t: 'place', kind: 'gun', x: 3, y: 4 });
+    const locked = startWave(s);
+    const running = stepWave(locked, 30).state;
+    running.stats.retries = 3;
+    if (running.checkpoint) running.checkpoint.stats.retries = 1;
+    const migrated = migrateState(asV1(running, 12), 1)!;
+    expect(migrated.phase).toBe('build');
+    expect(migrated.stats.retries).toBe(3);
+  });
+
+  it('won, ended and lost games stay as they were (a lost one keeps its retry point)', () => {
+    let s = newGame(5, 'standard', 'fork');
+    for (const phase of ['won', 'ended'] as const) {
+      const done = migrateState({ ...asV1(s, 12), phase }, 1)!;
+      expect(done.phase, phase).toBe(phase);
+      expect(isValidState(done), phase).toBe(true);
+    }
+    // A wave lost with nothing built: the game keeps its checkpoint for a retry.
+    s = resolveWave(startWave(s)).state;
+    let lost = s;
+    while (lost.phase === 'build') lost = resolveWave(startWave(lost)).state;
+    expect(lost.phase).toBe('lost');
+    expect(lost.checkpoint).not.toBeNull();
+    const migrated = migrateState(asV1(lost, 12), 1)!;
+    expect(migrated.phase).toBe('lost');
+    expect(migrated.checkpoint).not.toBeNull();
+    expect(migrated.checkpoint!.variants).toHaveLength(20);
+    expect(isValidState(migrated)).toBe(true);
+    expect(retryWave(migrated).phase).toBe('build');
+  });
+
+  it('refuses what cannot be a save, and other versions', () => {
+    expect(migrateState(null, 1)).toBeUndefined();
+    expect(migrateState({ mapId: 'nowhere' }, 1)).toBeUndefined();
+    expect(migrateState({ mapId: 'fork' }, 1)).toBeUndefined();
+    expect(migrateState(asV1(newGame(1, 'standard', 'fork'), 12), 2)).toBeUndefined();
+    expect(migrateState(asV1(newGame(1, 'standard', 'fork'), 12), 0)).toBeUndefined();
   });
 });

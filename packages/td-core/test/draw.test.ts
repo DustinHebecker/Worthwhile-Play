@@ -18,7 +18,7 @@ function recorder(): { g: CanvasRenderingContext2D; calls: string[] } {
 }
 const PALETTE: Palette = { surface: '#fff', ink: '#000', muted: '#888', own: '#00f', enemy: '#f00', focus: '#0f0', grid: '#ccc', terrain: { key: 'k', base: () => '#eee', dark: false } };
 function frameOf(world: World): Frame {
-  return { world, prev: new Map(), alpha: 1, beams: [], blasts: [], selected: null, entries: [], goals: [], hpMax: (k) => archetypeOf(TD_RULESET, k)?.hp ?? 1, splashOf: () => 0 };
+  return { world, beams: [], blasts: [], selected: null, entries: [], goals: [], hpMax: (k) => archetypeOf(TD_RULESET, k)?.hp ?? 1, splashOf: () => 0 };
 }
 function draw(build: (w: World) => void, extra: Partial<Frame> = {}): string[] {
   const w = createWorld({ map: { w: 5, h: 5, terrain: '='.repeat(25) }, sides: 2, entities: [], seed: 1 }, TD_RULESET);
@@ -108,10 +108,47 @@ describe('outside force (hybrid External modes)', () => {
         },
         { neutralUnits: neutral }
       );
-      // Without Path2D a unit is a filled dot: the fill colour set right before each unit's fill.
       return calls.filter((c, i) => c.startsWith('fillStyle=') && calls[i + 1] === 'fill()').map((c) => c.slice(10));
     };
-    expect(unitFills(false)).toEqual([PALETTE.own, PALETTE.enemy]);
-    expect(unitFills(true)).toEqual([PALETTE.ink, PALETTE.ink]);
+    // Each side's units in its own colour; as an outside force none of them in a side colour.
+    expect(unitFills(false)).toContain(PALETTE.own);
+    expect(unitFills(false)).toContain(PALETTE.enemy);
+    expect(unitFills(true)).toContain(PALETTE.ink);
+    expect(unitFills(true)).not.toContain(PALETTE.own);
+    expect(unitFills(true)).not.toContain(PALETTE.enemy);
+  });
+});
+
+describe('unit pictures', () => {
+  it('every wave unit kind has its own picture, drawn without errors, facing either way', async () => {
+    const { drawUnit, UNIT_KINDS } = await import('../src/units');
+    const { ENEMY_KINDS } = await import('../src/ruleset');
+    expect([...UNIT_KINDS].sort()).toEqual([...ENEMY_KINDS].sort());
+    const shapes = new Set<string>();
+    for (const kind of UNIT_KINDS) {
+      for (const facing of [1, -1] as const) {
+        for (const moving of [false, true]) {
+          const { g, calls } = recorder();
+          expect(drawUnit(g, kind, 20, 20, 40, { colour: '#00f', ink: '#000', surface: '#fff', facing, phase: 0.3, moving }), kind).toBe(true);
+          expect(calls).toContain(`scale(${facing},1)`);
+          if (facing === 1 && !moving) shapes.add(calls.filter((c) => !c.includes('=')).join('|'));
+        }
+      }
+    }
+    // Different silhouettes: no two kinds draw the same path.
+    expect(shapes.size).toBe(UNIT_KINDS.length);
+    const { g } = recorder();
+    expect(drawUnit(g, 'gun', 0, 0, 10, { colour: '#00f', ink: '#000', surface: '#fff', facing: 1, phase: 0, moving: false })).toBe(false);
+  });
+
+  it('moving units swing their legs; standing ones do not', async () => {
+    const { drawUnit } = await import('../src/units');
+    const draw1 = (phase: number, moving: boolean) => {
+      const { g, calls } = recorder();
+      drawUnit(g, 'walker', 0, 0, 44, { colour: '#00f', ink: '#000', surface: '#fff', facing: 1, phase, moving });
+      return calls.join('|');
+    };
+    expect(draw1(0.1, true)).not.toBe(draw1(0.3, true));
+    expect(draw1(0.1, false)).toBe(draw1(0.3, false));
   });
 });

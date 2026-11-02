@@ -26,14 +26,14 @@ const play = (mapId: string): TdState => {
 
 /** [world hash, whole-state hash] after the build above (seed 11, standard). */
 const GOLDEN: Record<string, readonly [number, number]> = {
-  training: [1603014977, 3405912542],
-  fork: [5831435, 3890373243],
-  bend: [3748166587, 2253083412],
-  twin: [3798847199, 2127180923]
+  training: [3749022809, 257038379],
+  fork: [1073446734, 410946640],
+  bend: [1667153633, 308840924],
+  twin: [2996148242, 3091341483]
 };
 
-/** [phase, core, world hash, whole-state hash] at the end of the 12-wave game below. */
-const GOLDEN_FULL: readonly [string, number, number, number] = ['won', 11, 576951089, 1260280912];
+/** [phase, core, world hash, whole-state hash] at the end of the 20-wave game below. */
+const GOLDEN_FULL: readonly [string, number, number, number] = ['won', 18, 1944778902, 3701580300];
 
 describe('golden replays', () => {
   it.each(Object.keys(BUILD))('%s', (mapId) => {
@@ -43,7 +43,7 @@ describe('golden replays', () => {
 });
 
 /**
- * A whole 12-wave game on Fork (seed 11, relaxed) with a fixed build order that uses every branch C:
+ * A whole 20-wave game on Fork (seed 11, relaxed) with a fixed build order that uses every branch C:
  * before each wave the queue is worked off in order until a command is refused (usually: credits).
  * It reaches the last wave, so edits to the late waves (Shield bearers, Menders, the crawler) and to
  * the branch-C towers change this hash.
@@ -90,10 +90,10 @@ const playFull = (): { end: TdState; reached: number; bought: number } => {
   return { end: s, reached, bought: i };
 };
 
-describe('golden replay through all twelve waves', () => {
-  it('fork, relaxed, branch C: reaches wave 12 with a known end state', () => {
+describe('golden replay through all twenty waves', () => {
+  it('fork, relaxed, branch C: reaches wave 20 with a known end state', () => {
     const { end, reached, bought } = playFull();
-    expect(reached).toBe(12);
+    expect(reached).toBe(20);
     // Every branch C reached level 2, Prism and Amplifier level 3 (the queue up to 'amplifier-2').
     expect(bought).toBeGreaterThanOrEqual(FULL_QUEUE.findIndex(([k]) => k === 'amplifier-2') + 1);
     expect([end.phase, end.core, worldHash(end.world), seedFromString(canonicalJson(end))]).toEqual(GOLDEN_FULL);

@@ -8,4 +8,6 @@ export * from './ruleset';
 export * from './lanes';
 export * from './towers';
 export * from './draw';
+export * from './motion';
+export * from './units';
 export * from './i18n';

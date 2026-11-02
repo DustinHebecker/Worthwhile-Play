@@ -1,7 +1,7 @@
 import { createRng } from '@wp/game-core';
 import { archetypeOf } from '@wp/strategy-engine';
 import { BASE_TOWERS, ENEMIES, TD_RULESET, TOWERS, type Family } from '@wp/td-core';
-import { applyCommand, checkCommand, isPad, mapOf, newGame, resolveWave, startWave, type BuildCommand, type Difficulty, type TdState } from '../src/rules';
+import { applyCommand, checkCommand, isPad, mapOf, newGame, resolveWave, startWave, stepWave, type BuildCommand, type Difficulty, type TdState } from '../src/rules';
 
 /**
  * Balance bots (docs/design/tower-defense.md § 11.3). They play through the same build commands as
@@ -57,10 +57,20 @@ export interface Outcome {
  * with an unbreakable core: a lost wave is still graded, and wearing a Siege crawler down counts as
  * progress before it is stopped.
  */
-const evaluate = (s: TdState): number => {
-  const { leaks } = resolveWave(startWave({ ...s, core: 1_000_000 }));
-  return leaks.reduce((sum, l) => sum + (ENEMIES[l.kind].threat * l.hp) / (archetypeOf(TD_RULESET, l.kind)?.hp ?? 1), 0);
+const evaluate = (s: TdState, bound = Infinity): number => {
+  // In chunks, so that a candidate that can no longer be chosen stops early: once its loss reaches
+  // `bound` the exact rest does not matter (planBuild's choice is the same; it only saves time).
+  let run = startWave({ ...s, core: 1_000_000 });
+  let loss = 0;
+  while (run.phase === 'wave' && loss < bound) {
+    const step = stepWave(run, CHUNK);
+    run = step.state;
+    for (const l of step.leaks) loss += (ENEMIES[l.kind].threat * l.hp) / (archetypeOf(TD_RULESET, l.kind)?.hp ?? 1);
+  }
+  return loss;
 };
+/** Ticks simulated between two checks of the bound. */
+const CHUNK = 64;
 
 export interface PlannerOptions {
   families?: readonly Family[];
@@ -95,8 +105,9 @@ export function planBuild(s: TdState, options: PlannerOptions = {}): TdState {
     for (const cmd of candidates) {
       if (checkCommand(s, cmd) !== null) continue;
       const next = applyCommand(s, cmd);
-      const l = evaluate(next);
       const price = Math.max(1, s.credits - next.credits);
+      // Only a loss below this can be chosen: an improvement, and a better value than the best so far.
+      const l = evaluate(next, Math.min(loss - 0.01, best ? loss - best.value * price : Infinity));
       const value = (loss - l) / price;
       if (loss - l > 0.01 && (!best || value > best.value)) best = { s: next, loss: l, value };
     }
@@ -122,10 +133,13 @@ export function randomBuild(s: TdState, seed: number): TdState {
 
 export type Bot = (s: TdState, wave: number) => TdState;
 
-/** Plays a whole game with `bot` building before every wave. */
-export function play(mapId: string, difficulty: Difficulty, seed: number, bot: Bot): TdState {
+/**
+ * Plays a game with `bot` building before every wave: to its end, or until `stop` says the build
+ * phase reached is all the caller needs to know (tests stop once their condition is decided).
+ */
+export function play(mapId: string, difficulty: Difficulty, seed: number, bot: Bot, stop: (s: TdState) => boolean = () => false): TdState {
   let s = newGame(seed, difficulty, mapId);
-  while (s.phase === 'build') {
+  while (s.phase === 'build' && !stop(s)) {
     s = bot(s, s.wave);
     s = resolveWave(startWave(s)).state;
   }
