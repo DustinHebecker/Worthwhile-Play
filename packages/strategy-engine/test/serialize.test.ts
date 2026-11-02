@@ -99,6 +99,17 @@ describe('isValidWorld', () => {
     w.entities[2]!.kind = 'unknown';
     expect(isValidWorld(w)).toBe(true);
   });
+  it('names the ruleset it was made with: the one given, else a short id (fuzz review of Hold the Line, 2026-11-02)', () => {
+    const named = (ruleset: unknown) => ({ ...rich(), ruleset }) as World;
+    expect(rich().ruleset).toBe(rs.id);
+    // With a ruleset: exactly its id.
+    expect(isValidWorld(named('strategy-3'), rs)).toBe(rs.id === 'strategy-3');
+    expect(isValidWorld(named(`${rs.id}-other`), rs)).toBe(false);
+    expect(isValidWorld(named(''), rs)).toBe(false);
+    // Without: lower-case letters, digits and hyphens, 1 to 64 characters.
+    for (const id of ['base-1', 'strategy-3-sides', 'td-1', 'a', 'x'.repeat(64)]) expect(isValidWorld(named(id)), id).toBe(true);
+    for (const id of ['', '-base', 'Base-1', 'base 1', 'base_1', 'x'.repeat(65), '<script>', 7, null, undefined]) expect(isValidWorld(named(id)), String(id)).toBe(false);
+  });
 });
 
 describe('canonical hashing', () => {
