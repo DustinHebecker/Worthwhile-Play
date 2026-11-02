@@ -682,6 +682,26 @@ describe('game page: one start screen with host-drawn settings (ADR 0017)', () =
       expect(starts.get('old')![0]).toEqual({ seed: expect.any(Number), settings: { mode: 'person', size: 8, hints: true, rounds: 7 }, begin: true });
     });
 
+    it('a setting added after the save was written comes from settingsOf; the envelope keeps the rest', async () => {
+      declare('added', { settingsOf: fromState });
+      localStorage.setItem('wp:pref:added:@settings', JSON.stringify({ hints: true, rounds: 2 }));
+      const saves = createMemoryStore();
+      const module = (await registry.entries.get('added')!.load()) as GameModule<{ n: number }>;
+      // The envelope kept mode, size and rounds (the game later added "hints"); the state knows all of them.
+      const state = { n: 1, mode: 'person', size: 8, hints: false, rounds: 5 } as { n: number };
+      await saves.write(createSave(module, 3, state, { settings: { mode: 'person', size: 8, rounds: 7 } }));
+      const main = openPlain('added', saves);
+      await vi.waitFor(() => expect(q(main, 'continue')).not.toBeNull());
+      q(main, 'continue')!.click();
+      await vi.waitFor(() => expect(q(main, 'settings-summary')).not.toBeNull());
+      expect(q(main, 'settings-summary')!.textContent).toBe('Person · Eight · Rounds: 7');
+      contexts.get('added')!.finished({ outcome: 'won' });
+      await vi.waitFor(() => expect(q(main, 'another-round')).not.toBeNull());
+      q(main, 'another-round')!.click();
+      await vi.waitFor(() => expect(starts.get('added')).toHaveLength(1));
+      expect(starts.get('added')![0]).toEqual({ seed: expect.any(Number), settings: { mode: 'person', size: 8, hints: false, rounds: 7 }, begin: true });
+    });
+
     it('takes the difficulty from the state over the envelope (renamed by a migration)', async () => {
       declare('renamed', { settingsOf: fromState });
       const saves = await oldSave('renamed', { mode: 'computer', size: 6, hints: false, rounds: 3, difficulty: 'easy' }, 'hard');
