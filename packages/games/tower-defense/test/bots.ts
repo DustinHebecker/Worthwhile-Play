@@ -1,7 +1,7 @@
 import { createRng } from '@wp/game-core';
 import { archetypeOf } from '@wp/strategy-engine';
 import { BASE_TOWERS, ENEMIES, TD_RULESET, TOWERS, type Family } from '@wp/td-core';
-import { applyCommand, checkCommand, isPad, mapOf, newGame, resolveWave, startWave, stepWave, type BuildCommand, type Difficulty, type TdState } from '../src/rules';
+import { applyCommand, checkCommand, isPad, mapOf, newGame, resolveWave, startWave, stepWave, type BuildCommand, type Difficulty, type Length, type TdState } from '../src/rules';
 
 /**
  * Balance bots (docs/design/tower-defense.md § 11.3). They play through the same build commands as
@@ -137,8 +137,8 @@ export type Bot = (s: TdState, wave: number) => TdState;
  * Plays a game with `bot` building before every wave: to its end, or until `stop` says the build
  * phase reached is all the caller needs to know (tests stop once their condition is decided).
  */
-export function play(mapId: string, difficulty: Difficulty, seed: number, bot: Bot, stop: (s: TdState) => boolean = () => false): TdState {
-  let s = newGame(seed, difficulty, mapId);
+export function play(mapId: string, difficulty: Difficulty, seed: number, bot: Bot, stop: (s: TdState) => boolean = () => false, length: Length = 'waves'): TdState {
+  let s = newGame(seed, difficulty, mapId, length);
   while (s.phase === 'build' && !stop(s)) {
     s = bot(s, s.wave);
     s = resolveWave(startWave(s)).state;

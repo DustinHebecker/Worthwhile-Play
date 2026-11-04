@@ -19,7 +19,7 @@ import {
   type TowerRecord,
   type Walker
 } from '@wp/td-core';
-import { mapById, MAPS, type TdMap } from './maps';
+import { mapById, MAPS, type TdMap, type WaveDef } from './maps';
 
 export { refundOf, SELL_PERCENT, STUN_BUDGET, TOWER_PRIORITIES, type BuildCommand, type Leak, type PendingSpawn, type TowerPriority, type TowerRecord, type Walker } from '@wp/td-core';
 
@@ -43,9 +43,31 @@ export const INTEREST_PERCENT = 10;
 export const interestOf = (unspent: number): number => Math.floor((Math.max(0, unspent) * INTEREST_PERCENT) / 100);
 /** Wave income after surviving wave `wave` (difficulty applied). */
 export const incomeAfter = (state: Pick<TdCore, 'mapId' | 'difficulty'>, wave: number): number => {
-  const raw = mapOf(state).income[wave];
+  const income = mapOf(state).income;
+  // Endless: past the map's table the income keeps climbing by 5 per wave.
+  const raw = income[wave] ?? (wave >= income.length && income.length > 0 ? income[income.length - 1]! + 5 * (wave - income.length + 1) : undefined);
   return raw === undefined ? 0 : scaled(raw, CREDIT_PERCENT[state.difficulty]);
 };
+
+/**
+ * Length of a game (owner, 2026-11-04: an endless mode as in Hold the Line). `waves`: the map's
+ * waves, held to win (the game as before). `endless`: after the map's waves come generated ones,
+ * each larger than the one before, until the core falls; from wave 51 the core wears down (1, 2,
+ * 3, … at the end of each wave), so every game ends by wave ENDLESS_WAVES at the latest.
+ */
+export const LENGTHS = ['waves', 'endless'] as const;
+export type Length = (typeof LENGTHS)[number];
+export const DEFAULT_LENGTH: Length = 'waves';
+/** Endless: the last possible wave (the wear-down empties any core before it). */
+export const ENDLESS_WAVES = 60;
+/** Endless: the core wears down at the end of every wave from this one (0-based index) on. */
+export const WEAR_FROM = 50;
+/** Endless: each generated wave brings this many percent more units than the authored one it repeats. */
+export const ENDLESS_PERCENT = 15;
+/** Endless: no group of a generated wave sends more than this, after the difficulty (bounds the work and what a save holds). */
+export const MAX_GROUP = 80;
+/** Credits never grow beyond this (endless games run long). */
+export const MAX_CREDITS = 1_000_000;
 
 /** Safety bound: a wave never runs longer (whatever is left then counts as leaked). */
 export const MAX_WAVE_TICKS = 6000;
@@ -70,6 +92,10 @@ export interface Stats {
 
 export interface TdCore {
   mapId: string;
+  /** Endless (absent: the map's waves, the game as before; state version 3). */
+  length?: 'endless';
+  /** Endless: the game ended by the wear-down after this wave was held (phase `ended`). */
+  worn?: true;
   difficulty: Difficulty;
   seed: number;
   /** Chosen variant per wave slot (from the seed). */
@@ -108,7 +134,7 @@ export function mapOf(state: Pick<TdCore, 'mapId'>): TdMap {
   return map;
 }
 
-export function newGame(seed: number, difficulty: Difficulty = DEFAULT_DIFFICULTY, mapId: string = (MAPS[0] as TdMap).id): TdState {
+export function newGame(seed: number, difficulty: Difficulty = DEFAULT_DIFFICULTY, mapId: string = (MAPS[0] as TdMap).id, length: Length = DEFAULT_LENGTH): TdState {
   const map = mapById(mapId);
   if (!map) throw new RangeError(`Unknown map ${mapId}`);
   const rng = createRng(seed);
@@ -117,6 +143,7 @@ export function newGame(seed: number, difficulty: Difficulty = DEFAULT_DIFFICULT
   return {
     v: 1,
     mapId: map.id,
+    ...(length === 'endless' && { length: 'endless' as const }),
     difficulty,
     seed: world.rng,
     variants,
@@ -133,22 +160,48 @@ export function newGame(seed: number, difficulty: Difficulty = DEFAULT_DIFFICULT
   };
 }
 
-export const waveCount = (state: Pick<TdCore, 'mapId'>): number => mapOf(state).waves.length;
+/** The waves of a game: the map's, or in an endless game the most it can last. */
+export const waveCount = (state: Pick<TdCore, 'mapId' | 'length'>): number => (state.length === 'endless' ? ENDLESS_WAVES : mapOf(state).waves.length);
+export const isEndless = (state: Pick<TdCore, 'length'>): boolean => state.length === 'endless';
+/** Waves held so far: those before the current one, and the current one when it ended the game by wear-down. */
+export const wavesHeld = (state: Pick<TdCore, 'wave' | 'worn' | 'phase'>): number => state.wave + (state.worn || state.phase === 'won' ? 1 : 0);
+/** Endless: what the core loses to the wear-down at the end of wave `wave` (0-based). */
+export const wearAfter = (state: Pick<TdCore, 'length'>, wave: number): number => (state.length === 'endless' && wave >= WEAR_FROM ? wave - WEAR_FROM + 1 : 0);
+
+/**
+ * The definition of wave `wave`: the map's authored one, or in an endless game past the map's waves a
+ * generated one: the last four authored waves in turn (latest first), with ENDLESS_PERCENT more units
+ * per generated wave (the schedule sends at most MAX_GROUP per group) and one more Siege crawler every third wave.
+ */
+export function waveDef(state: Pick<TdCore, 'mapId' | 'variants'>, wave: number): WaveDef | undefined {
+  const map = mapOf(state);
+  const n = map.waves.length;
+  if (wave < n) return map.waves[wave]?.[state.variants[wave] ?? 0];
+  const extra = wave - n + 1;
+  const slot = n - 1 - ((wave - n) % Math.min(4, n));
+  const base = map.waves[slot]?.[state.variants[slot] ?? 0];
+  if (!base) return undefined;
+  const crawlers = Math.floor(extra / 3);
+  const groups = base.groups.map((grp) => ({ ...grp, count: grp.kind === 'crawler' ? grp.count + crawlers : Math.ceil((grp.count * (100 + extra * ENDLESS_PERCENT)) / 100) }));
+  if (crawlers > 0 && !groups.some((grp) => grp.kind === 'crawler')) groups.push({ kind: 'crawler', count: crawlers, every: 40, at: 60, route: 0 });
+  return { groups };
+}
 
 /**
  * The number of waves a game shows as its total: the map's, or for a won game the waves it really
  * held (a game won before the longer wave plans of state version 2 held fewer than the map has now).
  */
-export const wavesShown = (state: Pick<TdCore, 'mapId' | 'phase' | 'wave'>): number => (state.phase === 'won' ? state.wave + 1 : waveCount(state));
+export const wavesShown = (state: Pick<TdCore, 'mapId' | 'phase' | 'wave' | 'length'>): number => (state.phase === 'won' ? state.wave + 1 : waveCount(state));
 
 /** The spawn schedule of a wave as the player sees it in the preview (difficulty applied). */
 export function waveSchedule(state: Pick<TdCore, 'mapId' | 'variants' | 'difficulty'>, wave: number): PendingSpawn[] {
-  const map = mapOf(state);
-  const def = map.waves[wave]?.[state.variants[wave] ?? 0];
+  const def = waveDef(state, wave);
   if (!def) return [];
+  // Generated waves (endless) send at most MAX_GROUP per group, whatever the difficulty.
+  const cap = wave >= mapOf(state).waves.length ? MAX_GROUP : Infinity;
   const list: PendingSpawn[] = [];
   for (const group of def.groups) {
-    const count = Math.max(1, Math.ceil((group.count * COUNT_PERCENT[state.difficulty]) / 100));
+    const count = Math.min(cap, Math.max(1, Math.ceil((group.count * COUNT_PERCENT[state.difficulty]) / 100)));
     for (let i = 0; i < count; i++) list.push({ at: group.at + i * group.every, kind: group.kind, route: group.route });
   }
   // Stable: equal times keep the authored order.
@@ -212,15 +265,18 @@ export interface WaveStep {
   state: TdState;
   events: SimEvent[];
   leaks: Leak[];
+  /** The wave reached MAX_WAVE_TICKS: what was left of it counted as through (the view says so). */
+  timeUp: boolean;
 }
 
 export function stepWave(state: TdState, ticks = 1): WaveStep {
-  if (state.phase !== 'wave' || !state.run) return { state, events: [], leaks: [] };
+  if (state.phase !== 'wave' || !state.run) return { state, events: [], leaks: [], timeUp: false };
   let s = structuredClone(state);
   const events: SimEvent[] = [];
   const leaks: Leak[] = [];
-  for (let i = 0; i < ticks && s.phase === 'wave'; i++) s = tickWave(s, events, leaks);
-  return { state: s, events, leaks };
+  const flags = { timeUp: false };
+  for (let i = 0; i < ticks && s.phase === 'wave'; i++) s = tickWave(s, events, leaks, flags);
+  return { state: s, events, leaks, timeUp: flags.timeUp };
 }
 
 /** Run the current wave to its end. */
@@ -228,7 +284,7 @@ export function resolveWave(state: TdState): WaveStep {
   return stepWave(state, MAX_WAVE_TICKS + 1);
 }
 
-function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
+function tickWave(s: TdState, events: SimEvent[], leaks: Leak[], flags: { timeUp: boolean }): TdState {
   const step = tickLanes(s.world, s.run!, mapOf(s).routes);
   s.world = step.world;
   s.run = step.run;
@@ -237,7 +293,7 @@ function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
     events.push(e);
     if (e.t !== 'destroyed') continue;
     if (e.side === 1 && isEnemyKind(e.kind)) {
-      s.credits += ENEMIES[e.kind].bounty;
+      s.credits = Math.min(MAX_CREDITS, s.credits + ENEMIES[e.kind].bounty);
       s.stats.killed++;
     } else if (e.side === 0) {
       s.towers = s.towers.filter((r) => r.id !== e.id);
@@ -256,6 +312,10 @@ function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
     }
     s.stats.leaked += s.run.pending.length;
     s.run.pending = [];
+    // Shells still in flight fall harmlessly, so the wave ends exactly at the bound (a running
+    // wave past MAX_WAVE_TICKS would not be a valid save; review of PR #114).
+    s.world.projectiles = [];
+    flags.timeUp = true;
   }
   if (s.core <= 0) {
     // The wave is over: what is left of it leaves the map (a lost state holds no running wave).
@@ -288,12 +348,20 @@ function endWave(s: TdState): void {
     e.beam = null;
     e.status = [];
   }
-  if (s.wave >= map.waves.length - 1) {
+  if (isEndless(s)) {
+    // Endless: the wear-down; a core it empties ends the game for good (nothing to retry).
+    s.core = Math.max(0, s.core - wearAfter(s, s.wave));
+    if (s.core === 0 || s.wave >= ENDLESS_WAVES - 1) {
+      s.phase = 'ended';
+      s.worn = true;
+      return;
+    }
+  } else if (s.wave >= map.waves.length - 1) {
     s.phase = 'won';
     return;
   }
   // Income plus interest on what was left unspent when the wave started (the checkpoint is that moment).
-  s.credits += incomeAfter(s, s.wave) + interestOf(s.checkpoint?.credits ?? 0);
+  s.credits = Math.min(MAX_CREDITS, s.credits + incomeAfter(s, s.wave) + interestOf(s.checkpoint?.credits ?? 0));
   s.wave++;
   s.phase = 'build';
   s.log.push([]);
@@ -320,6 +388,8 @@ export function retryWave(state: TdState): TdState {
  * once migrated.
  */
 export function migrateState(old: unknown, fromVersion: number): TdState | undefined {
+  // Version 2 (before endless): valid as it is; it has no length, so it stays a game of the map's waves.
+  if (fromVersion === 2) return isRecord(old) && old.length === undefined && isValidState(old) ? old : undefined;
   if (fromVersion !== 1 || !isRecord(old) || typeof old.mapId !== 'string') return undefined;
   const map = mapById(old.mapId);
   if (!map) return undefined;
@@ -344,8 +414,8 @@ export function migrateState(old: unknown, fromVersion: number): TdState | undef
 }
 
 /** Replays a game from its log (reproduction and tests). */
-export function replay(seed: number, difficulty: Difficulty, mapId: string, log: readonly (readonly BuildCommand[])[]): TdState {
-  let s = newGame(seed, difficulty, mapId);
+export function replay(seed: number, difficulty: Difficulty, mapId: string, log: readonly (readonly BuildCommand[])[], length: Length = DEFAULT_LENGTH): TdState {
+  let s = newGame(seed, difficulty, mapId, length);
   for (let wave = 0; wave < log.length; wave++) {
     for (const cmd of log[wave]!) s = applyCommand(s, cmd);
     if (wave < log.length - 1) s = resolveWave(startWave(s)).state;
@@ -382,8 +452,13 @@ function isValidCore(v: unknown): v is TdCore {
   if (!map) return false;
   if (!(DIFFICULTIES as readonly unknown[]).includes(v.difficulty) || !isInt(v.seed, 0, 0xffffffff)) return false;
   if (!isArrayOf(v.variants, (x): x is number => isInt(x)) || v.variants.length !== map.waves.length || v.variants.some((x, i) => x >= (map.waves[i]?.length ?? 0))) return false;
-  if (!['build', 'wave', 'won', 'lost', 'ended'].includes(v.phase as string) || !isInt(v.wave, 0, map.waves.length - 1)) return false;
-  if (!isInt(v.credits, 0, 1_000_000) || !isInt(v.core, 0, 1000)) return false;
+  if (v.length !== undefined && v.length !== 'endless') return false;
+  const endless = v.length === 'endless';
+  if (!['build', 'wave', 'won', 'lost', 'ended'].includes(v.phase as string) || !isInt(v.wave, 0, (endless ? ENDLESS_WAVES : map.waves.length) - 1)) return false;
+  // An endless game is never won; only an endless game that ended is worn down.
+  if (endless && v.phase === 'won') return false;
+  if (v.worn !== undefined && (v.worn !== true || !endless || v.phase !== 'ended')) return false;
+  if (!isInt(v.credits, 0, MAX_CREDITS) || !isInt(v.core, 0, 1000)) return false;
   if (!isValidWorld(v.world, TD_RULESET) || v.world.sides !== 2) return false;
   const world = v.world;
   if (world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.rows.join('')) return false;
@@ -418,7 +493,7 @@ export function isValidState(v: unknown): v is TdState {
   if (v.checkpoint !== null) {
     // The checkpoint is this game at the lock of its current (or, between waves, its last) wave.
     const c = v.checkpoint;
-    if (!isValidCore(c) || c.phase !== 'build' || c.mapId !== v.mapId || c.difficulty !== v.difficulty || c.seed !== v.seed) return false;
+    if (!isValidCore(c) || c.phase !== 'build' || c.mapId !== v.mapId || c.difficulty !== v.difficulty || c.seed !== v.seed || c.length !== v.length) return false;
     if (JSON.stringify(c.variants) !== JSON.stringify(v.variants) || (c.wave !== v.wave && c.wave !== (v.wave as number) - 1)) return false;
   }
   if (!isArrayOf(v.log, (l): l is BuildCommand[] => isArrayOf(l, isCommand)) || v.log.length !== (v.wave as number) + 1) return false;
