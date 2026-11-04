@@ -64,7 +64,7 @@ export const ENDLESS_WAVES = 60;
 export const WEAR_FROM = 50;
 /** Endless: each generated wave brings this many percent more units than the authored one it repeats. */
 export const ENDLESS_PERCENT = 15;
-/** Endless: no group of a generated wave grows beyond this (bounds the work and what a save holds). */
+/** Endless: no group of a generated wave sends more than this, after the difficulty (bounds the work and what a save holds). */
 export const MAX_GROUP = 80;
 /** Credits never grow beyond this (endless games run long). */
 export const MAX_CREDITS = 1_000_000;
@@ -171,7 +171,7 @@ export const wearAfter = (state: Pick<TdCore, 'length'>, wave: number): number =
 /**
  * The definition of wave `wave`: the map's authored one, or in an endless game past the map's waves a
  * generated one: the last four authored waves in turn (latest first), with ENDLESS_PERCENT more units
- * per generated wave (each group at most MAX_GROUP) and one more Siege crawler every third wave.
+ * per generated wave (the schedule sends at most MAX_GROUP per group) and one more Siege crawler every third wave.
  */
 export function waveDef(state: Pick<TdCore, 'mapId' | 'variants'>, wave: number): WaveDef | undefined {
   const map = mapOf(state);
@@ -182,7 +182,7 @@ export function waveDef(state: Pick<TdCore, 'mapId' | 'variants'>, wave: number)
   const base = map.waves[slot]?.[state.variants[slot] ?? 0];
   if (!base) return undefined;
   const crawlers = Math.floor(extra / 3);
-  const groups = base.groups.map((grp) => ({ ...grp, count: grp.kind === 'crawler' ? grp.count + crawlers : Math.min(MAX_GROUP, Math.ceil((grp.count * (100 + extra * ENDLESS_PERCENT)) / 100)) }));
+  const groups = base.groups.map((grp) => ({ ...grp, count: grp.kind === 'crawler' ? grp.count + crawlers : Math.ceil((grp.count * (100 + extra * ENDLESS_PERCENT)) / 100) }));
   if (crawlers > 0 && !groups.some((grp) => grp.kind === 'crawler')) groups.push({ kind: 'crawler', count: crawlers, every: 40, at: 60, route: 0 });
   return { groups };
 }
@@ -197,9 +197,11 @@ export const wavesShown = (state: Pick<TdCore, 'mapId' | 'phase' | 'wave' | 'len
 export function waveSchedule(state: Pick<TdCore, 'mapId' | 'variants' | 'difficulty'>, wave: number): PendingSpawn[] {
   const def = waveDef(state, wave);
   if (!def) return [];
+  // Generated waves (endless) send at most MAX_GROUP per group, whatever the difficulty.
+  const cap = wave >= mapOf(state).waves.length ? MAX_GROUP : Infinity;
   const list: PendingSpawn[] = [];
   for (const group of def.groups) {
-    const count = Math.max(1, Math.ceil((group.count * COUNT_PERCENT[state.difficulty]) / 100));
+    const count = Math.min(cap, Math.max(1, Math.ceil((group.count * COUNT_PERCENT[state.difficulty]) / 100)));
     for (let i = 0; i < count; i++) list.push({ at: group.at + i * group.every, kind: group.kind, route: group.route });
   }
   // Stable: equal times keep the authored order.
@@ -263,15 +265,18 @@ export interface WaveStep {
   state: TdState;
   events: SimEvent[];
   leaks: Leak[];
+  /** The wave reached MAX_WAVE_TICKS: what was left of it counted as through (the view says so). */
+  timeUp: boolean;
 }
 
 export function stepWave(state: TdState, ticks = 1): WaveStep {
-  if (state.phase !== 'wave' || !state.run) return { state, events: [], leaks: [] };
+  if (state.phase !== 'wave' || !state.run) return { state, events: [], leaks: [], timeUp: false };
   let s = structuredClone(state);
   const events: SimEvent[] = [];
   const leaks: Leak[] = [];
-  for (let i = 0; i < ticks && s.phase === 'wave'; i++) s = tickWave(s, events, leaks);
-  return { state: s, events, leaks };
+  const flags = { timeUp: false };
+  for (let i = 0; i < ticks && s.phase === 'wave'; i++) s = tickWave(s, events, leaks, flags);
+  return { state: s, events, leaks, timeUp: flags.timeUp };
 }
 
 /** Run the current wave to its end. */
@@ -279,7 +284,7 @@ export function resolveWave(state: TdState): WaveStep {
   return stepWave(state, MAX_WAVE_TICKS + 1);
 }
 
-function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
+function tickWave(s: TdState, events: SimEvent[], leaks: Leak[], flags: { timeUp: boolean }): TdState {
   const step = tickLanes(s.world, s.run!, mapOf(s).routes);
   s.world = step.world;
   s.run = step.run;
@@ -307,6 +312,10 @@ function tickWave(s: TdState, events: SimEvent[], leaks: Leak[]): TdState {
     }
     s.stats.leaked += s.run.pending.length;
     s.run.pending = [];
+    // Shells still in flight fall harmlessly, so the wave ends exactly at the bound (a running
+    // wave past MAX_WAVE_TICKS would not be a valid save; review of PR #114).
+    s.world.projectiles = [];
+    flags.timeUp = true;
   }
   if (s.core <= 0) {
     // The wave is over: what is left of it leaves the map (a lost state holds no running wave).

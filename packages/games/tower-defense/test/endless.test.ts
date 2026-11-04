@@ -2,17 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { ENEMIES } from '@wp/td-core';
 import { MAPS, TRAINING } from '../src/maps';
 import {
+  applyCommand,
   ENDLESS_PERCENT,
   ENDLESS_WAVES,
   endGame,
   incomeAfter,
   isValidState,
+  MAX_CREDITS,
   MAX_GROUP,
+  MAX_WAVE_TICKS,
   migrateState,
   newGame,
   resolveWave,
   retryWave,
   startWave,
+  stepWave,
   waveCount,
   waveDef,
   waveSchedule,
@@ -78,7 +82,7 @@ describe('endless: generated waves', () => {
         const base = map.waves[slot]![s.variants[slot]!]!;
         // Every authored group comes back, as large as the growth says (at most MAX_GROUP).
         for (const [i, grp] of base.groups.entries()) {
-          const want = grp.kind === 'crawler' ? grp.count + Math.floor(extra / 3) : Math.min(MAX_GROUP, Math.ceil((grp.count * (100 + extra * ENDLESS_PERCENT)) / 100));
+          const want = grp.kind === 'crawler' ? grp.count + Math.floor(extra / 3) : Math.ceil((grp.count * (100 + extra * ENDLESS_PERCENT)) / 100);
           expect(def.groups[i]!.count, `${map.id} wave ${k + 1}`).toBe(want);
         }
         expect(def.groups.filter((g) => g.kind === 'crawler').reduce((m, g) => m + g.count, 0)).toBeGreaterThanOrEqual(Math.floor(extra / 3));
@@ -183,5 +187,70 @@ describe('endless: saves', () => {
     expect(migrateState(clone(v2), 2)).toEqual(v2);
     expect(migrateState({ ...clone(v2), length: 'endless' }, 2)).toBeUndefined();
     expect(migrateState({ junk: 1 }, 2)).toBeUndefined();
+  });
+});
+
+describe('endless: review of PR #114', () => {
+  it('the end of an endless game has its own neutral result text in every language (not "Solved.")', async () => {
+    const { messages } = await import('../src/messages');
+    for (const [locale, table] of Object.entries(messages)) expect((table as Record<string, string>)['result.completed'], locale).toBeTruthy();
+    expect((messages.en as Record<string, string>)['result.completed']).not.toMatch(/solved/i);
+  });
+
+  it('a wave that reaches the bound with shells in flight ends exactly there: resolved, a valid save, time up', () => {
+    // A Fork game with an artillery piece firing at the first units.
+    let s = newGame(5, 'standard', 'fork', 'endless');
+    s = applyCommand(s, { t: 'place', kind: 'artillery', x: 2, y: 3 });
+    let t = startWave({ ...s, core: 1000 });
+    while (t.phase === 'wave' && t.world.projectiles.length === 0) t = stepWave(t, 1).state;
+    expect(t.world.projectiles.length).toBeGreaterThan(0);
+    const late = clone(t);
+    late.run!.tick = MAX_WAVE_TICKS - 1;
+    expect(isValidState(clone(late))).toBe(true);
+    const step = stepWave(late, 1);
+    expect(step.timeUp).toBe(true);
+    expect(step.state.phase).not.toBe('wave');
+    expect(step.state.world.projectiles).toEqual([]);
+    expect(isValidState(clone(step.state))).toBe(true);
+    // Before the bound nothing is cut short.
+    expect(stepWave(t, 1).timeUp).toBe(false);
+  });
+
+  it('the last possible wave ends the game even with core left (a crafted save; the wear-down gets there first in play)', () => {
+    const t = startWave(at(ENDLESS_WAVES - 1, 1000));
+    t.run!.pending = [];
+    const done = resolveWave(t).state;
+    expect(done.phase).toBe('ended');
+    expect(done.worn).toBe(true);
+    expect(done.core).toBeGreaterThan(0);
+    expect(wavesHeld(done)).toBe(ENDLESS_WAVES);
+    expect(isValidState(clone(done))).toBe(true);
+  });
+
+  it('credits stop at the cap: bounties during the wave and income after it', () => {
+    const rich = { ...at(2), credits: MAX_CREDITS - 1 };
+    const t = startWave(applyCommand(rich, { t: 'place', kind: 'gun', x: 2, y: 2 }));
+    const done = resolveWave(t).state;
+    expect(done.stats.killed).toBeGreaterThan(0);
+    expect(done.credits).toBe(MAX_CREDITS);
+    expect(isValidState(clone(done))).toBe(true);
+  });
+
+  it('generated waves, pinned: Training wave 9 repeats wave 8 with 15 % more units; Hard sends at most MAX_GROUP per group', () => {
+    const s = at(0);
+    const n = TRAINING.waves.length;
+    const base = TRAINING.waves[n - 1]![s.variants[n - 1]!]!;
+    const def = waveDef(s, n)!;
+    expect(def.groups.map((g) => g.count)).toEqual(base.groups.map((g) => (g.kind === 'crawler' ? g.count : Math.ceil((g.count * 115) / 100))));
+    // Long into an endless game on Hard: groups that would be larger send MAX_GROUP (after the difficulty, not before).
+    const hard = newGame(5, 'hard', 'fork', 'endless');
+    const big = waveDef(hard, 55)!.groups.filter((g) => g.kind !== 'crawler' && Math.ceil((g.count * 120) / 100) > MAX_GROUP);
+    expect(big.length).toBeGreaterThan(0);
+    const schedule = waveSchedule(hard, 55);
+    const want = waveDef(hard, 55)!.groups.reduce((n, g) => n + Math.min(MAX_GROUP, Math.max(1, Math.ceil((g.count * 120) / 100))), 0);
+    expect(schedule.length).toBe(want);
+    // The map's own waves are never capped.
+    const own = waveDef(hard, 19)!.groups;
+    expect(waveSchedule(hard, 19).length).toBe(own.reduce((n, g) => n + Math.max(1, Math.ceil((g.count * 120) / 100)), 0));
   });
 });

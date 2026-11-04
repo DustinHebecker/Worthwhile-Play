@@ -186,7 +186,8 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
 
   /** The end of a game that is over (`ended`): a loss the player ended, or in endless how far the defence got. */
   const endText = (): string => {
-    if (state.worn) return t('status.worn', { held: wavesHeld(state) });
+    // Worn down with core left: only the last possible wave stops a game that way.
+    if (state.worn) return state.core > 0 ? t('status.lastWave', { n: state.wave + 1, held: wavesHeld(state) }) : t('status.worn', { held: wavesHeld(state) });
     return isEndless(state) ? t('status.endedEndless', { n: state.wave + 1, held: wavesHeld(state) }) : t('status.ended', { n: state.wave + 1 });
   };
   const endStats = () => ({ core: state.core, waves: wavesHeld(state), killed: state.stats.killed, leaked: state.stats.leaked, retries: state.stats.retries });
@@ -414,7 +415,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     motion.prune(new Set(state.world.entities.map((e) => e.id)));
     sinceSave += ticks;
     if (state.phase !== 'wave') {
-      onWaveOver(before);
+      onWaveOver(before, result.timeUp);
       return;
     }
     if (sinceSave >= SAVE_EVERY) {
@@ -424,7 +425,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     renderHud();
   };
 
-  const onWaveOver = (before: TdState): void => {
+  const onWaveOver = (before: TdState, timeUp: boolean): void => {
     stopLoop();
     playing = false;
     sinceSave = 0;
@@ -439,17 +440,17 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
       const income = incomeAfter(before, before.wave);
       const paid = interestOf(before.checkpoint?.credits ?? 0);
       const wear = wearAfter(before, before.wave);
-      status.textContent = `${t('status.waveDone', { n: state.wave, killed, leaked })} ${t('status.income', { income, interest: paid })}${wear > 0 ? ` ${t('status.wear', { n: wear })}` : ''}`;
+      status.textContent = `${timeUp ? `${t('status.timeUp')} ` : ''}${t('status.waveDone', { n: state.wave, killed, leaked })} ${t('status.income', { income, interest: paid })}${wear > 0 ? ` ${t('status.wear', { n: wear })}` : ''}`;
       announce(live, status.textContent);
     } else if (state.phase === 'ended') {
       // Endless, worn down: the natural end of the game.
-      announce(live, endText());
+      announce(live, `${timeUp ? `${t('status.timeUp')} ` : ''}${endText()}`);
       context.finished({ outcome: 'completed', stats: endStats() });
     } else if (state.phase === 'won') {
       announce(live, t('status.won', { total: wavesShown(state), core: state.core }));
       context.finished({ outcome: 'won', stats: { core: state.core, killed: state.stats.killed, leaked: state.stats.leaked, retries: state.stats.retries } });
     } else if (state.phase === 'lost') {
-      announce(live, t('status.lost', { n: state.wave + 1 }));
+      announce(live, `${timeUp ? `${t('status.timeUp')} ` : ''}${t('status.lost', { n: state.wave + 1 })}`);
     }
     context.requestSave();
     render();
