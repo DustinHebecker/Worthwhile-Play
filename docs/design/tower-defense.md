@@ -605,6 +605,17 @@ The owner played TD and reported four things; all are addressed:
    - The golden replays are updated deliberately; the full replay now buys every branch C and wins all 20 waves on Fork (relaxed) with 18 core.
 4. **The card picture was too poor.** The card now shows a picture drawn by the game itself (like Relay Command's): an arranged 6 × 4 scene of the real map and unit renderer, light and dark, 288 × 192 WebP (`apps/web/public/previews/tower-defense-*.webp`).
 
+### 15.11 Endless (owner, 2026-11-04)
+
+The owner asked for an endless mode in Tower Defense as in Hold the Line. Built as a start-screen choice **Length**: *All waves of the map* (default, the game as before: hold every wave to win) or *Endless*.
+
+- **Generated waves:** after the map's waves the game goes on with generated ones: the last four authored waves in turn (latest first), each with `ENDLESS_PERCENT` = 15 % more units per generated wave than authored (each group at most `MAX_GROUP` = 80 units) and one more Siege crawler every third generated wave (added on road 0 where the repeated wave has none). Difficulty scales them like any wave. Income past the map's table climbs by 5 per wave; credits stop at 1,000,000.
+- **End:** an endless game is never won. When the core falls in battle, the wave can be retried or the game ended as ever (outcome `completed`: falling is how every endless game ends). From wave 51 (`WEAR_FROM` = index 50) the core **wears down** at the end of every wave by 1, 2, 3, …; a core it empties ends the game for good (phase `ended`, `worn`), so every game ends by wave 60 (`ENDLESS_WAVES`) at the latest, which also bounds what a save can hold. The HUD reads "Wave n (endless, at most 60)", announces the wear-down from wave 46 and shows each wave's loss while it applies; the end text says how many waves the defence held.
+- **Saves:** `stateVersion` 3 (version-2 saves load as they are: no `length`, a game of the map's waves). Validation: `length` only `endless`, waves up to 60 in endless, never `won` in endless, `worn` only on an ended endless game, the checkpoint of the same length.
+- **Unchanged:** a game of the map's waves plays exactly as before (golden replays, balance suites).
+- **Measured** (`endless.long.test.ts`, seed 7, Standard, the mixed planner of the balance suites, every save on the way valid): Training ground 16 waves held, Fork 24, Long bend 24, Twin approach 28 — 4 to 8 waves past the map's own, then the core falls; with every credit from the start (Fork) also 24, since the planner takes at most ten actions per build. The wear-down did not come into play there; it is the bound for defences beyond what the planner builds (unit tests: it ends the game by wave 60 whatever the core).
+- Also fixed: the map hint on the start screen still said "six short waves, twelve waves each" (since the playtest: 8 and 20).
+
 ---
 
 ## 16. Hold the Line (strategy/TD hybrid), mode VS Small — as built (2026-11-01)

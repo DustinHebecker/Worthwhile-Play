@@ -97,3 +97,20 @@ test('tower-defense: after a new game on a taller map the drawing matches the ce
   const canvas = root(page).locator('canvas.td-canvas');
   await expect.poll(async () => canvas.evaluate((c: HTMLCanvasElement) => c.height / c.width)).toBeCloseTo(15 / 7, 2);
 });
+
+test('tower-defense: endless is chosen on the start screen, says so, and survives a reload', async ({ page }) => {
+  await startGame(page, 'tower-defense', { settings: { map: 'training', length: 'endless' } });
+  await expect(root(page).getByTestId('wave')).toContainText('endless');
+  await expect(root(page).getByTestId('wave')).toContainText('60');
+  await root(page).getByTestId('cell-2-2').click();
+  await root(page).getByTestId('build-gun').click();
+  await root(page).getByTestId('start').click();
+  await root(page).getByTestId('instant').click();
+  await expect(game(page)).toHaveAttribute('data-wave-index', '1');
+  await expect.poll(async () => ((await readSave(page, 'tower-defense')) as { state?: { length?: string; wave?: number } } | undefined)?.state?.wave).toBe(1);
+  expect(((await readSave(page, 'tower-defense')) as { state?: { length?: string } }).state?.length).toBe('endless');
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(game(page)).toHaveAttribute('data-wave-index', '1');
+  await expect(root(page).getByTestId('wave')).toContainText('endless');
+});

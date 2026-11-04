@@ -1,7 +1,7 @@
 import { defineGame } from '@wp/game-core';
 import { metadata } from './metadata';
 import { MAPS } from './maps';
-import { isValidState, migrateState, type TdState } from './rules';
+import { DEFAULT_LENGTH, isValidState, LENGTHS, migrateState, type TdState } from './rules';
 import { createTowerDefense } from './view';
 
 export type { TdState } from './rules';
@@ -22,7 +22,8 @@ export default defineGame<TdState>({
       display: 'radio',
       hintKey: 'map.hint'
     },
+    { kind: 'choice', id: 'length', labelKey: 'length.label', valueKey: 'length', values: [...LENGTHS], default: DEFAULT_LENGTH, display: 'radio', hintKey: 'length.hint' },
     { kind: 'difficulty', default: 'standard' }
   ],
-  settingsOf: (state) => ({ map: state.mapId, difficulty: state.difficulty })
+  settingsOf: (state) => ({ map: state.mapId, length: state.length ?? 'waves', difficulty: state.difficulty })
 });

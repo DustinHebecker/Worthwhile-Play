@@ -7,8 +7,15 @@ import {
   applyCommand,
   checkCommand,
   DEFAULT_DIFFICULTY,
+  DEFAULT_LENGTH,
   DIFFICULTIES,
   endGame,
+  ENDLESS_WAVES,
+  isEndless,
+  LENGTHS,
+  WEAR_FROM,
+  wearAfter,
+  wavesHeld,
   INTEREST_PERCENT,
   incomeAfter,
   interestOf,
@@ -26,6 +33,7 @@ import {
   wavePreview,
   type BuildCommand,
   type Difficulty,
+  type Length,
   type TdState,
   type TowerPriority
 } from './rules';
@@ -36,6 +44,7 @@ import './styles.css';
 const SAVE_EVERY = 5 * TICKS_PER_SECOND;
 const SPEEDS = [1, 2, 4] as const;
 
+const toLength = (l: unknown): Length => ((LENGTHS as readonly unknown[]).includes(l) ? (l as Length) : DEFAULT_LENGTH);
 const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
 const hpMax = (kind: string): number => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
 const splashOf = (kind: string): number => archetypeOf(TD_RULESET, kind)?.weapon?.splash ?? 0;
@@ -175,10 +184,17 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     disposeKeyboard = gridKeyboard(cells, w);
   };
 
+  /** The end of a game that is over (`ended`): a loss the player ended, or in endless how far the defence got. */
+  const endText = (): string => {
+    if (state.worn) return t('status.worn', { held: wavesHeld(state) });
+    return isEndless(state) ? t('status.endedEndless', { n: state.wave + 1, held: wavesHeld(state) }) : t('status.ended', { n: state.wave + 1 });
+  };
+  const endStats = () => ({ core: state.core, waves: wavesHeld(state), killed: state.stats.killed, leaked: state.stats.leaked, retries: state.stats.retries });
+
   // --- Rendering -------------------------------------------------------------------------------
   const renderHud = (): void => {
     const total = wavesShown(state);
-    wave.textContent = t('hud.wave', { n: state.wave + 1, total });
+    wave.textContent = isEndless(state) ? t('hud.waveEndless', { n: state.wave + 1, max: ENDLESS_WAVES }) : t('hud.wave', { n: state.wave + 1, total });
     phase.textContent = state.phase === 'wave' ? t(playing && !hostPaused ? 'hud.running' : 'hud.paused') : state.phase === 'build' ? t('hud.build') : '';
     credits.textContent = t('hud.credits', { n: state.credits });
     credits.dataset.value = String(state.credits);
@@ -187,7 +203,16 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     // Interest is paid after every wave but the last, on what is left when the wave starts.
     const paysInterest = state.phase === 'build' && state.wave < waveCount(state) - 1;
     interest.hidden = !paysInterest;
-    interest.textContent = paysInterest ? t('hud.interest', { n: interestOf(state.credits), p: INTEREST_PERCENT }) : '';
+    // Endless: the wear-down this wave will cost, announced from five waves before it starts.
+    const wear = state.phase === 'build' ? wearAfter(state, state.wave) : 0;
+    const wearSoon = state.phase === 'build' && isEndless(state) && wear === 0 && state.wave >= WEAR_FROM - 5;
+    interest.textContent = [
+      paysInterest ? t('hud.interest', { n: interestOf(state.credits), p: INTEREST_PERCENT }) : '',
+      wear > 0 ? t('hud.wear', { n: wear }) : wearSoon ? t('hud.wearSoon', { n: WEAR_FROM + 1 }) : ''
+    ]
+      .filter(Boolean)
+      .join(' ');
+    interest.hidden = interest.textContent === '';
     container.dataset.phase = state.phase;
     container.dataset.tick = String(state.run?.tick ?? 0);
     container.dataset.waveIndex = String(state.wave);
@@ -305,7 +330,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     retryButton.textContent = t('controls.retry', { n: (state.checkpoint?.wave ?? state.wave) + 1 });
     if (p === 'won') status.textContent = t('status.won', { total: wavesShown(state), core: state.core });
     else if (p === 'lost') status.textContent = t('status.lost', { n: state.wave + 1 });
-    else if (p === 'ended') status.textContent = t('status.ended', { n: state.wave + 1 });
+    else if (p === 'ended') status.textContent = endText();
     status.hidden = status.textContent === '';
   };
 
@@ -413,8 +438,13 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     if (state.phase === 'build') {
       const income = incomeAfter(before, before.wave);
       const paid = interestOf(before.checkpoint?.credits ?? 0);
-      status.textContent = `${t('status.waveDone', { n: state.wave, killed, leaked })} ${t('status.income', { income, interest: paid })}`;
+      const wear = wearAfter(before, before.wave);
+      status.textContent = `${t('status.waveDone', { n: state.wave, killed, leaked })} ${t('status.income', { income, interest: paid })}${wear > 0 ? ` ${t('status.wear', { n: wear })}` : ''}`;
       announce(live, status.textContent);
+    } else if (state.phase === 'ended') {
+      // Endless, worn down: the natural end of the game.
+      announce(live, endText());
+      context.finished({ outcome: 'completed', stats: endStats() });
     } else if (state.phase === 'won') {
       announce(live, t('status.won', { total: wavesShown(state), core: state.core }));
       context.finished({ outcome: 'won', stats: { core: state.core, killed: state.stats.killed, leaked: state.stats.leaked, retries: state.stats.retries } });
@@ -523,8 +553,10 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   /** Ending the game after a loss is final (no retry afterwards), so `finished` is reported once. */
   const onGiveUp = (): void => {
     if (state.phase !== 'lost' || hostPaused) return;
-    commit(endGame(state), t('status.ended', { n: state.wave + 1 }));
-    context.finished({ outcome: 'lost', stats: { core: state.core, killed: state.stats.killed, leaked: state.stats.leaked, retries: state.stats.retries } });
+    const ended = endGame(state);
+    commit(ended, isEndless(ended) ? t('status.endedEndless', { n: ended.wave + 1, held: wavesHeld(ended) }) : t('status.ended', { n: ended.wave + 1 }));
+    // Endless: the core falling is how every game ends, so it counts as completed.
+    context.finished({ outcome: isEndless(state) ? 'completed' : 'lost', stats: endStats() });
   };
 
   const onCellKey = (event: KeyboardEvent, x: number, y: number): void => {
@@ -563,11 +595,11 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     newGame(options: NewGameOptions) {
       const wanted = options.settings?.map;
       const mapId = typeof wanted === 'string' && mapById(wanted) ? wanted : DEFAULT_MAP;
-      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), mapId);
+      initial = newGame(normalizeSeed(options.seed), toDifficulty(options.difficulty), mapId, toLength(options.settings?.length));
       show(initial);
     },
     restore(saved: TdState) {
-      initial = newGame(saved.seed, saved.difficulty, saved.mapId);
+      initial = newGame(saved.seed, saved.difficulty, saved.mapId, saved.length ?? 'waves');
       show(structuredClone(saved));
     },
     serialize: () => structuredClone(state),
