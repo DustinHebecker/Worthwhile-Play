@@ -4,7 +4,7 @@ import { messages } from './messages';
 export const metadata: GameMetadata = {
   id: 'tower-defense',
   // 2: twenty waves on the full maps, eight on the Training ground (version 1 saves are migrated).
-  stateVersion: 2,
+  stateVersion: 3,
   skills: ['strategy', 'planning', 'spatial'],
   typicalMinutes: [8, 40],
   inputMethods: ['pointer', 'touch', 'keyboard'],
