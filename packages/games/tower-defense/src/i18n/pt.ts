@@ -17,7 +17,7 @@ export const pt: Record<MessageKey, string> = {
   'length.label': 'Duração',
   'length.waves': 'Todas as ondas do mapa',
   'length.endless': 'Sem fim',
-  'length.hint': 'Todas as ondas: resista a cada onda do mapa para vencer (campo de treino 8, os outros mapas 20). Sem fim: depois das ondas do mapa vêm outras cada vez maiores até o núcleo cair; a partir da onda 51 o núcleo desgasta-se após cada onda, por isso cada partida termina no máximo na onda 60.',
+  'length.hint': 'Todas as ondas: resista a cada onda do mapa para vencer (campo de treino 8, os outros mapas 20). Sem fim: depois das ondas do mapa vêm outras cada vez maiores até o núcleo cair; a partir da onda 101 o núcleo desgasta-se após cada onda, por isso cada partida termina no máximo na onda 110.',
   'hud.waveEndless': 'Onda {n} (sem fim, no máximo {max})',
   'hud.wear': 'Desgaste após esta onda: núcleo −{n}.',
   'hud.wearSoon': 'A partir da onda {n} o núcleo desgasta-se após cada onda.',

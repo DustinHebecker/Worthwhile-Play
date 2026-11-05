@@ -17,7 +17,7 @@ export const nl: Record<MessageKey, string> = {
   'length.label': 'Lengte',
   'length.waves': 'Alle golven van de kaart',
   'length.endless': 'Eindeloos',
-  'length.hint': 'Alle golven: houd elke golf van de kaart tegen om te winnen (oefenterrein 8, de andere kaarten 20). Eindeloos: na de golven van de kaart komen steeds grotere, tot de kern valt; vanaf golf 51 slijt de kern na elke golf, dus elk spel eindigt uiterlijk bij golf 60.',
+  'length.hint': 'Alle golven: houd elke golf van de kaart tegen om te winnen (oefenterrein 8, de andere kaarten 20). Eindeloos: na de golven van de kaart komen steeds grotere, tot de kern valt; vanaf golf 101 slijt de kern na elke golf, dus elk spel eindigt uiterlijk bij golf 110.',
   'hud.waveEndless': 'Golf {n} (eindeloos, hoogstens {max})',
   'hud.wear': 'Slijtage na deze golf: kern −{n}.',
   'hud.wearSoon': 'Vanaf golf {n} slijt de kern na elke golf.',

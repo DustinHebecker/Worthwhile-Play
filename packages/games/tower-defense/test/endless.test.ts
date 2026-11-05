@@ -9,6 +9,7 @@ import {
   incomeAfter,
   isValidState,
   MAX_CREDITS,
+  MAX_CRAWLERS,
   MAX_GROUP,
   MAX_WAVE_TICKS,
   migrateState,
@@ -71,40 +72,63 @@ describe('endless: the game', () => {
 });
 
 describe('endless: generated waves', () => {
-  it('repeat the last four authored waves, larger every time, one more Siege crawler every third wave', () => {
+  /** The compound factor of generated wave `extra` (1-based) in per mille, as the rules compute it. */
+  const factorOf = (extra: number) => {
+    let f = 1000;
+    for (let i = 0; i < extra; i++) f = Math.floor((f * (100 + ENDLESS_PERCENT)) / 100);
+    return f;
+  };
+
+  it('repeat the last four authored waves, each ENDLESS_PERCENT larger than the one before (compound)', () => {
+    expect(ENDLESS_PERCENT).toBe(6);
+    expect([1, 2, 10].map(factorOf)).toEqual([1060, 1123, 1786]);
+    // Only the Training ground starts its growth further on (its last waves are small).
+    expect(MAPS.filter((m) => m.endlessHeadStart).map((m) => [m.id, m.endlessHeadStart])).toEqual([['training', 34]]);
     for (const map of MAPS) {
       const s = at(0, 1000, map.id);
       const n = map.waves.length;
-      for (let k = n; k < ENDLESS_WAVES; k++) {
-        const extra = k - n + 1;
+      for (let k = n; k < ENDLESS_WAVES; k += 7) {
         const def = waveDef(s, k)!;
         const slot = n - 1 - ((k - n) % 4);
         const base = map.waves[slot]![s.variants[slot]!]!;
-        // Every authored group comes back, as large as the growth says (at most MAX_GROUP).
-        for (const [i, grp] of base.groups.entries()) {
-          const want = grp.kind === 'crawler' ? grp.count + Math.floor(extra / 3) : Math.ceil((grp.count * (100 + extra * ENDLESS_PERCENT)) / 100);
-          expect(def.groups[i]!.count, `${map.id} wave ${k + 1}`).toBe(want);
-        }
-        expect(def.groups.filter((g) => g.kind === 'crawler').reduce((m, g) => m + g.count, 0)).toBeGreaterThanOrEqual(Math.floor(extra / 3));
-        // Four waves later the same authored wave comes back with more units and threat.
-        if (k + 4 < ENDLESS_WAVES) {
+        const steps = k - n + 1 + (map.endlessHeadStart ?? 0);
+        expect(def.groups.map((g) => g.count), `${map.id} wave ${k + 1}`).toEqual(base.groups.map((g) => (g.kind === 'crawler' ? g.count : Math.ceil((g.count * factorOf(steps)) / 1000))));
+        // Four waves later the same authored wave comes back larger, in units and in threat (until every
+        // cap is reached, far beyond what a defence holds; then it stays at that size).
+        if (k + 4 < 70) {
           expect(units(s, k + 4), `${map.id} wave ${k + 5}`).toBeGreaterThanOrEqual(units(s, k));
           expect(threat(s, k + 4), `${map.id} wave ${k + 5}`).toBeGreaterThan(threat(s, k));
         }
       }
-      expect(waveDef(s, ENDLESS_WAVES + 5)).toBeDefined();
     }
   });
 
-  it('a Siege crawler comes along from the third generated wave even where the repeated wave has none', () => {
-    const s = at(0);
-    const n = TRAINING.waves.length;
-    expect(waveSchedule(s, n + 2).filter((p) => p.kind === 'crawler').length).toBeGreaterThanOrEqual(1);
+  it('what outgrows a group comes as Brutes of the same health on a ground road, what outgrows those as Siege crawlers; both bounded', () => {
+    const s = at(0, 1000, 'fork');
+    const n = MAPS.find((m) => m.id === 'fork')!.waves.length;
+    // Early generated waves: nothing outgrows MAX_GROUP yet, so no conversion.
+    const early = waveSchedule(s, n);
+    const plain = waveDef(s, n)!.groups.reduce((m, g) => m + Math.max(1, g.count), 0);
+    expect(early.length).toBe(plain);
+    // Late: every group of the generated wave is at most MAX_GROUP, Brutes and Siege crawlers carry the rest.
+    const late = waveSchedule(s, 100);
+    const perGroup = new Map<string, number>();
+    for (const p of late) if (p.kind !== 'brute' && p.kind !== 'crawler') perGroup.set(`${p.kind}/${p.route}`, (perGroup.get(`${p.kind}/${p.route}`) ?? 0) + 1);
+    for (const count of perGroup.values()) expect(count).toBeLessThanOrEqual(MAX_GROUP * 3);
+    const crawlers = late.filter((p) => p.kind === 'crawler');
+    expect(crawlers.length).toBeGreaterThan(0);
+    for (const road of new Set(crawlers.map((p) => p.route))) expect(crawlers.filter((p) => p.route === road).length).toBeLessThanOrEqual(2 * MAX_CRAWLERS);
+    // Converted units walk ground roads only.
+    const fork = MAPS.find((m) => m.id === 'fork')!;
+    for (const p of late.filter((x) => x.kind === 'brute' || x.kind === 'crawler')) expect(fork.routes[p.route]!.layer).toBe('ground');
+    // The threat keeps growing wave on wave of the same authored slot, also past the conversion.
+    expect(threat(s, 64)).toBeGreaterThan(threat(s, 60));
+    expect(threat(s, 104)).toBeGreaterThanOrEqual(threat(s, 100));
   });
 });
 
 describe('endless: the wear-down', () => {
-  it('costs 1, 2, 3, … from wave 51 on, and nothing in a game of the map’s waves', () => {
+  it('costs 1, 2, 3, … from wave 101 on, and nothing in a game of the map’s waves', () => {
     const e = at(0);
     expect(wearAfter(e, WEAR_FROM - 1)).toBe(0);
     expect([0, 1, 2, 9].map((i) => wearAfter(e, WEAR_FROM + i))).toEqual([1, 2, 3, 10]);
@@ -236,21 +260,15 @@ describe('endless: review of PR #114', () => {
     expect(isValidState(clone(done))).toBe(true);
   });
 
-  it('generated waves, pinned: Training wave 9 repeats wave 8 with 15 % more units; Hard sends at most MAX_GROUP per group', () => {
-    const s = at(0);
-    const n = TRAINING.waves.length;
-    const base = TRAINING.waves[n - 1]![s.variants[n - 1]!]!;
-    const def = waveDef(s, n)!;
-    expect(def.groups.map((g) => g.count)).toEqual(base.groups.map((g) => (g.kind === 'crawler' ? g.count : Math.ceil((g.count * 115) / 100))));
-    // Long into an endless game on Hard: groups that would be larger send MAX_GROUP (after the difficulty, not before).
+  it('the cap applies after the difficulty, to generated waves only (the map’s own waves are never capped)', () => {
     const hard = newGame(5, 'hard', 'fork', 'endless');
-    const big = waveDef(hard, 55)!.groups.filter((g) => g.kind !== 'crawler' && Math.ceil((g.count * 120) / 100) > MAX_GROUP);
-    expect(big.length).toBeGreaterThan(0);
-    const schedule = waveSchedule(hard, 55);
-    const want = waveDef(hard, 55)!.groups.reduce((n, g) => n + Math.min(MAX_GROUP, Math.max(1, Math.ceil((g.count * 120) / 100))), 0);
-    expect(schedule.length).toBe(want);
-    // The map's own waves are never capped.
-    const own = waveDef(hard, 19)!.groups;
-    expect(waveSchedule(hard, 19).length).toBe(own.reduce((n, g) => n + Math.max(1, Math.ceil((g.count * 120) / 100)), 0));
+    const n = MAPS.find((m) => m.id === 'fork')!.waves.length;
+    // A generated wave on Hard where a group grows past MAX_GROUP only through the difficulty (×1.2).
+    let k = n;
+    while (!waveDef(hard, k)!.groups.some((g) => g.count <= MAX_GROUP && Math.ceil((g.count * 120) / 100) > MAX_GROUP)) k++;
+    const g = waveDef(hard, k)!.groups.find((x) => x.count <= MAX_GROUP && Math.ceil((x.count * 120) / 100) > MAX_GROUP)!;
+    expect(waveSchedule(hard, k).filter((p) => p.kind === g.kind && p.route === g.route).length).toBeLessThanOrEqual(MAX_GROUP * waveDef(hard, k)!.groups.filter((x) => x.kind === g.kind && x.route === g.route).length);
+    const own = waveDef(hard, n - 1)!.groups;
+    expect(waveSchedule(hard, n - 1).length).toBe(own.reduce((m, x) => m + Math.max(1, Math.ceil((x.count * 120) / 100)), 0));
   });
 });

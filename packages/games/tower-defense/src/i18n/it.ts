@@ -17,7 +17,7 @@ export const it: Record<MessageKey, string> = {
   'length.label': 'Durata',
   'length.waves': 'Tutte le ondate della mappa',
   'length.endless': 'Senza fine',
-  'length.hint': 'Tutte le ondate: resisti a ogni ondata della mappa per vincere (campo di addestramento 8, le altre mappe 20). Senza fine: dopo le ondate della mappa ne arrivano di sempre più grandi finché il nucleo cade; dall’ondata 51 il nucleo si logora dopo ogni ondata, quindi ogni partita finisce al più tardi all’ondata 60.',
+  'length.hint': 'Tutte le ondate: resisti a ogni ondata della mappa per vincere (campo di addestramento 8, le altre mappe 20). Senza fine: dopo le ondate della mappa ne arrivano di sempre più grandi finché il nucleo cade; dall’ondata 101 il nucleo si logora dopo ogni ondata, quindi ogni partita finisce al più tardi all’ondata 110.',
   'hud.waveEndless': 'Ondata {n} (senza fine, al massimo {max})',
   'hud.wear': 'Logoramento dopo questa ondata: nucleo −{n}.',
   'hud.wearSoon': 'Dall’ondata {n} il nucleo si logora dopo ogni ondata.',

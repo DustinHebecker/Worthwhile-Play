@@ -57,20 +57,23 @@ export const incomeAfter = (state: Pick<TdCore, 'mapId' | 'difficulty'>, wave: n
  */
 export const LENGTHS = ['waves', 'endless'] as const;
 export type Length = (typeof LENGTHS)[number];
-export const DEFAULT_LENGTH: Length = 'waves';
+/** The start screen's default (owner, 2026-11-04: endless). `newGame` and `replay` keep the map's waves as their own default (older saves, replays). */
+export const DEFAULT_LENGTH: Length = 'endless';
 /** Endless: the last possible wave (the wear-down empties any core before it). */
-export const ENDLESS_WAVES = 60;
+export const ENDLESS_WAVES = 110;
 /** Endless: the core wears down at the end of every wave from this one (0-based index) on. */
-export const WEAR_FROM = 50;
+export const WEAR_FROM = 100;
 /** Endless: each generated wave brings this many percent more units than the authored one it repeats. */
-export const ENDLESS_PERCENT = 15;
+export const ENDLESS_PERCENT = 6;
 /** Endless: no group of a generated wave sends more than this, after the difficulty (bounds the work and what a save holds). */
 export const MAX_GROUP = 80;
+/** Endless: at most this many Siege crawlers per group of a generated wave, and as many again per road from what outgrew the Brutes (bounds even a crafted wave 110). */
+export const MAX_CRAWLERS = 120;
 /** Credits never grow beyond this (endless games run long). */
 export const MAX_CREDITS = 1_000_000;
 
 /** Safety bound: a wave never runs longer (whatever is left then counts as leaked). */
-export const MAX_WAVE_TICKS = 6000;
+export const MAX_WAVE_TICKS = 20_000;
 
 
 export interface WaveRun {
@@ -134,7 +137,7 @@ export function mapOf(state: Pick<TdCore, 'mapId'>): TdMap {
   return map;
 }
 
-export function newGame(seed: number, difficulty: Difficulty = DEFAULT_DIFFICULTY, mapId: string = (MAPS[0] as TdMap).id, length: Length = DEFAULT_LENGTH): TdState {
+export function newGame(seed: number, difficulty: Difficulty = DEFAULT_DIFFICULTY, mapId: string = (MAPS[0] as TdMap).id, length: Length = 'waves'): TdState {
   const map = mapById(mapId);
   if (!map) throw new RangeError(`Unknown map ${mapId}`);
   const rng = createRng(seed);
@@ -170,8 +173,10 @@ export const wearAfter = (state: Pick<TdCore, 'length'>, wave: number): number =
 
 /**
  * The definition of wave `wave`: the map's authored one, or in an endless game past the map's waves a
- * generated one: the last four authored waves in turn (latest first), with ENDLESS_PERCENT more units
- * per generated wave (the schedule sends at most MAX_GROUP per group) and one more Siege crawler every third wave.
+ * generated one: the last four authored waves in turn (latest first), each generated wave ENDLESS_PERCENT
+ * larger than the one before (compound growth, owner 2026-11-04: about 20 waves with little effort, 50 or
+ * more with a good strategy, 80–100 with a very good one). `waveSchedule` turns what outgrows a group
+ * into heavier units.
  */
 export function waveDef(state: Pick<TdCore, 'mapId' | 'variants'>, wave: number): WaveDef | undefined {
   const map = mapOf(state);
@@ -181,10 +186,14 @@ export function waveDef(state: Pick<TdCore, 'mapId' | 'variants'>, wave: number)
   const slot = n - 1 - ((wave - n) % Math.min(4, n));
   const base = map.waves[slot]?.[state.variants[slot] ?? 0];
   if (!base) return undefined;
-  const crawlers = Math.floor(extra / 3);
-  const groups = base.groups.map((grp) => ({ ...grp, count: grp.kind === 'crawler' ? grp.count + crawlers : Math.ceil((grp.count * (100 + extra * ENDLESS_PERCENT)) / 100) }));
-  if (crawlers > 0 && !groups.some((grp) => grp.kind === 'crawler')) groups.push({ kind: 'crawler', count: crawlers, every: 40, at: 60, route: 0 });
-  return { groups };
+  // Compound growth in whole per mille (no floats: the same in every engine). A map whose last waves
+  // are small (the Training ground) starts its growth further on (`endlessHeadStart`), so its endless
+  // game is not the easiest.
+  let factor = 1000;
+  for (let i = 0; i < extra + (map.endlessHeadStart ?? 0); i++) factor = Math.floor((factor * (100 + ENDLESS_PERCENT)) / 100);
+  // Siege crawlers keep their authored count (rounded up they would double at once); more of them
+  // only come from what outgrows the Brutes.
+  return { groups: base.groups.map((grp) => ({ ...grp, count: grp.kind === 'crawler' ? grp.count : Math.ceil((grp.count * factor) / 1000) })) };
 }
 
 /**
@@ -197,12 +206,29 @@ export const wavesShown = (state: Pick<TdCore, 'mapId' | 'phase' | 'wave' | 'len
 export function waveSchedule(state: Pick<TdCore, 'mapId' | 'variants' | 'difficulty'>, wave: number): PendingSpawn[] {
   const def = waveDef(state, wave);
   if (!def) return [];
-  // Generated waves (endless) send at most MAX_GROUP per group, whatever the difficulty.
-  const cap = wave >= mapOf(state).waves.length ? MAX_GROUP : Infinity;
+  const map = mapOf(state);
+  const generated = wave >= map.waves.length;
   const list: PendingSpawn[] = [];
+  // Generated waves (endless): a group past MAX_GROUP sends the rest as Brutes of the same total
+  // health on a ground road (its own, else road 0); Brutes past MAX_GROUP per road as Siege
+  // crawlers. The force keeps growing evenly while what a wave holds stays bounded.
+  const hp = (kind: EnemyKind) => archetypeOf(TD_RULESET, kind)?.hp ?? 1;
+  const heavy = new Map<number, number>();
   for (const group of def.groups) {
-    const count = Math.min(cap, Math.max(1, Math.ceil((group.count * COUNT_PERCENT[state.difficulty]) / 100)));
+    let count = Math.max(1, Math.ceil((group.count * COUNT_PERCENT[state.difficulty]) / 100));
+    if (generated && group.kind === 'crawler') count = Math.min(count, MAX_CRAWLERS);
+    else if (generated && count > MAX_GROUP) {
+      const road = map.routes[group.route]?.layer === 'ground' ? group.route : 0;
+      heavy.set(road, (heavy.get(road) ?? 0) + (count - MAX_GROUP) * hp(group.kind));
+      count = MAX_GROUP;
+    }
     for (let i = 0; i < count; i++) list.push({ at: group.at + i * group.every, kind: group.kind, route: group.route });
+  }
+  for (const [road, health] of [...heavy].sort((x, y) => x[0] - y[0])) {
+    const brutes = Math.ceil(health / hp('brute'));
+    for (let i = 0; i < Math.min(brutes, MAX_GROUP); i++) list.push({ at: 40 + i * 30, kind: 'brute', route: road });
+    const crawlers = Math.min(MAX_CRAWLERS, brutes > MAX_GROUP ? Math.ceil(((brutes - MAX_GROUP) * hp('brute')) / hp('crawler')) : 0);
+    for (let i = 0; i < crawlers; i++) list.push({ at: 100 + i * 60, kind: 'crawler', route: road });
   }
   // Stable: equal times keep the authored order.
   return list.map((s, i) => ({ s, i })).sort((a, b) => a.s.at - b.s.at || a.i - b.i).map(({ s }) => s);
@@ -414,7 +440,7 @@ export function migrateState(old: unknown, fromVersion: number): TdState | undef
 }
 
 /** Replays a game from its log (reproduction and tests). */
-export function replay(seed: number, difficulty: Difficulty, mapId: string, log: readonly (readonly BuildCommand[])[], length: Length = DEFAULT_LENGTH): TdState {
+export function replay(seed: number, difficulty: Difficulty, mapId: string, log: readonly (readonly BuildCommand[])[], length: Length = 'waves'): TdState {
   let s = newGame(seed, difficulty, mapId, length);
   for (let wave = 0; wave < log.length; wave++) {
     for (const cmd of log[wave]!) s = applyCommand(s, cmd);

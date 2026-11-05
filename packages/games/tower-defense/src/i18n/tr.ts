@@ -17,7 +17,7 @@ export const tr: Record<MessageKey, string> = {
   'length.label': 'Uzunluk',
   'length.waves': 'Haritanın tüm dalgaları',
   'length.endless': 'Sonsuz',
-  'length.hint': 'Tüm dalgalar: kazanmak için haritanın her dalgasını durdur (eğitim alanı 8, diğer haritalar 20). Sonsuz: haritanın dalgalarından sonra çekirdek düşene kadar giderek büyüyen dalgalar gelir; 51. dalgadan itibaren çekirdek her dalgadan sonra aşınır, bu yüzden her oyun en geç 60. dalgada biter.',
+  'length.hint': 'Tüm dalgalar: kazanmak için haritanın her dalgasını durdur (eğitim alanı 8, diğer haritalar 20). Sonsuz: haritanın dalgalarından sonra çekirdek düşene kadar giderek büyüyen dalgalar gelir; 101. dalgadan itibaren çekirdek her dalgadan sonra aşınır, bu yüzden her oyun en geç 110. dalgada biter.',
   'hud.waveEndless': 'Dalga {n} (sonsuz, en fazla {max})',
   'hud.wear': 'Bu dalgadan sonra aşınma: çekirdek −{n}.',
   'hud.wearSoon': '{n}. dalgadan itibaren çekirdek her dalgadan sonra aşınır.',

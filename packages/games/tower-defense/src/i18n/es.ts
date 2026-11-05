@@ -17,7 +17,7 @@ export const es: Record<MessageKey, string> = {
   'length.label': 'Duración',
   'length.waves': 'Todas las oleadas del mapa',
   'length.endless': 'Sin fin',
-  'length.hint': 'Todas las oleadas: resiste cada oleada del mapa para ganar (campo de entrenamiento 8, los otros mapas 20). Sin fin: tras las oleadas del mapa llegan otras cada vez mayores hasta que cae el núcleo; desde la oleada 51 el núcleo se desgasta tras cada oleada, así que toda partida termina como muy tarde en la oleada 60.',
+  'length.hint': 'Todas las oleadas: resiste cada oleada del mapa para ganar (campo de entrenamiento 8, los otros mapas 20). Sin fin: tras las oleadas del mapa llegan otras cada vez mayores hasta que cae el núcleo; desde la oleada 101 el núcleo se desgasta tras cada oleada, así que toda partida termina como muy tarde en la oleada 110.',
   'hud.waveEndless': 'Oleada {n} (sin fin, como máximo {max})',
   'hud.wear': 'Desgaste tras esta oleada: núcleo −{n}.',
   'hud.wearSoon': 'Desde la oleada {n} el núcleo se desgasta tras cada oleada.',

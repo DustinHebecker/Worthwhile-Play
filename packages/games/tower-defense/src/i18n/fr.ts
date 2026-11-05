@@ -17,7 +17,7 @@ export const fr: Record<MessageKey, string> = {
   'length.label': 'Durée',
   'length.waves': 'Toutes les vagues de la carte',
   'length.endless': 'Sans fin',
-  'length.hint': 'Toutes les vagues : tenez chaque vague de la carte pour gagner (terrain d’entraînement 8, les autres cartes 20). Sans fin : après les vagues de la carte viennent des vagues toujours plus grandes, jusqu’à la chute du noyau ; à partir de la vague 51, le noyau s’use après chaque vague, donc chaque partie se termine au plus tard à la vague 60.',
+  'length.hint': 'Toutes les vagues : tenez chaque vague de la carte pour gagner (terrain d’entraînement 8, les autres cartes 20). Sans fin : après les vagues de la carte viennent des vagues toujours plus grandes, jusqu’à la chute du noyau ; à partir de la vague 101, le noyau s’use après chaque vague, donc chaque partie se termine au plus tard à la vague 110.',
   'hud.waveEndless': 'Vague {n} (sans fin, au plus {max})',
   'hud.wear': 'Usure après cette vague : noyau −{n}.',
   'hud.wearSoon': 'À partir de la vague {n}, le noyau s’use après chaque vague.',
