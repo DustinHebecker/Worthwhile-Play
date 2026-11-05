@@ -623,11 +623,11 @@ The owner asked for an endless mode in Tower Defense as in Hold the Line. Start-
   | Map | Little effort | Good | Very good |
   |---|---|---|---|
   | Training ground | 27 | – | – |
-  | Fork | 20 | 60 | – |
+  | Fork | 20 | 60 | 67 |
   | Long bend | 17 | 36 | – |
   | Twin approach | 19 | 61 | 60 |
 
-  Long bend is the hardest map by design (130 % of the units, less money). The *very good* planner (more actions per build) holds no longer than the good one: its limit is the board and the money, not the planning, so whether a very good player reaches 80–100 is for the owner's playtest to show; the growth (`ENDLESS_PERCENT`) is the one knob to turn. `endless.long.test.ts` plays every map with little effort: every game ends, every save on the way is valid.
+  Long bend is the hardest map by design (130 % of the units, less money). The *very good* planner (more actions per build) holds a little longer on Fork (67 against 60) and as long on Twin approach (60 against 61): its limit is the board and the money more than the planning, so whether a very good player reaches 80–100 is for the owner's playtest to show; the growth (`ENDLESS_PERCENT`) is the one knob to turn. `endless.long.test.ts` plays every map with little effort: every game ends, every save on the way is valid.
 - **Stun-heavy boards** (review of PR #114): on Hard with every pad a Blackout, or Blackouts and Stasis fields in turn, waves take long because units are stopped and slowed all along the road; already the map's own waves 16–22 took 3,000–5,950 ticks. Letting a stopped unit on the entry shake the stop off was measured and did not shorten them, so it was not kept.
 - Also fixed: the map hint on the start screen still said "six short waves, twelve waves each" (since the playtest: 8 and 20).
 
