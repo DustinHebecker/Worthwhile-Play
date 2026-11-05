@@ -56,6 +56,8 @@ test('tower-defense: an undefended game is lost, can be retried, and ends calmly
     if ((await game(page).getAttribute('data-phase')) !== 'build') break;
     await root(page).getByTestId('start').click();
     await root(page).getByTestId('instant').click();
+    // "Instant" resolves in slices (the page stays responsive): wait for the wave's end.
+    await expect(game(page)).not.toHaveAttribute('data-phase', 'wave');
   }
   await expect(game(page)).toHaveAttribute('data-phase', 'lost');
   // A lost game is saved like any other: after a reload it continues with Retry (review of PR #97).

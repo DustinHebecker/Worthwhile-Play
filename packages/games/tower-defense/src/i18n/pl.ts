@@ -45,6 +45,7 @@ export const pl: Record<MessageKey, string> = {
   'hud.build': 'Faza budowy',
   'hud.running': 'Fala trwa',
   'hud.paused': 'Fala wstrzymana',
+  'hud.resolving': 'Obliczanie fali…',
   'panel.title': 'Wybór',
   'panel.none': 'Wybierz pole budowy lub wieżę na mapie.',
   'panel.road': 'Na drodze nie można budować.',

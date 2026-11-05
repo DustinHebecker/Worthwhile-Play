@@ -45,6 +45,7 @@ export const ru: Record<MessageKey, string> = {
   'hud.build': 'Строительство',
   'hud.running': 'Идёт волна',
   'hud.paused': 'Волна на паузе',
+  'hud.resolving': 'Волна рассчитывается…',
   'panel.title': 'Выбор',
   'panel.none': 'Выберите площадку или башню на карте.',
   'panel.road': 'На дороге строить нельзя.',

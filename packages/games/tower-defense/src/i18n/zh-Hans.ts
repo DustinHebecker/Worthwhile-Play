@@ -45,6 +45,7 @@ export const zhHans: Record<MessageKey, string> = {
   'hud.build': '建造阶段',
   'hud.running': '波次进行中',
   'hud.paused': '波次已暂停',
+  'hud.resolving': '正在计算波次…',
   'panel.title': '选中项',
   'panel.none': '在地图上选择一个建造位或一座塔。',
   'panel.road': '道路上不能建造。',

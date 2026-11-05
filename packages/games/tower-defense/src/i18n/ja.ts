@@ -45,6 +45,7 @@ export const ja: Record<MessageKey, string> = {
   'hud.build': '建設フェーズ',
   'hud.running': 'ウェーブ進行中',
   'hud.paused': 'ウェーブ一時停止中',
+  'hud.resolving': 'ウェーブを計算中…',
   'panel.title': '選択中',
   'panel.none': 'マップ上の建設地点かタワーを選択してください。',
   'panel.road': '道路には建設できません。',

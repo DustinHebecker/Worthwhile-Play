@@ -45,6 +45,7 @@ export const nl: Record<MessageKey, string> = {
   'hud.build': 'Bouwfase',
   'hud.running': 'Golf loopt',
   'hud.paused': 'Golf gepauzeerd',
+  'hud.resolving': 'Golf wordt berekend…',
   'panel.title': 'Selectie',
   'panel.none': 'Kies een bouwplaats of een toren op de kaart.',
   'panel.road': 'Op de weg kan niet worden gebouwd.',

@@ -45,6 +45,7 @@ export const ar: Record<MessageKey, string> = {
   'hud.build': 'مرحلة البناء',
   'hud.running': 'الموجة جارية',
   'hud.paused': 'الموجة متوقفة مؤقتًا',
+  'hud.resolving': 'جارٍ حساب الموجة…',
   'panel.title': 'التحديد',
   'panel.none': 'اختر موقع بناء أو برجًا على الخريطة.',
   'panel.road': 'لا يمكن البناء على الطريق.',

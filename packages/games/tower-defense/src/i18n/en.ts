@@ -48,6 +48,7 @@ export const en = {
   'hud.build': 'Build phase',
   'hud.running': 'Wave running',
   'hud.paused': 'Wave paused',
+  'hud.resolving': 'Resolving the wave…',
   'panel.title': 'Selection',
   'panel.none': 'Select a build pad or a tower on the map.',
   'panel.road': 'The road cannot be built on.',

@@ -45,6 +45,7 @@ export const de: Record<MessageKey, string> = {
   'hud.build': 'Bauphase',
   'hud.running': 'Welle läuft',
   'hud.paused': 'Welle pausiert',
+  'hud.resolving': 'Welle wird berechnet…',
   'panel.title': 'Auswahl',
   'panel.none': 'Wähle einen Bauplatz oder einen Turm auf der Karte.',
   'panel.road': 'Auf der Straße kann nicht gebaut werden.',

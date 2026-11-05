@@ -45,6 +45,7 @@ export const hi: Record<MessageKey, string> = {
   'hud.build': 'निर्माण चरण',
   'hud.running': 'लहर जारी है',
   'hud.paused': 'लहर रुकी हुई है',
+  'hud.resolving': 'लहर की गणना हो रही है…',
   'panel.title': 'चयन',
   'panel.none': 'नक्शे पर कोई प्लेटफ़ॉर्म या टावर चुनें।',
   'panel.road': 'सड़क पर निर्माण नहीं हो सकता।',

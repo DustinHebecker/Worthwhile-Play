@@ -45,6 +45,7 @@ export const ko: Record<MessageKey, string> = {
   'hud.build': '건설 단계',
   'hud.running': '웨이브 진행 중',
   'hud.paused': '웨이브 일시 정지',
+  'hud.resolving': '웨이브 계산 중…',
   'panel.title': '선택',
   'panel.none': '지도에서 건설 부지나 타워를 선택하세요.',
   'panel.road': '도로에는 건설할 수 없습니다.',

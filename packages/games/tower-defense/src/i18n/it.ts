@@ -45,6 +45,7 @@ export const it: Record<MessageKey, string> = {
   'hud.build': 'Fase di costruzione',
   'hud.running': 'Ondata in corso',
   'hud.paused': 'Ondata in pausa',
+  'hud.resolving': 'Calcolo dell’ondata…',
   'panel.title': 'Selezione',
   'panel.none': 'Seleziona una piazzola o una torre sulla mappa.',
   'panel.road': 'Sulla strada non si può costruire.',

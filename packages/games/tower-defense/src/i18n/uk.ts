@@ -45,6 +45,7 @@ export const uk: Record<MessageKey, string> = {
   'hud.build': 'Етап будівництва',
   'hud.running': 'Хвиля триває',
   'hud.paused': 'Хвилю призупинено',
+  'hud.resolving': 'Хвиля обчислюється…',
   'panel.title': 'Вибране',
   'panel.none': 'Виберіть на мапі майданчик або вежу.',
   'panel.road': 'На дорозі будувати не можна.',

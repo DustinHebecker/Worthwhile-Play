@@ -45,6 +45,7 @@ export const tr: Record<MessageKey, string> = {
   'hud.build': 'İnşa aşaması',
   'hud.running': 'Dalga sürüyor',
   'hud.paused': 'Dalga duraklatıldı',
+  'hud.resolving': 'Dalga hesaplanıyor…',
   'panel.title': 'Seçim',
   'panel.none': 'Haritada bir inşa alanı veya bir kule seç.',
   'panel.road': 'Yolun üzerine inşa edilemez.',
