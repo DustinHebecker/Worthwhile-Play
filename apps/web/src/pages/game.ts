@@ -9,6 +9,7 @@ import { findGame } from '../registry';
 import type { Route } from '../router';
 import { hostLearning, loadLearningRecords, type HostLearning } from '../lib/learning';
 import { createPreferences } from '../lib/preferences';
+import { requestUpdate } from '../lib/update';
 import { safeStorage, sessionNoteEnabled } from './settings';
 import { renderSetupForm, settingsSummary } from './setup-form';
 import { gameBadges, gameTextAttrs, gameTranslator } from './shared';
@@ -450,6 +451,24 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     clear(status);
     if (!store.persistent) status.append(h('p', { class: 'notice' }, t('game.saveUnavailable')));
     const loaded = interpretSave(await store.read(metadata.id).catch(() => undefined), module);
+    if (loaded.status === 'corrupt' && loaded.reason === 'newer-version') {
+      // A newer release wrote this save (this tab or installed app still runs an older, cached one). The save is
+      // kept and nothing is started that could overwrite it: the update is fetched, and applied as soon as it is
+      // there. Only an explicit choice discards the save.
+      requestUpdate();
+      const kept = store;
+      const update = h('button', { type: 'button', 'data-testid': 'save-newer-update' }, t('game.saveNewerUpdate'));
+      update.addEventListener('click', () => requestUpdate(true));
+      const discard = h('button', { type: 'button', 'data-testid': 'save-newer-discard' }, t('game.saveNewerDiscard'));
+      discard.addEventListener('click', () => {
+        void kept
+          .remove(metadata.id)
+          .catch(() => undefined)
+          .then(() => location.reload());
+      });
+      status.append(h('div', { class: 'notice', role: 'alert', 'data-testid': 'save-newer' }, h('p', {}, t('game.saveNewer')), h('p', {}, update, ' ', discard)));
+      return;
+    }
     if (loaded.status === 'corrupt') {
       status.append(h('p', { class: 'notice', role: 'alert', 'data-testid': 'save-corrupt' }, t('game.saveCorrupt')));
       await store.remove(metadata.id).catch(() => undefined);

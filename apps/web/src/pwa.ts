@@ -1,5 +1,6 @@
 import { h } from '@wp/ui';
 import type { UiTranslator } from './app';
+import { setUpdateHandler } from './lib/update';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -11,6 +12,9 @@ let needRefresh = false;
 let offlineReady = false;
 let registered = false;
 let rerender: (() => void) | undefined;
+let registration: ServiceWorkerRegistration | undefined;
+/** A game page holds a save from a newer release: apply the next update at once, game page or not. */
+let updateWanted = false;
 
 /**
  * Service-worker registration (`registerType: 'prompt'`).
@@ -26,6 +30,27 @@ const isGamePage = (path = location.pathname) => path.startsWith('/games/');
 export function applyPendingUpdateIfIdle(): void {
   if (needRefresh && updateSW && !isGamePage()) void updateSW(true);
 }
+
+/**
+ * A save was written by a newer release than this (cached) app: look for the update now and apply it as
+ * soon as it is there, even on a game page (the save is kept until then). Without a service worker, or
+ * with `reload`, the page is reloaded from the network instead.
+ */
+function requestUpdate(reload: boolean): void {
+  updateWanted = true;
+  if (needRefresh && updateSW) void updateSW(true);
+  else if (registration)
+    void registration
+      .update()
+      .catch(() => undefined)
+      .then(() => {
+        // Asked for explicitly and no update came: reload from the network.
+        if (reload && !needRefresh) location.reload();
+      });
+  else if (reload) location.reload();
+}
+
+setUpdateHandler(requestUpdate);
 
 export function setupPwa(slot: HTMLElement, t: UiTranslator): void {
   const render = () => {
@@ -62,12 +87,14 @@ export function setupPwa(slot: HTMLElement, t: UiTranslator): void {
     updateSW = registerSW({
       onNeedRefresh: () => {
         needRefresh = true;
-        if (!isGamePage()) void updateSW?.(true);
+        if (!isGamePage() || updateWanted) void updateSW?.(true);
         else rerender?.();
       },
-      onRegisteredSW: (_url, registration) => {
+      onRegisteredSW: (_url, reg) => {
+        registration = reg;
         // Long-lived tabs and installed apps also pick up new releases.
-        if (registration) setInterval(() => void registration.update(), UPDATE_CHECK_INTERVAL_MS);
+        if (reg) setInterval(() => void reg.update(), UPDATE_CHECK_INTERVAL_MS);
+        if (reg && updateWanted) void reg.update().catch(() => undefined);
       },
       onOfflineReady: () => {
         offlineReady = true;
