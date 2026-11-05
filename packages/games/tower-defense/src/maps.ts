@@ -27,6 +27,11 @@ export interface TdMap {
   readonly startCredits: number;
   /** Credits at the start of each build phase after the first (index = wave just survived). */
   readonly income: readonly number[];
+  /**
+   * Endless: growth steps its generated waves start with (default 0). The Training ground's last
+   * waves are far smaller than a full map's, so its endless game starts further on (measured).
+   */
+  readonly endlessHeadStart?: number;
 }
 
 const g = (kind: EnemyKind, count: number, every: number, at = 0, route = 0): SpawnGroup => ({ kind, count, every, at, route });
@@ -89,7 +94,8 @@ export const TRAINING: TdMap = {
     [{ groups: [g('brute', 2, 40), g('raider', 2, 24, 30), g('swarm', 12, 3, 70)] }]
   ],
   startCredits: 300,
-  income: [110, 115, 120, 125, 130, 135, 140]
+  income: [110, 115, 120, 125, 130, 135, 140],
+  endlessHeadStart: 34
 };
 
 /**

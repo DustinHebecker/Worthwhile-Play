@@ -56,6 +56,8 @@ test('tower-defense: an undefended game is lost, can be retried, and ends calmly
     if ((await game(page).getAttribute('data-phase')) !== 'build') break;
     await root(page).getByTestId('start').click();
     await root(page).getByTestId('instant').click();
+    // "Instant" resolves in slices (the page stays responsive): wait for the wave's end.
+    await expect(game(page)).not.toHaveAttribute('data-phase', 'wave');
   }
   await expect(game(page)).toHaveAttribute('data-phase', 'lost');
   // A lost game is saved like any other: after a reload it continues with Retry (review of PR #97).
@@ -76,7 +78,7 @@ test('tower-defense: an undefended game is lost, can be retried, and ends calmly
 });
 
 test('tower-defense: the map is chosen on the start screen and kept in the save', async ({ page }) => {
-  await startGame(page, 'tower-defense', { settings: { map: 'twin' } });
+  await startGame(page, 'tower-defense', { settings: { map: 'twin', length: 'waves' } });
   await expect(root(page).getByTestId('wave')).toContainText('20');
   // Two road entries on the twin map: both corner cells are road.
   await expect(root(page).getByTestId('cell-0-0')).toHaveAttribute('aria-label', /road/);
@@ -101,7 +103,7 @@ test('tower-defense: after a new game on a taller map the drawing matches the ce
 test('tower-defense: endless is chosen on the start screen, says so, and survives a reload', async ({ page }) => {
   await startGame(page, 'tower-defense', { settings: { map: 'training', length: 'endless' } });
   await expect(root(page).getByTestId('wave')).toContainText('endless');
-  await expect(root(page).getByTestId('wave')).toContainText('60');
+  await expect(root(page).getByTestId('wave')).toContainText('110');
   await root(page).getByTestId('cell-2-2').click();
   await root(page).getByTestId('build-gun').click();
   await root(page).getByTestId('start').click();
@@ -112,5 +114,10 @@ test('tower-defense: endless is chosen on the start screen, says so, and survive
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(game(page)).toHaveAttribute('data-wave-index', '1');
+  await expect(root(page).getByTestId('wave')).toContainText('endless');
+});
+
+test('tower-defense: endless is the default on the start screen (owner 2026-11-04)', async ({ page }) => {
+  await startGame(page, 'tower-defense');
   await expect(root(page).getByTestId('wave')).toContainText('endless');
 });

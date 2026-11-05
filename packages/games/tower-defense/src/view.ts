@@ -22,7 +22,6 @@ import {
   mapOf,
   newGame,
   refundOf,
-  resolveWave,
   retryWave,
   startWave,
   stepWave,
@@ -43,6 +42,10 @@ import './styles.css';
 /** Ticks between autosaves while a wave runs (5 simulated seconds). */
 const SAVE_EVERY = 5 * TICKS_PER_SECOND;
 const SPEEDS = [1, 2, 4] as const;
+/** "Instant": ticks per step and the time a slice may take before the page gets a turn (review of PR #115). */
+const INSTANT_STEP = 20;
+const INSTANT_BUDGET_MS = 12;
+const clock = (): number => globalThis.performance?.now() ?? Date.now();
 
 const toLength = (l: unknown): Length => ((LENGTHS as readonly unknown[]).includes(l) ? (l as Length) : DEFAULT_LENGTH);
 const toDifficulty = (d: string | undefined): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d ?? '') ? (d as Difficulty) : DEFAULT_DIFFICULTY);
@@ -61,6 +64,9 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   let lastTime = 0;
   let acc = 0;
   let sinceSave = 0;
+  /** "Instant": the wave runs to its end in time-bounded slices, so the page (Close, Pause) stays responsive. */
+  let instant = false;
+  let instantId: ReturnType<typeof setTimeout> | undefined;
   const motion = new Motion();
   let hits = new Set<number>();
   let beams: [number, number][] = [];
@@ -196,7 +202,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   const renderHud = (): void => {
     const total = wavesShown(state);
     wave.textContent = isEndless(state) ? t('hud.waveEndless', { n: state.wave + 1, max: ENDLESS_WAVES }) : t('hud.wave', { n: state.wave + 1, total });
-    phase.textContent = state.phase === 'wave' ? t(playing && !hostPaused ? 'hud.running' : 'hud.paused') : state.phase === 'build' ? t('hud.build') : '';
+    phase.textContent = state.phase === 'wave' ? t(hostPaused || !playing ? 'hud.paused' : instant ? 'hud.resolving' : 'hud.running') : state.phase === 'build' ? t('hud.build') : '';
     credits.textContent = t('hud.credits', { n: state.credits });
     credits.dataset.value = String(state.credits);
     core.textContent = t('hud.core', { n: state.core });
@@ -324,6 +330,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     playButton.hidden = p !== 'wave';
     speedButton.hidden = p !== 'wave';
     instantButton.hidden = p !== 'wave';
+    instantButton.disabled = instant;
     retryButton.hidden = p !== 'lost' || !state.checkpoint;
     giveUpButton.hidden = p !== 'lost';
     playButton.textContent = t(playing ? 'controls.pause' : 'controls.play');
@@ -409,7 +416,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
 
   const advance = (ticks: number): void => {
     const before = state;
-    const result = ticks > 1_000 ? resolveWave(before) : stepWave(before, ticks);
+    const result = stepWave(before, ticks);
     state = result.state;
     collect(result.events);
     motion.prune(new Set(state.world.entities.map((e) => e.id)));
@@ -428,14 +435,17 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   const onWaveOver = (before: TdState, timeUp: boolean): void => {
     stopLoop();
     playing = false;
+    instant = false;
     sinceSave = 0;
     beams = [];
     blasts = [];
     motion.clear();
     hits = new Set();
     acc = 0;
-    const killed = state.stats.killed - before.stats.killed;
-    const leaked = state.stats.leaked - before.stats.leaked;
+    // The whole wave's count: from its lock (the checkpoint), not from the last frame.
+    const from = before.checkpoint?.stats ?? before.stats;
+    const killed = state.stats.killed - from.killed;
+    const leaked = state.stats.leaked - from.leaked;
     if (state.phase === 'build') {
       const income = incomeAfter(before, before.wave);
       const paid = interestOf(before.checkpoint?.credits ?? 0);
@@ -458,7 +468,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
 
   const loop = (time: number): void => {
     frameId = 0;
-    if (!playing || hostPaused || state.phase !== 'wave') return;
+    if (!playing || instant || hostPaused || state.phase !== 'wave') return;
     const dt = lastTime === 0 ? 0 : Math.min(250, time - lastTime);
     lastTime = time;
     acc += (dt * speed * TICKS_PER_SECOND) / 1000;
@@ -482,6 +492,28 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     if (frameId !== 0) caf?.(frameId);
     frameId = 0;
     lastTime = 0;
+    if (instantId !== undefined) clearTimeout(instantId);
+    instantId = undefined;
+  };
+
+  /**
+   * One slice of "Instant": steps of INSTANT_STEP ticks for about INSTANT_BUDGET_MS, then the page
+   * gets a turn (a timeout, which unlike an animation frame also runs in a background tab). The
+   * result is exactly that of resolveWave: a wave is the same however its ticks are grouped.
+   */
+  const instantSlice = (): void => {
+    instantId = undefined;
+    if (!instant || hostPaused || state.phase !== 'wave') return;
+    const end = clock() + INSTANT_BUDGET_MS;
+    do advance(INSTANT_STEP);
+    while (instant && state.phase === 'wave' && clock() < end);
+    if (instant && state.phase === 'wave') {
+      draw();
+      scheduleInstant();
+    }
+  };
+  const scheduleInstant = (): void => {
+    if (instantId === undefined) instantId = setTimeout(instantSlice, 0);
   };
 
   // --- Actions ---------------------------------------------------------------------------------
@@ -525,6 +557,8 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   const togglePlay = (): void => {
     if (state.phase !== 'wave' || hostPaused) return;
     playing = !playing;
+    // Pausing also stops "Instant"; playing on goes at the chosen speed.
+    instant = false;
     if (playing) schedule();
     else {
       stopLoop();
@@ -540,8 +574,13 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
   };
 
   const onInstant = (): void => {
-    if (state.phase !== 'wave' || hostPaused) return;
-    advance(Number.MAX_SAFE_INTEGER);
+    if (state.phase !== 'wave' || hostPaused || instant) return;
+    stopLoop();
+    instant = true;
+    playing = true;
+    renderHud();
+    renderControls();
+    scheduleInstant();
   };
 
   const onRetry = (): void => {
@@ -579,6 +618,7 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     stopLoop();
     state = next;
     playing = false;
+    instant = false;
     selected = null;
     motion.clear();
     hits = new Set();
@@ -611,7 +651,8 @@ export function createTowerDefense(context: GameContext): GameInstance<TdState> 
     },
     resume() {
       hostPaused = false;
-      if (playing && state.phase === 'wave') schedule();
+      if (instant && state.phase === 'wave') scheduleInstant();
+      else if (playing && state.phase === 'wave') schedule();
       renderHud();
     },
     reset() {
