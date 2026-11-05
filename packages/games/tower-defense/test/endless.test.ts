@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ENEMIES } from '@wp/td-core';
 import { MAPS, TRAINING } from '../src/maps';
@@ -6,6 +7,7 @@ import {
   ENDLESS_PERCENT,
   ENDLESS_WAVES,
   endGame,
+  HEAD_START_RAMP,
   incomeAfter,
   isValidState,
   MAX_CREDITS,
@@ -91,7 +93,7 @@ describe('endless: generated waves', () => {
         const def = waveDef(s, k)!;
         const slot = n - 1 - ((k - n) % 4);
         const base = map.waves[slot]![s.variants[slot]!]!;
-        const steps = k - n + 1 + (map.endlessHeadStart ?? 0);
+        const steps = k - n + 1 + Math.min(map.endlessHeadStart ?? 0, (k - n + 1) * HEAD_START_RAMP);
         expect(def.groups.map((g) => g.count), `${map.id} wave ${k + 1}`).toEqual(base.groups.map((g) => (g.kind === 'crawler' ? g.count : Math.ceil((g.count * factorOf(steps)) / 1000))));
         // Four waves later the same authored wave comes back larger, in units and in threat (until every
         // cap is reached, far beyond what a defence holds; then it stays at that size).
@@ -101,6 +103,22 @@ describe('endless: generated waves', () => {
         }
       }
     }
+  });
+
+  it('a head start is caught up over the first generated waves: no cliff after the map’s last wave (review of PR #115)', () => {
+    expect(HEAD_START_RAMP).toBe(3);
+    for (const map of MAPS) {
+      const s = at(0, 1000, map.id);
+      const n = map.waves.length;
+      // The first generated wave is at most half again the last authored one, in units and in threat.
+      expect(units(s, n), map.id).toBeLessThanOrEqual(Math.ceil(units(s, n - 1) * 1.5));
+      expect(threat(s, n), map.id).toBeLessThanOrEqual(Math.ceil(threat(s, n - 1) * 1.5));
+    }
+    // From the wave the Training ground has caught up its head start on, it grows as any map.
+    const caught = TRAINING.waves.length + Math.ceil(TRAINING.endlessHeadStart! / HEAD_START_RAMP) - 1;
+    const def = (k: number) => waveDef(at(0), k)!.groups.filter((g) => g.kind !== 'crawler').map((g) => g.count);
+    const base = TRAINING.waves.length - 1 - ((caught - TRAINING.waves.length) % 4);
+    expect(def(caught)).toEqual(TRAINING.waves[base]![at(0).variants[base]!]!.groups.filter((g) => g.kind !== 'crawler').map((g) => Math.ceil((g.count * factorOf(caught - TRAINING.waves.length + 1 + TRAINING.endlessHeadStart!)) / 1000)));
   });
 
   it('what outgrows a group comes as Brutes of the same health on a ground road, what outgrows those as Siege crawlers; both bounded', () => {
@@ -211,6 +229,46 @@ describe('endless: saves', () => {
     expect(migrateState(clone(v2), 2)).toEqual(v2);
     expect(migrateState({ ...clone(v2), length: 'endless' }, 2)).toBeUndefined();
     expect(migrateState({ junk: 1 }, 2)).toBeUndefined();
+  });
+});
+
+describe('endless: state version 3 saves (review of PR #115)', () => {
+  // Real mid-wave saves of main 52ecec5 (linear growth); see the fixture's `source`.
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/v3-endless-mid-wave.json', import.meta.url), 'utf8')) as { saves: { name: string; state: TdState }[] };
+  const save = (name: string): TdState => clone(fixture.saves.find((x) => x.name === name)!.state);
+
+  it('a running generated wave restarts from its lock: the save is kept, never deleted', () => {
+    const fork = save('fork-w21-t120');
+    // As it is, it holds more units than the new plan of its wave (the host would delete it).
+    expect(fork.run!.pending.length + fork.run!.walkers.length).toBeGreaterThan(waveSchedule(fork, fork.wave).length);
+    expect(isValidState(fork)).toBe(false);
+    for (const name of ['fork-w21-t120', 'training-w9-t120']) {
+      const old = save(name);
+      const migrated = migrateState(clone(old), 3)!;
+      expect(isValidState(migrated), name).toBe(true);
+      expect(migrated).toMatchObject({ phase: 'build', run: null, checkpoint: null, length: 'endless', wave: old.wave, credits: old.checkpoint!.credits, towers: old.checkpoint!.towers });
+      expect(migrated.log).toEqual(old.log);
+      expect(migrated.stats.retries).toBe(old.stats.retries);
+      // It plays on under the new plan.
+      expect(startWave(migrated).run!.pending).toEqual(waveSchedule(migrated, migrated.wave));
+    }
+  });
+
+  it('every other version 3 save loads as it is', () => {
+    const build = clone(at(30));
+    expect(migrateState(clone(build), 3)).toEqual(build);
+    // A running authored wave (its plan did not change), endless or not.
+    for (const s of [stepWave(startWave(at(3)), 50).state, stepWave(startWave(newGame(5, 'standard', 'fork')), 50).state]) {
+      expect(s.phase).toBe('wave');
+      expect(migrateState(clone(s), 3)).toEqual(s);
+    }
+    const lost = { ...clone(at(30)), core: 0, phase: 'lost' as const };
+    expect(migrateState(clone(lost), 3)).toEqual(lost);
+    expect(migrateState({ junk: 1 }, 3)).toBeUndefined();
+    expect(migrateState(null, 3)).toBeUndefined();
+    expect(migrateState({ ...save('fork-w21-t120'), checkpoint: null }, 3)).toBeUndefined();
+    expect(migrateState({ ...save('fork-w21-t120'), mapId: 'nowhere' }, 3)).toBeUndefined();
+    expect(migrateState(clone(build), 4)).toBeUndefined();
   });
 });
 

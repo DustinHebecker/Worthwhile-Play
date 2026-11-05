@@ -14,7 +14,7 @@ Ownership: the shared simulation (`packages/strategy-engine`) is designed and bu
 
 - A *planning* game: the interesting decisions are where to build, which branch to take, and how to spend a limited budget against a known threat — not reaction speed.
 - Five strategically distinct tower families with branch upgrades that remove a capability as well as adding one ("not just el-td").
-- Clear end points: a map is a fixed number of waves (default 12). No endless mode, no score chasing loop.
+- Clear end points: a map is a fixed number of waves (8 on the Training ground, 20 on the full maps). The endless mode (§ 15.11, the start screen's default since 2026-11-04) ends too: by wave 110 at the latest. No score chasing loop.
 - Exact resumability at any moment, including in the middle of a wave.
 - Fully deterministic: `map + seed + difficulty + commands` reproduces every state bit for bit.
 - The same rules, towers and enemies power the four hybrid modes.

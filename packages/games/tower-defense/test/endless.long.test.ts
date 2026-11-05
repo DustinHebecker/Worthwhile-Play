@@ -7,7 +7,7 @@ import { planBuild } from './bots';
  * Endless (design § 15.11): every game ends before ENDLESS_WAVES and every save on the way is valid.
  * Played with little effort (two build actions per wave), which the owner expects to reach about
  * wave 20. The balance for good and very good play (50+, 80–100) is measured in § 15.11; those
- * games run to wave 60 and beyond and are too slow for this suite.
+ * games run 50 waves and more and are too slow for this suite.
  */
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 function endless(mapId: string): TdState {
