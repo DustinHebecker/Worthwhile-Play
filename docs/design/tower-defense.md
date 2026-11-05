@@ -540,94 +540,17 @@ The owner relays these to the strategy context (engine owner, ADR 0009). If pref
   - the mixed planner wins every map on Relaxed and Standard with at least half the core left;
   - random building loses every 12-wave map on Standard;
   - every single-family defence ends Standard at least 8 core points worse than the mix, or loses.
-- **Measured** (seed 7):
+- **Measured** (Standard; the balance suites' planner with 2 build actions per wave as *little effort*, 10 as *good*, 40 on more pads as *very good*; seed 7 unless said otherwise; with the head-start ramp and the denser overflow of the review of PR #115, *very good* from before them):
 
-  | Bot | Result |
-  |---|---|
-  | Mixed planner, Standard | wins Fork, Long bend and Twin with 20/20 core |
-  | Gun only | wins with 10/20 |
-  | Laser only | wins with 3–9, or loses Twin |
-  | Artillery, Support or Specialist only | loses by wave 2–7 |
-  | Mixed planner, Hard | loses Fork and Twin approach in wave 12, wins Long bend with 1 core left |
-
-  The planner is greedy, so Hard is meant for players who plan ahead of the next wave. Owner (2026-11-01): Hard need not be winnable by this bot; the harness asserts that it reaches at least wave 10 on every 12-wave map.
-- **Stop budget:** a unit can be stopped (EMP) for at most 48 ticks (6 s at 1×) per wave; afterwards it shakes off further stops. Stop-only builds could otherwise stall a wave up to the safety bound (review of PR #97).
-- **Seed on one-lane maps:** Long bend's second variant per wave reverses the order in which the groups start, so the seed matters there too.
-- **Known limit:** 7 cells of 44 px need a viewport of about 340 px (page margins included); below that (e.g. 320 px phones) cells shrink to about 41 px.
-- **Changed during tuning:**
-  - Laser beams fire every second tick and ramp up to 3 stacks. Before, a Laser was worth about three Guns per credit.
-  - Gatling and Cannon damage is lower, and the base Gun deals 50 % against air.
-  - Hard: core 12, credits ×0.9, units ×1.2.
-
-### 15.8 Increments
-
-1. **TD core:** ruleset, the training map (6 waves), the build/wave phase machine on the engine, upgrades and branches, economy, leaks, victory and defeat, the checkpoint retry; unit and property tests (determinism, chunking invariance, save/restore at any tick, conservation, termination).
-2. **TD view:** canvas map, HUD, keyboard/touch, 16 locales, contract and e2e tests; three 12-wave maps; balance harness; catalogue place 4.
-3. **Engine extensions** E0–E3 (built here, reviewed by the strategy context), then Prism, Amplifier/Repair, Corroder, Shield bearer, Mender (§ 15.9).
-4. **Hybrid** `strategy-td-hybrid`: VS Small → External Small → External Large → VS Large on the engine economy (`produce`, yards, Supply), catalogue place 7.
-
-### 15.9 Branch C towers and the new units (2026-11-01)
-
-**Third branch instead of replacing branch B.** The design's B branches (Prism, Amplifier, Corroder) arrived after Pulse, Snare and Blackout had shipped as interim B branches. Replacing them would invalidate saves that hold those towers and remove choices players know, so each of the three families gains a **branch C**; Gun and Artillery keep two branches. The branch choice stays exclusive and final. In the view, level pips are filled dots (A), hollow dots (B) and squares (C).
-
-| Family | Branch C (level 2, level 3) | Engine | Price |
-|---|---|---|---|
-| Laser | **Prism**: beam without heat-up that runs on through its target and hits every unit on the line up to its range (`pierce`); 2/3 damage, range 4/5, weak vs heavy (60 %) | E1 | 175 / 250 |
-| Support | **Amplifier**: no weapon; own towers within radius 2 reload 25 %/50 % faster; level 3 also repairs 2 health per second | E2 | 150 / 220 |
-| Specialist | **Corroder**: small hits that mark a unit for 3/4 s; marked units take +25 %/+40 % damage from every tower | E3 | 150 / 220 |
-
-New units (12-wave maps; the Training ground is unchanged):
-- **Shield bearer** (light, 60 health, shield 80 that returns after 3 s without a hit; beams hit the shield ×1.5; an EMP strips it): threat 2, bounty 10; waves 7, 10 and 12. Drawn with a hexagon while the shield lasts.
-- **Mender** (infantry, 50 health, repairs units within radius 2 by 3 health per second, never itself): threat 1, bounty 8; waves 9 and 11. **Not in wave 12:** beside the Siege crawler it decided the game on its own (the mixed planner lost 10 core on Fork).
-- Shield bearers in wave 12 start after the crawler has passed for the same reason (on Long bend the planner lost the crawler fight with them alongside).
-- A marked unit shows a diamond.
-
-Saves stay valid: no kind was removed; a running wave is only bounded by its schedule length, which grew. **But a 12-wave game in progress plays the new waves from wave 7 on**: the waves are read from the map when a wave starts, so this also holds for a checkpoint retry and for replaying a log recorded before the change (the retried or replayed wave brings the new units). Only a wave already running in the save keeps its old schedule.
-
-Review follow-ups (orchestrator, PR #102):
-- **Amplifier in Hold the Line:** its aura reaches every own entity nearby (engine E2: same side), so there it also speeds up and (level 3) repairs **your own attack units** passing it. **Kept, text fixed** rather than restricting the aura to structures: a restriction would need a new engine field (ADR 0009) for one game, and helping your outgoing wave near your own lane is a readable, deliberate tactic in a duel. Hold the Line overrides the shared text ("your towers and your own units close by"); in Tower Defense the player has no units, so "towers close by" stays exact.
-- **Pips** are 0.15 of a cell (6.6 px at 44 px) on a halo in the surface colour, so they stand out from the picture.
-- **Silhouettes:** the Mender uses the mast-truck picture, the Shield bearer the tracer (they no longer look alike once the shield is gone).
-- **Golden replay through wave 12** (`golden.test.ts`): a fixed build order on Fork (relaxed) that buys every branch C and wins wave 12, so edits to waves 7–12 or to the branch-C towers change a hash.
-- **Names:** no further names close to commercial strategy games; "Prism" stays (the spec names it, the mechanic differs).
-
-**Balance (seed 7, standard; core left of 20):** mixed planner Fork 20, Long bend 20, Twin 20 (relaxed 30/20/30); Hard: Fork and Long bend won with 1 left, Twin lost in wave 12; random building loses all three; single families: Gun 8–10, Laser ≤ 9, the rest lose. **The look-ahead planner never picks a branch-C tower**: their value (lines of units, clusters, focus fire) builds up over more than one wave, which its one-wave look-ahead cannot see. Unit tests prove each one does what its text says (`td-core/test/ruleset.test.ts`); whether they are worth their price is a playtest question. The hybrid's computer opponent sees them as upgrade candidates but, for the same reason, has not chosen them in its measured games.
-
-### 15.10 Owner playtest of Tower Defense (2026-11-01)
-
-The owner played TD and reported four things; all are addressed:
-
-1. **Clicks on the second map hit other cells** (lower part). Cause: "New game" reuses the game instance, and the canvas buffer was resized only when the width changed. All maps are 7 wide, so Fork after Training kept a 13-row buffer stretched over 15 rows. Fixed in TD and Hold the Line (PR #105), e2e reproduces it.
-2. **Movement looked turn-based; units should look better.** The engine still moves whole cells. The view now glides every step over the time the unit takes for a cell (`td-core/src/motion.ts`; the picture trails the simulation by up to a cell, nothing in the rules depends on it), with a small hop per step, facing the walking direction and a spark when hit; beams run between where shooter and target are drawn. Units first got pictures of their own; after the owner's next look (2026-11-02: "the new figures are ugly, animate the old ones") they are the strategy game's pictures again, animated by gait (`td-core/src/units.ts`): soldiers waddle from foot to foot with a small bob on each step, wheeled units lean into the drive and bounce, tracked ones jolt, flyers bank and ride up and down; each faces the way it goes, a standing unit keeps the plain picture. Reduced motion keeps units on their cells.
-3. **Too few waves, climbing too fast.** Full maps now have **20 waves**, the Training ground **8**. New kinds come one at a time and few at first (Runners 3, Swarms 5, a Brute 7, Gliders 8, Raiders 11, Shield bearers 12, Menders 14, the Siege crawler 20); waves 1–10 stay gentle, and from wave 11 every wave brings 15 % more units than authored (`LATE_PERCENT`; wave 20: 2.5 ×). Income climbs steadily (70 + 5 per wave). Long bend keeps 130 % of the units but has less money (250 start, 30 less per wave): with more units its long road only paid out more bounty.
-   - **Balance (seed 7):** the mixed planner wins every map on Relaxed and Standard with the full core; on Hard it wins Twin (12 left) and reaches wave 20 on Fork and Long bend; random building loses all three full maps; a single family ends ≥ 8 core behind the mix on at least two of three full maps (Gun 10/7/10 left, Laser 10/18/9: on Long bend's straights lasers come close), the others lose. The balance suite asserts exactly these (Hard: reaches wave 15 or wins).
-   - **Saves:** state version 2. Version-1 saves are migrated (`migrateState`): wave choices kept where the new slot has them, a running wave restarts from its lock (its units came from the old plan); the game goes on with the new waves.
-   - The golden replays are updated deliberately; the full replay now buys every branch C and wins all 20 waves on Fork (relaxed) with 18 core.
-4. **The card picture was too poor.** The card now shows a picture drawn by the game itself (like Relay Command's): an arranged 6 × 4 scene of the real map and unit renderer, light and dark, 288 × 192 WebP (`apps/web/public/previews/tower-defense-*.webp`).
-
-### 15.11 Endless (owner, 2026-11-04)
-
-The owner asked for an endless mode in Tower Defense as in Hold the Line. Start-screen choice **Length**: *Endless* (the default, owner's answer the same day) or *All waves of the map* (the game as before: hold every wave to win). `newGame` and `replay` keep the map's waves as their own default, so older saves and replays are unchanged.
-
-**Owner's targets (2026-11-04):** with little effort about wave 20, with a good strategy at least 50, with a very good one about 80–100.
-
-- **Generated waves:** after the map's waves come generated ones: the last four authored waves in turn (latest first), each generated wave `ENDLESS_PERCENT` = 6 % larger than the one before (compound, in whole per mille: the same in every engine). The Training ground, whose last waves are small, starts its growth 34 steps further on (`endlessHeadStart`, measured). Siege crawler groups keep their authored count; rounded up with the growth they would double at once.
-- **Bounded size, steady growth:** a group past `MAX_GROUP` = 80 (after the difficulty) sends the rest as Brutes of the same total health on a ground road; Brutes past 80 per road come as Siege crawlers (at most `MAX_CRAWLERS` = 120 per group and road). The force keeps growing evenly until every cap is reached, far beyond what any defence holds (about wave 90), while what a wave and a save hold stays bounded.
-- **Why not linear growth or extra Siege crawlers:** measured with the balance suites' mixed planner on Fork. One more Siege crawler every third (or tenth) wave is a cliff: a full core falls within one wave as soon as a second one comes (good strategy 28–32 waves whatever the unit growth). Linear growth with a cap per group flattens out: a good defence then holds to the end (104–106 waves). Compound growth with the conversion gives 65 (5 %), 60 (6 %), 53 (8 %), 44 (12 %) waves on Fork.
-- **End:** an endless game is never won. When the core falls in battle, the wave can be retried or the game ended as ever (outcome `completed`, end panel "The endless game is over."). From wave 101 (`WEAR_FROM` = index 100) the core wears down at the end of every wave by 1, 2, 3, …; a core it empties ends the game for good (`ended`, `worn`), so every game ends by wave 110 (`ENDLESS_WAVES`). The HUD reads "Wave n (endless, at most 110)", announces the wear-down five waves ahead and shows each wave's loss; the end says "Waves held: n".
-- **Time limit per wave:** `MAX_WAVE_TICKS` = 20,000 ticks (about 42 minutes at 1×; before 6,000, 12.5 minutes). It is only a safety net that every wave ends for certain (also for the saves); a unit can be stopped for at most 48 ticks in all (`STUN_BUDGET`), so every wave ends by itself. Owner, 2026-11-04: whoever builds only stun towers decides that themselves; the limit is set so far out that play does not reach it. Should a wave reach it, shells in flight fall harmlessly, the wave ends exactly there and the summary says that time was up (review of PR #114).
-- **Saves:** `stateVersion` 3 (version-2 saves load as they are: no `length`, a game of the map's waves). Validation: `length` only `endless`, waves up to 110 in endless, never `won` in endless, `worn` only on an ended endless game, the checkpoint of the same length.
-- **Unchanged:** a game of the map's waves plays exactly as before (golden replays, balance suites).
-- **Measured** (seed 7, Standard; the balance suites' planner with 2 build actions per wave as *little effort*, 10 as *good*, 40 on more pads as *very good*):
-
-  | Map | Little effort | Good | Very good |
+  | Map | Little effort (seed 7 / 11) | Good | Very good |
   |---|---|---|---|
-  | Training ground | 27 | – | – |
-  | Fork | 20 | 60 | 67 |
-  | Long bend | 17 | 36 | – |
-  | Twin approach | 19 | 61 | 60 |
+  | Training ground | 44 / 16 | 66 | – |
+  | Fork | 20 / 20 | 64 | 67 |
+  | Long bend | 17 / 17 | 44 | – |
+  | Twin approach | 19 / 19 | – | 60 |
 
-  Long bend is the hardest map by design (130 % of the units, less money). The *very good* planner (more actions per build) holds a little longer on Fork (67 against 60) and as long on Twin approach (60 against 61): its limit is the board and the money more than the planning, so whether a very good player reaches 80–100 is for the owner's playtest to show; the growth (`ENDLESS_PERCENT`) is the one knob to turn. `endless.long.test.ts` plays every map with little effort: every game ends, every save on the way is valid.
+  Long bend is the hardest map by design (130 % of the units, less money). The Training ground's little-effort result depends on the seed (its wave choices): 44 and 16. The *very good* planner (more actions per build) holds a little longer on Fork (67 against 60 before the review) and as long on Twin approach (60 against 61): its limit is the board and the money more than the planning, so whether a very good player reaches 80–100 is for the owner's playtest to show; the growth (`ENDLESS_PERCENT`) is the one knob to turn. `endless.long.test.ts` plays every map with little effort: every game ends, every save on the way is valid.
+- **Simple play and the maps** (review of PR #115, open for the owner's playtest): "fill every pad, upgrade with all credits" (seed 7 Standard, the reviewer's bot, before the ramp and the denser overflow) held Training 104, Fork 80, Long bend 69, but Twin approach only 9. A cruder variant measured afterwards (one family on every pad in reading order, then upgrades) held Twin 12 / Fork 19 with Guns, 8 / 7 with Artillery, 3 / 12 with Lasers. Twin approach punishes building without regard to its two roads far more than the other maps do; the planner (which weighs both roads) holds Twin as long as Fork. Whether that is the intended character of the map or needs a Twin-specific change is for the playtest to decide.
 - **Stun-heavy boards** (review of PR #114): on Hard with every pad a Blackout, or Blackouts and Stasis fields in turn, waves take long because units are stopped and slowed all along the road; already the map's own waves 16–22 took 3,000–5,950 ticks. Letting a stopped unit on the entry shake the stop off was measured and did not shorten them, so it was not kept.
 - Also fixed: the map hint on the start screen still said "six short waves, twelve waves each" (since the playtest: 8 and 20).
 
