@@ -290,6 +290,22 @@ describe('game page: games whose first screen is their own setup (ADR 0015)', ()
     expect(main.querySelector('[data-testid="settings-summary"]')!.textContent).toBe('Hard');
   });
 
+  it('a save from a newer release is kept: no game starts that could overwrite it; only an explicit choice discards it', async () => {
+    const log = fakeGame('newer');
+    const saves = createMemoryStore();
+    const module = (await registry.entries.get('newer')!.load()) as GameModule<{ n: number }>;
+    const newer = { ...createSave(module, 3, { n: 1 }), stateVersion: module.metadata.stateVersion + 1 };
+    await saves.write(newer);
+    const main = openPlain('newer', saves);
+    await vi.waitFor(() => expect(main.querySelector('[data-testid="save-newer"]')).not.toBeNull());
+    expect(main.querySelector('[data-testid="save-newer"]')!.textContent).toContain('game.saveNewer');
+    expect(main.querySelector('[data-testid="save-corrupt"]')).toBeNull();
+    expect(main.querySelector('[data-testid="start-game"]')).toBeNull();
+    expect(main.querySelector('[data-testid="continue"]')).toBeNull();
+    expect(log).toEqual([]);
+    expect(await saves.read('newer')).toEqual(newer);
+  });
+
   it('without the flag, shows the start panel unchanged', async () => {
     const log = fakeGame('no-flag');
     const main = openPlain('no-flag');
