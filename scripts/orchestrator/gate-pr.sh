@@ -5,6 +5,11 @@
 # Usage: scripts/orchestrator/gate-pr.sh <pr-number>
 # Env: SCRATCH (default /tmp/wp-orch), E2E_PORT (default 4795).
 set -uo pipefail
+# Cloud containers preinstall one Chromium (/opt/pw-browsers/chromium); it need not be the build this
+# Playwright version downloads, so e2e uses it explicitly when nothing else is set (playwright.config.ts).
+if [ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE:-}" ] && [ -x /opt/pw-browsers/chromium ]; then
+  export PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium
+fi
 PR=$1
 REPO=$(git rev-parse --show-toplevel)
 SCRATCH=${SCRATCH:-/tmp/wp-orch}
