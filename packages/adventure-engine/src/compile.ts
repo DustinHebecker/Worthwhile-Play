@@ -2,7 +2,11 @@ import { VERBS, type Adventure, type Combination, type Cond, type Deduction, typ
 
 /** Lower-case letters, digits and hyphens, 1–48 characters (no dots: text keys are dot-separated). */
 export const ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,47}$/;
-export const isId = (v: unknown): v is string => typeof v === 'string' && ID_PATTERN.test(v);
+/**
+ * A valid id. Names of `Object.prototype` members (`constructor`) are refused: ids are keys of plain
+ * objects in the state (`flags`, `hints`), where such a name would resolve to the inherited member.
+ */
+export const isId = (v: unknown): v is string => typeof v === 'string' && ID_PATTERN.test(v) && !Object.prototype.hasOwnProperty.call(Object.prototype, v);
 export const MAX_FLAG = 1000;
 
 /** An adventure with lookup tables. Built once per adventure; the engine functions take it instead of the raw data. */

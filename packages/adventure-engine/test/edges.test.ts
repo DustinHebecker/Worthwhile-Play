@@ -174,6 +174,21 @@ describe('edge cases found by mutation testing', () => {
   });
 });
 
+describe('ids that are Object.prototype members (orchestrator review L1)', () => {
+  it('compile refuses "constructor" as an id of any kind', () => {
+    expect(errorOf({ ...WATCHTOWER, flags: { ...WATCHTOWER.flags, constructor: { max: 1 } } })).toContain('flag id "constructor"');
+    expect(errorOf({ ...WATCHTOWER, goals: [...WATCHTOWER.goals, { id: 'constructor', active: { has: 'rope' }, done: { has: 'map' } }] })).toContain('goal id "constructor"');
+    expect(errorOf({ ...WATCHTOWER, items: [...WATCHTOWER.items, { id: 'constructor' }] })).toContain('item id "constructor"');
+  });
+
+  it('flag and hint lookups read own properties only', () => {
+    const viaPrototype = compile(withYardHotspot({ visible: { flag: 'keeper-mood' } }));
+    expect(available(viaPrototype, { ...initialState(viaPrototype, 1), flags: Object.create({ 'keeper-mood': 1 }) as Record<string, number> }).some((a) => 'hs' in a && a.hs === 'extra')).toBe(false);
+    const hinted = { ...play([{ a: 'use', hs: 'stair' }]), hints: Object.create({ 'reach-window': 3 }) as Record<string, number> };
+    expect(step(C(), hinted, { a: 'hint', goal: 'reach-window' }).state.hints).toEqual({ 'reach-window': 1 });
+  });
+});
+
 describe('isActionShape', () => {
   it.each<[unknown, boolean]>([
     [{ a: 'examine', hs: 'x' }, true],
