@@ -262,6 +262,12 @@ importers:
         specifier: ^7.4.1
         version: 7.4.1
 
+  packages/adventure-engine:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../game-core
+
   packages/cards:
     dependencies:
       '@wp/game-core':

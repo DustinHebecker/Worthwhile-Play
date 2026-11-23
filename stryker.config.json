@@ -20,6 +20,8 @@
     "packages/td-core/src/towers.ts",
     "packages/strategy-engine/src/*.ts",
     "!packages/strategy-engine/src/{content,index,types}.ts",
+    "packages/adventure-engine/src/*.ts",
+    "!packages/adventure-engine/src/{index,types}.ts",
     "packages/life-engine/src/*.ts",
     "packages/life-engine/src/params/check.ts",
     "!packages/life-engine/src/index.ts",
