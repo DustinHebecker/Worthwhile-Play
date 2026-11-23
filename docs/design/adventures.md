@@ -1,6 +1,6 @@
 # Adventure engine and the two original adventures — design
 
-Status: **Owner decisions recorded (2026-10-14)**; nothing implemented yet. This is the leading design document for roadmap milestone M8. It consolidates the adventure workstream's first draft and the orchestrator's draft (formerly `docs/design/adventure.md`, Q1–Q11), and records the owner's answers (section 0). Numbers marked *(calibrate)* are first estimates; the vertical slices confirm or correct them.
+Status: **Owner decisions recorded (2026-10-14, 2026-11-23)**; engine core (E1) in progress. This is the leading design document for roadmap milestone M8. It consolidates the adventure workstream's first draft and the orchestrator's draft (formerly `docs/design/adventure.md`, Q1–Q11), and records the owner's answers (section 0). Numbers marked *(calibrate)* are first estimates; the vertical slices confirm or correct them.
 
 Scope:
 
@@ -30,7 +30,15 @@ Binding inputs: implementation brief ("Point-and-click adventure framework", "Ad
 | Q10 | Delivery | **Bundled and precached** at first; separate download later only if too large. | Per-locale text chunks via ADR 0011; budgets § 4.2. |
 | Q11 | Failure | **No death, no dead ends**, proven by a content checker. | § 8.3. |
 
-Remaining open points (do not block the engine work): see section 13.
+Follow-up decisions (2026-11-23, owner in this session):
+
+| # | Topic | Decision | Consequence |
+|---|---|---|---|
+| E1 | Start | **Go** for the engine core (E1). | § 11. |
+| O2 | Time inside rooms | **Short scenarios may run in real time**, as long as they can be restarted at any moment — a restart is effectively a pause, nothing is lost. | § 9.3: rooms may be `realtime`; the simulation stays beat-based, a clock only dispatches beats; pause, restart and single-step are always available. |
+| O1 | Earth locations in B | **Both**: an 18th-century harbour town **and** a Bronze-Age site. No strong focus on clocks or calendars; instead **physical cause and effect**, e.g. something falls down, you need to get something up, so you place it on the fallen thing and run time backwards to carry it up. | § 9.7 and § 10.2. |
+
+Remaining open points: see section 13.
 
 ---
 
@@ -127,16 +135,18 @@ Puzzle logic is **data, not code**, so the checker can explore it and translator
 type Cond =
   | { all: Cond[] } | { any: Cond[] } | { not: Cond }
   | { flag: FlagId; eq?: number; gte?: number; lte?: number }
-  | { has: ItemId } | { knows: ClueId } | { visited: SceneId } | { mech: MechId; solved: true }
+  | { has: ItemId } | { used: ItemId } | { knows: ClueId } | { visited: SceneId } | { in: SceneId } | { goal: GoalId }
+  | { mech: MechId; solved: true }                                    // with the first mechanism
   | { era: EraId } | { room: TimeRoomId; solved: true };              // B
 
 type Effect =
   | { set: FlagId; to: number } | { add: FlagId; by: number }        // clamped to the declared range
   | { give: ItemId } | { take: ItemId } | { learn: ClueId }
-  | { go: SceneId } | { dialogue: DialogueId } | { goalDone: GoalId }
-  | { chapterEnd: ChapterId } | { end: EndingId }
+  | { go: SceneId } | { dialogue: DialogueId }
   | { travel: EraId } | { grantPower: PowerId };                      // B: story-driven only
 ```
+
+Goals, chapter ends and endings are not effects: they are conditions (`Goal.done`, `Chapter.done`, `Ending.when`) checked after every successful action, so content cannot forget to fire them. A goal stays done once its condition held.
 
 No arithmetic beyond bounded add, no loops, no string flags. Anything richer is a **mechanism** (§ 3.6).
 
@@ -146,15 +156,17 @@ No arithmetic beyond bounded add, no loops, no string flags. Anything richer is 
 type Action =
   | { a: 'examine' | 'take' | 'use' | 'talk'; hs: HotspotId }
   | { a: 'useItem'; item: ItemId; hs: HotspotId } | { a: 'combine'; x: ItemId; y: ItemId }
-  | { a: 'deduce'; x: ClueId; y: ClueId } | { a: 'present'; what: ClueId | ItemId; hs: HotspotId }
-  | { a: 'choose'; option: string } | { a: 'go'; scene: SceneId }
+  | { a: 'deduce'; x: ClueId; y: ClueId } | { a: 'present'; clue: ClueId; hs: HotspotId }
+  | { a: 'choose'; option: string } | { a: 'travel'; scene: SceneId }  // travel = map; exits are hotspots with `go`
   | { a: 'select'; item: ItemId | null } | { a: 'hint'; goal: GoalId }
   | { a: 'mech'; mech: MechId; move: MechMove }
   | { a: 'power'; power: PowerId; obj: ObjId; k?: number } | { a: 'release'; obj: ObjId }   // B, in rooms
   | { a: 'wait'; beats: number } | { a: 'resetRoom' };                                     // B, in rooms
 
 step(content, state, action): { state: AdventureState; out: Outcome }   // pure, never throws
-// Outcome = { ok: true; text: TextId[]; changes: Change[] } | { ok: false; refusal: RefusalReason; text: TextId }
+// Outcome = { ok: true; text: TextId[]; events: GameEvent[] } | { ok: false; reason: RefusalReason }
+// Implemented in E1 (packages/adventure-engine/src): compile() indexes and checks authored content
+// (throws on invalid content); step/available/initialState/holds; isValidAdventureState; stateHash.
 ```
 
 Order inside `step`: validate against `available` (invalid → refusal, **state unchanged**) → effects of the first matching rule in order → `onEnter` rules of a newly entered scene → B: time-room step (§ 9.3) → goal/chapter/ending evaluation. The view renders the outcome, then calls `requestSave()`; `finished` fires exactly once at an ending.
@@ -269,7 +281,7 @@ Size: ≤ 12 kB (A), ≤ 16 kB (B), hard caps on every array, asserted. Resuming
 | P5 | Every reachable state passes `isValidState`; `isValidState(junk)` never throws. |
 | P6 | Item conservation: each item is in exactly one place (world, inventory, consumed). |
 | P7 | `combine` and `deduce` are symmetric. |
-| P8 | Examine/journal/hint/select/map actions never change world state (only `hints`, `log`, `selected`). |
+| P8 | Selecting an item and revealing a hint never change the world (only `hints`, `log`, `selected`, `actions`). Examining may: noticing a detail can teach a clue. |
 | P9 | B: a held object's state is unchanged by any number of beats. |
 | P10 | B: for an isolated object, `fast` for 1 beat ≡ normal for 4; `slow` for 2 ≡ normal for 1. |
 | P11 | B: if nothing acted on X for k ≤ 24 beats, `rewind(X, k)` restores X's exact state k beats ago and changes nothing else. |
@@ -288,7 +300,7 @@ No `Math.random`, no `Date`, no floats in logic.
 - **Targets ≥ 44 CSS px**: the scene renders at ≥ 640 CSS px width (narrower viewports pan, as Relay Command's map); hence padded hit areas ≥ 110 × 110 scene units and non-overlapping — enforced by the checker.
 - **Screen readers**: `aria-live` announces each outcome once; the picture is `role="img"` labelled with the scene description; dialogue options are a real list; mechanisms render their text description as labelled controls ("Ring 2 of 3: shows the heron pictogram. Turn forward / back").
 - **No colour-only information**: states are named in text and drawn with shape/pattern changes; time powers use distinct glyphs (hold ‖, slow ◁, fast ≫, rewind ↺) plus words; eras have a badge with name and glyph.
-- **Reduced motion**: no animated transitions; state changes are instant swaps with a brief outline highlight; B's optional auto-run (§ 9.3) is not offered.
+- **Reduced motion**: no animated transitions; state changes are instant swaps with a brief outline highlight; real-time rooms in B start in single-step mode (§ 9.3).
 - **Honest limitation** (spec): spatial puzzles (sightlines, beams) are described on a small labelled grid — operable without sight, but harder. The rules text says so.
 
 ### 6.3 Hints (Q6)
@@ -380,7 +392,12 @@ Owner decision Q7 shapes the model: **outside time rooms, time does not run**; *
 ### 9.3 Beats inside rooms
 
 - Time inside a room is an integer **beat** counter that advances **only through the player's actions**: physical actions (take, use, use item, power) cost 1 beat; `wait(n)` costs n (1 ≤ n ≤ 24); examining, reading, journal, inventory, hints and releasing a power cost 0. Reading is never under pressure.
-- Optional **auto-run** presentation (button "Let time run"): dispatches `wait(1)` at a steady pace for atmosphere; off by default, stops on any input, `pause()` and `visibilitychange`; not offered under reduced motion; nothing requires it (§ 13, O2).
+- **Real-time rooms** (owner O2): a short room may be marked `realtime`. Its simulation is still the same deterministic beat simulation; a clock merely dispatches `wait(1)` at the room's tempo (default 2 beats per second) while the room is *running*. Player actions are applied between two beats, so the logic and the save only ever see beats. Rules that keep this fair and compatible with "never require timers for correctness":
+  - a real-time room is **paused on entry**, after a reload, on `pause()`/`visibilitychange` and while a menu or the journal is open; *Start*, *Pause*, *Restart* and *Step* (exactly one beat) are always available, plus a slower tempo (½×);
+  - every real-time room is **solvable in step mode** (the checker explores the room by beats, so it never assumes reaction speed); *Step* is the default under reduced motion and in text mode;
+  - failing costs nothing: *Restart* resets the room to its entry state, exactly like leaving and re-entering;
+  - rooms stay short (≤ 60 beats on the shortest solution, checked).
+- Rooms without `realtime` advance only through actions; they offer an optional *Let time run* button with the same clock (off by default).
 - Integer scales, sub-steps per beat: **held 0, slow 1, normal 2, fast 8** (slow ×½, fast ×4); no floats, so `fast(1) ≡ normal(4)` exactly.
 - Fixed order within one beat: (1) apply the action (effects, powers, releases) → (2) advance every non-held time object in id order by its sub-steps → (3) evaluate room rules to a bounded fixpoint (≤ 8 rounds; content that does not settle fails the checker) → (4) check room goal / failure → (5) push rewindable objects' states to their history.
 
@@ -405,7 +422,7 @@ Powers are granted by the story one at a time (hold → slow → hasten → rewi
 | T1 | Only **marked** objects react (glyph + the word "marked" in the description). People and you are never affected. |
 | T2 | **Hold** (pause/delay): the object's process stops and it becomes rigid — a held piston blocks, a held door stays open. You can still take its loose parts or place things on it. |
 | T3 | **Slow / Hasten**: the object runs at ½× / 4× (some objects say "up to 16×"). |
-| T4 | **Rewind k**: the object returns to the exact state it had k beats ago, within what the device remembers *in this room* (24 beats, shown as a row of frames). A broken object can be rewound to whole if it broke within memory. Items you carry are never pulled back. A rewind into a place where something solid now is, is refused. |
+| T4 | **Rewind k**: the object returns to the exact state it had k beats ago, within what the device remembers *in this room* (24 beats, shown as a row of frames). A broken object can be rewound to whole if it broke within memory. Loose things resting on it ride along; items you carry are never pulled back. A rewind into a place where something solid now is, is refused. |
 | T5 | **Capacity**: at most N effects at once (N = 1 at first, 2 later, 3 in the last chapter, granted by the story; no recharge, no cost). Releasing is free. |
 | T6 | **Locality**: powers work only inside time rooms; leaving a room ends its effects and clears its memory. |
 | T7 | **Eras**: changes flow only **forward** in time: what was done in an earlier era shows in later ones, never the reverse. You carry items and knowledge across eras. |
@@ -430,7 +447,8 @@ Per-object state ring: each rewindable object keeps its last **24** integer stat
 3. **Battery and vine (hasten + rewind)**: a cell charges over 6 phases — hasten to charged. A seedling grows seed → sprout → vine (rest) → withered (rest): hastening twice overshoots; rewind returns it to *vine*.
 4. **Projector lens (targeted rewind)**: rewinding the shattered lens makes it whole; rewinding the projector housing would also re-lock its cover (its history contains *locked*). Teaches: choose the target.
 5. **Era link (story travel)**: in the earlier era, plant a seedling in the planter (room stage); after the story jump, its roots have cracked a sealed floor → new route.
-6. **Combined (late chapter, spec example)**: rewind the broken lift mechanism to intact → hold it at the top (slot 1) → take the counterweight block from the rigid cage → hasten the resin vat until it sets into a wedge (slot 2) → wedge under the rails → release the hold → the cage stops level with the gallery.
+6. **Crate lift (rewind, owner example)**: a crate has just fallen from a quay crane's hook to the ground. The cargo you need is down here, the hatch you need is up there. Put the cargo on the fallen crate, then rewind the crate: it rises back to the hook — carrying what lies on it (rule T4: rewinding moves an object back along its own path; loose things resting on it ride along unless they are anchored).
+7. **Combined (late chapter, spec example)**: rewind the broken lift mechanism to intact → hold it at the top (slot 1) → take the counterweight block from the rigid cage → hasten the resin vat until it sets into a wedge (slot 2) → wedge under the rails → release the hold → the cage stops level with the gallery.
 
 ---
 
@@ -455,12 +473,13 @@ Common: unnamed, ungendered protagonist; no combat; eerie and melancholic, no go
 ### 10.2 Adventure B — temporal science fiction: *The Folded Station* (working title)
 
 - **Setting**: a research station in orbit, built to study "time shear". A failed calibration left it folded across eras of its own history. Around three story jumps lead to a **historical location on Earth** connected to the station's origin (open point O1):
-  - **Option E1 (recommended)**: an 18th-century harbour town with a fictional clockmaker's workshop and observatory, where precise timekeeping for navigation was first worked out — thematically tied to the station's time instruments; mechanical clockwork makes beautiful hold/slow/rewind rooms; the station's founding blueprint traces back to the workshop's notebooks.
-  - **Option E2**: a fictional Bronze-Age stone calendar site on a moor, whose solstice alignments the station's builders reused; strong atmosphere, but fewer mechanisms for time rooms.
-- **Eras** (story-driven): *Station now* (damaged, dim) → *Earth, historical* (E1/E2) → *Station during construction* → *Station now* (changed by what you did). Forward causality only (T7).
+  - **an 18th-century harbour town** (fictional): quays, cranes, warehouses, a shipyard, tides — and
+  - **a Bronze-Age site** (fictional): a hill settlement with a stone circle, a quarry and a log causeway.
+  Owner decision O1: both, without a strong focus on clocks or calendars. The time rooms are about **physical cause and effect**: falling, rolling, floating, burning, growing, breaking — and using those motions backwards and forwards. Example: a crate falls from a crane; you place the cargo you need upstairs on the fallen crate and run time backwards, so the crate carries it up.
+- **Eras** (story-driven): *Station now* (damaged, dim) → *Bronze-Age site* → *harbour town* → *Station now* (changed by what you did). Forward causality only (T7): what you leave in the Bronze Age (a moved stone, a planted grove) is still there for the harbour town and the station.
 - **Protagonist**: the station's maintenance technician, who wakes holding the calibration device ("the tuner", generic working name).
 - **Core mystery**: why the safety interlock failed — a design flaw nobody reported, or deliberate? Answered by what you observe in the past, not told.
-- **Chapters**: (1) station, *hold* and *slow* introduced in short rooms; (2) Earth location, *hasten* (clockwork, growth, curing); (3) station construction, *rewind*; (4) station now, combined rooms with capacity 2–3; (5) finale.
+- **Chapters**: (1) station, *hold* and *slow* introduced in short rooms; (2) Bronze-Age site, *rewind* (falling and rolling stones, a log raft on the river); (3) harbour town, *hasten* and combinations (cranes, tides, ropes, a burning fuse); (4) station now, combined rooms with capacity 2–3; (5) finale.
 - **Scope**: ~7–8 locations × 1–3 eras ≈ 22–28 scenes, ~20–24 puzzles of which ~14–16 time rooms (many short time effects, Q5), 10–12 k words, ≈ 3 h.
 
 ---
@@ -470,14 +489,14 @@ Common: unnamed, ungendered protagonist; no combat; eerie and melancholic, no go
 | # | Increment | Acceptance | Size |
 |---|---|---|---|
 | **E0** | This document + **ADR 0014** *Adventure engine API and ownership* (Proposed) + CLAUDE.md role line + ROADMAP M8 status; delete the superseded `docs/design/adventure.md` | docs review | S |
-| **E1** | Engine core: content types, conditions/effects, `step`, `available`, items/combinations, dialogue, clues/deductions, goals/hints, chapters/endings, state + `isValidState` + hash, `defineAdventureGame` with `preload`; 3-scene fixture adventure | unit suite; P1–P8, P14; mutation ≥ 75 % on `logic/`; fixture walkthrough | M |
+| **E1** | Engine core: content types, conditions/effects, `step`, `available`, items/combinations, dialogue, clues/deductions, goals/hints, chapters/endings, state + `isValidState` + hash; 3-scene fixture adventure (`defineAdventureGame` with `preload` moves to E3, where the view exists) | unit suite; P1–P8, P14; mutation ≥ 75 %; fixture walkthrough — **done**: 249 tests, mutation score 94.6 % | M |
 | **E2** | Checker: static checks, independent interpreter, BFS explorer (completable, no dead ends, coverage, fair clues, hints, budgets, metrics) | broken-fixture suite (one per failure reason); interpreter cross-check property; shortest-path replay | M |
 | **E3** | View kit: renderer + `ArtProvider` + primitive kit, hotspot list, verb menu, inventory, dialogue, journal, map, hints, chapter screen, summary, read-aloud | jsdom view tests; roles/labels/focus order; target-size rule | M |
 | **A1** | **Vertical slice of A**: 2–3 village scenes (pickup, combination, use-on, dialogue clue, one deduction, one small mechanism, transition), 16 locales, registry line + dependency, rules text | contract; checker green; golden walkthrough; e2e keyboard + pointer + resume (mid-dialogue, mid-mechanism) + offline locale; budgets; **owner reviews art** | M–L |
 | A2–A5 | Chapters 1–4 of A (mechanism kinds added as needed, at most one new kind per PR) | checker incl. cross-region puzzles; walkthrough extended | L each |
 | A6 | Finale, endings, summary, hint review, polish → Adventure A complete | full walkthrough; metrics reviewed; mutation re-run | M |
 | T1 | Time module: time rooms, beats, objects, scales, powers, capacity, history/rewind, reset/leave, stages, story eras + derivations; checker extension | P9–P13; unit per rule T1–T8; broken time fixtures; room budgets | M–L |
-| T2 | Time views: device panel, effect glyphs, rewind frames, room reset, era badge, optional auto-run | view tests; reduced motion; keyboard rewind | M |
+| T2 | Time views: device panel, effect glyphs, rewind frames, room restart, era badge, real-time clock with start/pause/step/tempo | view tests; reduced motion; keyboard rewind | M |
 | B1 | Vertical slice of B: 2–3 station scenes with hold and slow rooms | as A1, plus e2e reload mid-room | M–L |
 | B2–B6 | Chapters and finale of B | checker: later rooms need ≥ 2 distinct powers | L each |
 | X1 | *Optional*: Web-Audio ambience/effects in code, off by default | no puzzle depends on it; pause/dispose stop sound | S |
@@ -498,8 +517,8 @@ Deliberately avoided because they are characteristic of the references: masks or
 
 | # | Point | Options | Recommendation |
 |---|---|---|---|
-| O1 | Historical Earth location in B | E1 18th-century harbour town with clockmaker's workshop · E2 Bronze-Age stone calendar site · own idea | **E1** (clockwork suits time rooms; thematic link to precise timekeeping) — needed before B1 |
-| O2 | "Time runs" inside rooms | beats only (time advances with your actions) + optional auto-run · real-time inside rooms | **beats + optional auto-run**: same feel of running time, no reflex pressure, exact saves; real time would contradict "never require timers for correctness" and accessibility. This is our reading of Q7 — please confirm. |
+| O1 | Historical Earth location in B | — | **decided 2026-11-23**: harbour town and Bronze-Age site, physical cause and effect (§ 0) |
+| O2 | "Time runs" inside rooms | — | **decided 2026-11-23**: real time allowed in short, restartable rooms (§ 9.3) |
 | O3 | Final titles | after premise lock-in and name check | before the first adventure leaves "preview" |
 
 ---
