@@ -31,6 +31,8 @@ export interface Move {
   readonly next: AState;
   /** Text keys of the rules that fired (for coverage). */
   readonly fired: readonly string[];
+  /** The action hit the scene-change limit (an onEnter chain longer than the engine follows). */
+  readonly overflow: boolean;
 }
 
 /** Scene changes per action, as specified for the engine (MAX_HOPS). */
@@ -92,6 +94,7 @@ const clone = (s: AState): AState => abstractOf(s as unknown as AdventureState);
 
 class Run {
   readonly fired: string[] = [];
+  overflow = false;
   constructor(readonly c: Compiled, readonly s: AState) {}
 
   rule(rules: readonly Rule[] | undefined, key: (n: number) => string): boolean {
@@ -160,7 +163,10 @@ class Run {
   }
 
   enter(scene: string, depth: number): void {
-    if (depth > HOPS) return;
+    if (depth > HOPS) {
+      this.overflow = true;
+      return;
+    }
     this.s.scene = scene;
     if (this.s.visited.indexOf(scene) < 0) this.s.visited.push(scene);
     const rules = this.c.scenes.get(scene)?.onEnter ?? [];
@@ -221,7 +227,7 @@ export function moves(c: Compiled, s: AState): Move[] {
     const run = new Run(c, clone(s));
     if (!body(run)) return;
     run.settle();
-    out.push({ action, next: run.s, fired: run.fired });
+    out.push({ action, next: run.s, fired: run.fired, overflow: run.overflow });
   };
   if (s.dialogue) {
     const { id, node } = s.dialogue;
