@@ -135,16 +135,18 @@ Puzzle logic is **data, not code**, so the checker can explore it and translator
 type Cond =
   | { all: Cond[] } | { any: Cond[] } | { not: Cond }
   | { flag: FlagId; eq?: number; gte?: number; lte?: number }
-  | { has: ItemId } | { knows: ClueId } | { visited: SceneId } | { mech: MechId; solved: true }
+  | { has: ItemId } | { used: ItemId } | { knows: ClueId } | { visited: SceneId } | { in: SceneId } | { goal: GoalId }
+  | { mech: MechId; solved: true }                                    // with the first mechanism
   | { era: EraId } | { room: TimeRoomId; solved: true };              // B
 
 type Effect =
   | { set: FlagId; to: number } | { add: FlagId; by: number }        // clamped to the declared range
   | { give: ItemId } | { take: ItemId } | { learn: ClueId }
-  | { go: SceneId } | { dialogue: DialogueId } | { goalDone: GoalId }
-  | { chapterEnd: ChapterId } | { end: EndingId }
+  | { go: SceneId } | { dialogue: DialogueId }
   | { travel: EraId } | { grantPower: PowerId };                      // B: story-driven only
 ```
+
+Goals, chapter ends and endings are not effects: they are conditions (`Goal.done`, `Chapter.done`, `Ending.when`) checked after every successful action, so content cannot forget to fire them. A goal stays done once its condition held.
 
 No arithmetic beyond bounded add, no loops, no string flags. Anything richer is a **mechanism** (§ 3.6).
 
@@ -154,15 +156,17 @@ No arithmetic beyond bounded add, no loops, no string flags. Anything richer is 
 type Action =
   | { a: 'examine' | 'take' | 'use' | 'talk'; hs: HotspotId }
   | { a: 'useItem'; item: ItemId; hs: HotspotId } | { a: 'combine'; x: ItemId; y: ItemId }
-  | { a: 'deduce'; x: ClueId; y: ClueId } | { a: 'present'; what: ClueId | ItemId; hs: HotspotId }
-  | { a: 'choose'; option: string } | { a: 'go'; scene: SceneId }
+  | { a: 'deduce'; x: ClueId; y: ClueId } | { a: 'present'; clue: ClueId; hs: HotspotId }
+  | { a: 'choose'; option: string } | { a: 'travel'; scene: SceneId }  // travel = map; exits are hotspots with `go`
   | { a: 'select'; item: ItemId | null } | { a: 'hint'; goal: GoalId }
   | { a: 'mech'; mech: MechId; move: MechMove }
   | { a: 'power'; power: PowerId; obj: ObjId; k?: number } | { a: 'release'; obj: ObjId }   // B, in rooms
   | { a: 'wait'; beats: number } | { a: 'resetRoom' };                                     // B, in rooms
 
 step(content, state, action): { state: AdventureState; out: Outcome }   // pure, never throws
-// Outcome = { ok: true; text: TextId[]; changes: Change[] } | { ok: false; refusal: RefusalReason; text: TextId }
+// Outcome = { ok: true; text: TextId[]; events: GameEvent[] } | { ok: false; reason: RefusalReason }
+// Implemented in E1 (packages/adventure-engine/src): compile() indexes and checks authored content
+// (throws on invalid content); step/available/initialState/holds; isValidAdventureState; stateHash.
 ```
 
 Order inside `step`: validate against `available` (invalid → refusal, **state unchanged**) → effects of the first matching rule in order → `onEnter` rules of a newly entered scene → B: time-room step (§ 9.3) → goal/chapter/ending evaluation. The view renders the outcome, then calls `requestSave()`; `finished` fires exactly once at an ending.
@@ -277,7 +281,7 @@ Size: ≤ 12 kB (A), ≤ 16 kB (B), hard caps on every array, asserted. Resuming
 | P5 | Every reachable state passes `isValidState`; `isValidState(junk)` never throws. |
 | P6 | Item conservation: each item is in exactly one place (world, inventory, consumed). |
 | P7 | `combine` and `deduce` are symmetric. |
-| P8 | Examine/journal/hint/select/map actions never change world state (only `hints`, `log`, `selected`). |
+| P8 | Selecting an item and revealing a hint never change the world (only `hints`, `log`, `selected`, `actions`). Examining may: noticing a detail can teach a clue. |
 | P9 | B: a held object's state is unchanged by any number of beats. |
 | P10 | B: for an isolated object, `fast` for 1 beat ≡ normal for 4; `slow` for 2 ≡ normal for 1. |
 | P11 | B: if nothing acted on X for k ≤ 24 beats, `rewind(X, k)` restores X's exact state k beats ago and changes nothing else. |
@@ -485,7 +489,7 @@ Common: unnamed, ungendered protagonist; no combat; eerie and melancholic, no go
 | # | Increment | Acceptance | Size |
 |---|---|---|---|
 | **E0** | This document + **ADR 0014** *Adventure engine API and ownership* (Proposed) + CLAUDE.md role line + ROADMAP M8 status; delete the superseded `docs/design/adventure.md` | docs review | S |
-| **E1** | Engine core: content types, conditions/effects, `step`, `available`, items/combinations, dialogue, clues/deductions, goals/hints, chapters/endings, state + `isValidState` + hash; 3-scene fixture adventure (`defineAdventureGame` with `preload` moves to E3, where the view exists) | unit suite; P1–P8, P14; mutation ≥ 75 % on `logic/`; fixture walkthrough | M |
+| **E1** | Engine core: content types, conditions/effects, `step`, `available`, items/combinations, dialogue, clues/deductions, goals/hints, chapters/endings, state + `isValidState` + hash; 3-scene fixture adventure (`defineAdventureGame` with `preload` moves to E3, where the view exists) | unit suite; P1–P8, P14; mutation ≥ 75 %; fixture walkthrough — **done**: 249 tests, mutation score 94.6 % | M |
 | **E2** | Checker: static checks, independent interpreter, BFS explorer (completable, no dead ends, coverage, fair clues, hints, budgets, metrics) | broken-fixture suite (one per failure reason); interpreter cross-check property; shortest-path replay | M |
 | **E3** | View kit: renderer + `ArtProvider` + primitive kit, hotspot list, verb menu, inventory, dialogue, journal, map, hints, chapter screen, summary, read-aloud | jsdom view tests; roles/labels/focus order; target-size rule | M |
 | **A1** | **Vertical slice of A**: 2–3 village scenes (pickup, combination, use-on, dialogue clue, one deduction, one small mechanism, transition), 16 locales, registry line + dependency, rules text | contract; checker green; golden walkthrough; e2e keyboard + pointer + resume (mid-dialogue, mid-mechanism) + offline locale; budgets; **owner reviews art** | M–L |

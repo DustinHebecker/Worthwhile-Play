@@ -17,7 +17,7 @@ Short, durable records of decisions that are not obvious from the code. New ADR:
 | [0011](0011-per-locale-game-content.md) | Per-locale game content, loaded by an optional `preload` hook |
 | [0012](0012-game-library.md) | Per-game library for things players create |
 | [0013](0013-decks-made-with-an-ai.md) | Decks made with an AI: a guide link and direct import links |
-| [0014](0014-adventure-engine.md) | Adventure engine: declarative content, checker-proven completability (proposed) |
+| [0014](0014-adventure-engine.md) | Adventure engine: declarative content, checker-proven completability |
 | [0015](0015-setup-in-game.md) | Games whose first screen is their own setup (`setupInGame`) |
 | [0016](0016-shared-playing-cards.md) | Shared playing-card package (`@wp/cards`) |
 | [0017](0017-start-screen-settings.md) | One start screen with host-drawn settings (amends 0002, narrows 0015) |

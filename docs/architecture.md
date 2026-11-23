@@ -18,7 +18,7 @@ apps/web (shell)  ──uses──►  game-core · persistence · localization 
 packages/games/<id>  ──uses──►  game-core · ui · (learning-content | puzzle-core | strategy-engine | adventure-engine | cards …)
 ```
 
-Future shared engines (`puzzle-core`, `strategy-engine`, `adventure-engine`, `ai`, `audio`) are separate packages owned by the orchestrator.
+Future shared engines (`puzzle-core`, `strategy-engine`, `adventure-engine`, `ai`, `audio`) are separate packages owned by the orchestrator. Exceptions: `strategy-engine` (ADR 0009) and `adventure-engine` (ADR 0014: declarative adventure content, a pure `step`/`available` core, a content checker that proves completability) are owned by their workstreams.
 
 ## The GameModule contract
 
