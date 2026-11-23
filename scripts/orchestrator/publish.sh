@@ -9,6 +9,11 @@
 # Never commit on the working branch while it runs (the merge-back would conflict).
 # Env: SCRATCH (default /tmp/wp-orch) for the worktree and logs; E2E_PORT (default 4793).
 set -euo pipefail
+# Cloud containers preinstall one Chromium (/opt/pw-browsers/chromium); it need not be the build this
+# Playwright version downloads, so e2e uses it explicitly when nothing else is set (playwright.config.ts).
+if [ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE:-}" ] && [ -x /opt/pw-browsers/chromium ]; then
+  export PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium
+fi
 MSG="$1"; shift
 REPO=$(git rev-parse --show-toplevel)
 SCRATCH=${SCRATCH:-/tmp/wp-orch}
