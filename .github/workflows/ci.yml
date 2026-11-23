@@ -16,7 +16,7 @@ permissions:
 jobs:
   quality:
     name: Lint, types, unit & property tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -43,7 +43,7 @@ jobs:
 
   long:
     name: Long and slow suites (AI tournaments, strength, statistics, oracle searches)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
@@ -58,7 +58,7 @@ jobs:
 
   puzzles:
     name: Chess puzzles (full re-verification)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -74,7 +74,9 @@ jobs:
 
   e2e:
     name: E2E (Playwright, desktop + mobile, offline)
-    runs-on: ubuntu-latest
+    # Pinned (all jobs): ubuntu-latest moved to 26.04, for which Playwright 1.56 has no Chromium build.
+    # Move on together with a Playwright upgrade.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
@@ -100,7 +102,7 @@ jobs:
     name: Deploy to Cloudflare
     needs: [quality, long, puzzles, e2e]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment:
       name: production
