@@ -104,10 +104,15 @@ function enter(w: Work, scene: string, hops: number): void {
 /** Goals done, chapter ends and the ending, checked after every successful action. */
 function settle(w: Work): void {
   const { c, s } = w;
-  for (const g of c.adv.goals) {
-    if (!s.goalsDone.includes(g.id) && holds(g.done, s)) {
-      s.goalsDone.push(g.id);
-      w.events.push({ type: 'goal', goal: g.id });
+  // Goals may depend on other goals (`{ goal }`), in any order: repeat until nothing changes.
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const g of c.adv.goals) {
+      if (!s.goalsDone.includes(g.id) && holds(g.done, s)) {
+        s.goalsDone.push(g.id);
+        w.events.push({ type: 'goal', goal: g.id });
+        changed = true;
+      }
     }
   }
   for (let ch = c.adv.chapters[s.chapter]; ch && holds(ch.done, s); ch = c.adv.chapters[s.chapter]) {

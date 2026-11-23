@@ -179,6 +179,34 @@ describe('edge cases found by mutation testing', () => {
   });
 });
 
+describe('goals that depend on other goals (found by the random cross-check in CI)', () => {
+  it('are done in the same step, whatever their order', () => {
+    const adv: Adventure = {
+      ...WATCHTOWER,
+      goals: [
+        { id: 'after-both', active: { all: [] }, done: { all: [{ goal: 'after-one' }, { goal: 'explore' }] } },
+        { id: 'after-one', active: { all: [] }, done: { goal: 'explore' } },
+        ...WATCHTOWER.goals
+      ]
+    };
+    const c = compile(adv);
+    const r = step(c, initialState(c, 1), { a: 'use', hs: 'stair' });
+    expect(r.state.goalsDone).toEqual(['explore', 'after-one', 'after-both']);
+    expect(r.out.ok && r.out.events.filter((e) => e.type === 'goal')).toEqual([
+      { type: 'goal', goal: 'explore' },
+      { type: 'goal', goal: 'after-one' },
+      { type: 'goal', goal: 'after-both' }
+    ]);
+    const sel = step(c, r.state, { a: 'select', item: null });
+    expect(sel.state.goalsDone).toEqual(r.state.goalsDone);
+  });
+
+  it('already at the start', () => {
+    const c = compile({ ...WATCHTOWER, goals: [{ id: 'second', active: { all: [] }, done: { goal: 'first' } }, { id: 'first', active: { all: [] }, done: { in: 'yard' } }, ...WATCHTOWER.goals] });
+    expect(initialState(c, 1).goalsDone).toEqual(['first', 'second']);
+  });
+});
+
 describe('ids that are Object.prototype members (orchestrator review L1)', () => {
   it('compile refuses "constructor" as an id of any kind', () => {
     expect(errorOf({ ...WATCHTOWER, flags: { ...WATCHTOWER.flags, constructor: { max: 1 } } })).toContain('flag id "constructor"');

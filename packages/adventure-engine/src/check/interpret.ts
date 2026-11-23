@@ -176,7 +176,11 @@ class Run {
   /** Goals, chapters, ending — after every successful action. */
   settle(): void {
     const { c, s } = this;
-    for (const g of c.adv.goals) if (s.goalsDone.indexOf(g.id) < 0 && test(g.done, s)) s.goalsDone.push(g.id);
+    let before = -1;
+    while (before !== s.goalsDone.length) {
+      before = s.goalsDone.length;
+      for (const g of c.adv.goals) if (s.goalsDone.indexOf(g.id) < 0 && test(g.done, s)) s.goalsDone.push(g.id);
+    }
     while (s.chapter < c.adv.chapters.length) {
       const ch = c.adv.chapters[s.chapter];
       if (!ch || !test(ch.done, s)) break;
