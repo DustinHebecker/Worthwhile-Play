@@ -30,7 +30,8 @@ describe('available: exact lists', () => {
       { a: 'use', hs: 'stair' },
       { a: 'examine', hs: 'window' },
       { a: 'use', hs: 'window' },
-      { a: 'select', item: null }
+      { a: 'select', item: null },
+      { a: 'hint', goal: 'explore' }
     ]);
   });
 
@@ -74,7 +75,11 @@ describe('events', () => {
       text: ['combo.hook.rope.0', 'chapter.below'],
       events: [{ type: 'used', item: 'rope' }, { type: 'used', item: 'hook' }, { type: 'gained', item: 'grapnel' }, { type: 'chapter', chapter: 'below' }]
     });
-    expect(step(C(), initialState(C(), 1), { a: 'use', hs: 'stair' }).out).toEqual({ ok: true, text: ['hs.yard.stair.use.0'], events: [{ type: 'moved', scene: 'cellar' }] });
+    expect(step(C(), initialState(C(), 1), { a: 'use', hs: 'stair' }).out).toEqual({
+      ok: true,
+      text: ['hs.yard.stair.use.0'],
+      events: [{ type: 'moved', scene: 'cellar' }, { type: 'goal', goal: 'explore' }]
+    });
     expect(step(C(), initialState(C(), 1), { a: 'talk', hs: 'keeper' }).out).toEqual({
       ok: true,
       text: ['hs.yard.keeper.talk.0', 'dlg.keeper.hello'],

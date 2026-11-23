@@ -348,6 +348,8 @@ P1–P14 (§ 5.3) on fixture adventures and on the real adventures.
 
 **Static**: referential integrity and uniqueness; every derived text key in all 16 locales with matching placeholders and no unused keys; word cap; every hotspot named and described; every item obtainable and used (unless marked keepsake); flags written and read; hit areas inside the viewBox, ≥ 110 units, non-overlapping; mechanism and time-room definitions total and consistent; dialogue nodes reachable with an exit path.
 
+*Implemented in E2 (`packages/adventure-engine/src/check`): static checks, completability, every ending reachable, no dead ends (with the shortest path into one), coverage of scenes, items, clues and every rule/option/chapter text, an open goal in every non-dialogue state, state budget. Planned with A1: fair clues (needs mechanisms) and tier-3 hint correctness (needs hint targets).*
+
 **Dynamic** — breadth-first over the abstract state (scene, era, flags, items, clues, mechanism-solved bits, rooms-solved bits); mechanism internals and time-room internals are replaced by their own solvers' verdicts:
 
 1. **Completable**: an ending is reachable from the start.
@@ -490,7 +492,7 @@ Common: unnamed, ungendered protagonist; no combat; eerie and melancholic, no go
 |---|---|---|---|
 | **E0** | This document + **ADR 0014** *Adventure engine API and ownership* (Proposed) + CLAUDE.md role line + ROADMAP M8 status; delete the superseded `docs/design/adventure.md` | docs review | S |
 | **E1** | Engine core: content types, conditions/effects, `step`, `available`, items/combinations, dialogue, clues/deductions, goals/hints, chapters/endings, state + `isValidState` + hash; 3-scene fixture adventure (`defineAdventureGame` with `preload` moves to E3, where the view exists) | unit suite; P1–P8, P14; mutation ≥ 75 %; fixture walkthrough — **done**: 249 tests, mutation score 94.6 % | M |
-| **E2** | Checker: static checks, independent interpreter, BFS explorer (completable, no dead ends, coverage, fair clues, hints, budgets, metrics) | broken-fixture suite (one per failure reason); interpreter cross-check property; shortest-path replay | M |
+| **E2** | Checker: static checks, independent interpreter, BFS explorer (completable, no dead ends, coverage, fair clues, hints, budgets, metrics) | broken-fixture suite (one per failure reason); interpreter cross-check property; shortest-path replay — **done**: `checkAdventure` (`@wp/adventure-engine/check`); interpreter ≡ engine on 300 random adventures per run; Stryker 91.7 %. Fair-clue and hint-correctness checks need mechanisms/hint targets and follow with A1 | M |
 | **E3** | View kit: renderer + `ArtProvider` + primitive kit, hotspot list, verb menu, inventory, dialogue, journal, map, hints, chapter screen, summary, read-aloud | jsdom view tests; roles/labels/focus order; target-size rule | M |
 | **A1** | **Vertical slice of A**: 2–3 village scenes (pickup, combination, use-on, dialogue clue, one deduction, one small mechanism, transition), 16 locales, registry line + dependency, rules text | contract; checker green; golden walkthrough; e2e keyboard + pointer + resume (mid-dialogue, mid-mechanism) + offline locale; budgets; **owner reviews art** | M–L |
 | A2–A5 | Chapters 1–4 of A (mechanism kinds added as needed, at most one new kind per PR) | checker incl. cross-region puzzles; walkthrough extended | L each |

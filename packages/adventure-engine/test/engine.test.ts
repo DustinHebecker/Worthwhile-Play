@@ -105,7 +105,7 @@ describe('step', () => {
     const r1 = step(C(), initialState(C(), 1), { a: 'talk', hs: 'keeper' });
     expect(r1.out).toMatchObject({ ok: true, text: ['hs.yard.keeper.talk.0', 'dlg.keeper.hello'] });
     expect(r1.state.dialogue).toEqual({ id: 'keeper', node: 'hello' });
-    expect(available(C(), r1.state)).toEqual([{ a: 'choose', option: 'shifts' }, { a: 'choose', option: 'bye' }]);
+    expect(available(C(), r1.state)).toEqual([{ a: 'choose', option: 'shifts' }, { a: 'choose', option: 'bye' }, { a: 'hint', goal: 'explore' }]);
     expect(step(C(), r1.state, { a: 'choose', option: 'tower' }).out).toEqual({ ok: false, reason: 'invalid' });
     expect(step(C(), r1.state, { a: 'take', hs: 'rope' }).out).toEqual({ ok: false, reason: 'in-dialogue' });
     const r2 = step(C(), r1.state, { a: 'choose', option: 'shifts' });
@@ -217,7 +217,7 @@ describe('step', () => {
       if (r.out.ok) for (const e of r.out.events) if (e.type === 'chapter' || e.type === 'goal' || e.type === 'ended') events.push(`${e.type}:${'chapter' in e ? e.chapter : 'goal' in e ? e.goal : e.ending}`);
       s = r.state;
     }
-    expect(events).toEqual(['chapter:below', 'goal:keeper-secret', 'goal:reach-window', 'goal:open-chest', 'chapter:above', 'ended:map-found']);
+    expect(events).toEqual(['goal:explore', 'chapter:below', 'goal:keeper-secret', 'goal:reach-window', 'goal:open-chest', 'chapter:above', 'ended:map-found']);
     expect(s.ended).toBe('map-found');
     expect(s.chapter).toBe(2);
     expect(s.actions).toBe(WALKTHROUGH.length);
