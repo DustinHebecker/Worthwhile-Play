@@ -30,7 +30,8 @@ describe('available: exact lists', () => {
       { a: 'use', hs: 'stair' },
       { a: 'examine', hs: 'window' },
       { a: 'use', hs: 'window' },
-      { a: 'select', item: null }
+      { a: 'select', item: null },
+      { a: 'hint', goal: 'explore' }
     ]);
   });
 
@@ -74,7 +75,11 @@ describe('events', () => {
       text: ['combo.hook.rope.0', 'chapter.below'],
       events: [{ type: 'used', item: 'rope' }, { type: 'used', item: 'hook' }, { type: 'gained', item: 'grapnel' }, { type: 'chapter', chapter: 'below' }]
     });
-    expect(step(C(), initialState(C(), 1), { a: 'use', hs: 'stair' }).out).toEqual({ ok: true, text: ['hs.yard.stair.use.0'], events: [{ type: 'moved', scene: 'cellar' }] });
+    expect(step(C(), initialState(C(), 1), { a: 'use', hs: 'stair' }).out).toEqual({
+      ok: true,
+      text: ['hs.yard.stair.use.0'],
+      events: [{ type: 'moved', scene: 'cellar' }, { type: 'goal', goal: 'explore' }]
+    });
     expect(step(C(), initialState(C(), 1), { a: 'talk', hs: 'keeper' }).out).toEqual({
       ok: true,
       text: ['hs.yard.keeper.talk.0', 'dlg.keeper.hello'],
@@ -171,6 +176,49 @@ describe('edge cases found by mutation testing', () => {
     });
     const s = { ...initialState(c, 1), clues: ['shifts'] };
     expect(available(c, s).filter((a) => a.a === 'present').map((a) => (a as { hs: string }).hs)).toEqual(['keeper', 'extra', 'talker']);
+  });
+});
+
+describe('goals that depend on other goals (found by the random cross-check in CI)', () => {
+  it('are done in the same step, whatever their order', () => {
+    const adv: Adventure = {
+      ...WATCHTOWER,
+      goals: [
+        { id: 'after-both', active: { all: [] }, done: { all: [{ goal: 'after-one' }, { goal: 'explore' }] } },
+        { id: 'after-one', active: { all: [] }, done: { goal: 'explore' } },
+        ...WATCHTOWER.goals
+      ]
+    };
+    const c = compile(adv);
+    const r = step(c, initialState(c, 1), { a: 'use', hs: 'stair' });
+    expect(r.state.goalsDone).toEqual(['explore', 'after-one', 'after-both']);
+    expect(r.out.ok && r.out.events.filter((e) => e.type === 'goal')).toEqual([
+      { type: 'goal', goal: 'explore' },
+      { type: 'goal', goal: 'after-one' },
+      { type: 'goal', goal: 'after-both' }
+    ]);
+    const sel = step(c, r.state, { a: 'select', item: null });
+    expect(sel.state.goalsDone).toEqual(r.state.goalsDone);
+  });
+
+  it('already at the start', () => {
+    const c = compile({ ...WATCHTOWER, goals: [{ id: 'second', active: { all: [] }, done: { goal: 'first' } }, { id: 'first', active: { all: [] }, done: { in: 'yard' } }, ...WATCHTOWER.goals] });
+    expect(initialState(c, 1).goalsDone).toEqual(['first', 'second']);
+  });
+});
+
+describe('ids that are Object.prototype members (orchestrator review L1)', () => {
+  it('compile refuses "constructor" as an id of any kind', () => {
+    expect(errorOf({ ...WATCHTOWER, flags: { ...WATCHTOWER.flags, constructor: { max: 1 } } })).toContain('flag id "constructor"');
+    expect(errorOf({ ...WATCHTOWER, goals: [...WATCHTOWER.goals, { id: 'constructor', active: { has: 'rope' }, done: { has: 'map' } }] })).toContain('goal id "constructor"');
+    expect(errorOf({ ...WATCHTOWER, items: [...WATCHTOWER.items, { id: 'constructor' }] })).toContain('item id "constructor"');
+  });
+
+  it('flag and hint lookups read own properties only', () => {
+    const viaPrototype = compile(withYardHotspot({ visible: { flag: 'keeper-mood' } }));
+    expect(available(viaPrototype, { ...initialState(viaPrototype, 1), flags: Object.create({ 'keeper-mood': 1 }) as Record<string, number> }).some((a) => 'hs' in a && a.hs === 'extra')).toBe(false);
+    const hinted = { ...play([{ a: 'use', hs: 'stair' }]), hints: Object.create({ 'reach-window': 3 }) as Record<string, number> };
+    expect(step(C(), hinted, { a: 'hint', goal: 'reach-window' }).state.hints).toEqual({ 'reach-window': 1 });
   });
 });
 

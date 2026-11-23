@@ -11,6 +11,9 @@ export const HINT_TIERS = 3;
 /** Scene changes in one step (onEnter rules may move on). Further moves are ignored; the content checker reports such loops. */
 export const MAX_HOPS = 8;
 
+/** Own-property read of a state record (`flags`, `hints`): never an inherited `Object.prototype` member. */
+const own = (record: Readonly<Record<string, number>>, key: string): number => (Object.hasOwn(record, key) ? (record[key] as number) : 0);
+
 // ── Conditions ──────────────────────────────────────────────────────────────────────────────────
 
 export function holds(c: Cond, s: AdventureState): boolean {
@@ -18,7 +21,7 @@ export function holds(c: Cond, s: AdventureState): boolean {
   if ('any' in c) return c.any.some((x) => holds(x, s));
   if ('not' in c) return !holds(c.not, s);
   if ('flag' in c) {
-    const v = s.flags[c.flag] ?? 0;
+    const v = own(s.flags, c.flag);
     if (c.eq === undefined && c.gte === undefined && c.lte === undefined) return v !== 0;
     return (c.eq === undefined || v === c.eq) && (c.gte === undefined || v >= c.gte) && (c.lte === undefined || v <= c.lte);
   }
@@ -52,7 +55,7 @@ function apply(w: Work, effects: readonly Effect[] | undefined, hops = 0): void 
   for (const e of effects ?? []) {
     const { s } = w;
     if ('set' in e) setFlag(w, e.set, e.to);
-    else if ('add' in e) setFlag(w, e.add, (s.flags[e.add] ?? 0) + e.by);
+    else if ('add' in e) setFlag(w, e.add, own(s.flags, e.add) + e.by);
     else if ('give' in e) {
       if (!s.items.includes(e.give) && !s.used.includes(e.give)) {
         s.items.push(e.give);
@@ -101,10 +104,15 @@ function enter(w: Work, scene: string, hops: number): void {
 /** Goals done, chapter ends and the ending, checked after every successful action. */
 function settle(w: Work): void {
   const { c, s } = w;
-  for (const g of c.adv.goals) {
-    if (!s.goalsDone.includes(g.id) && holds(g.done, s)) {
-      s.goalsDone.push(g.id);
-      w.events.push({ type: 'goal', goal: g.id });
+  // Goals may depend on other goals (`{ goal }`), in any order: repeat until nothing changes.
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const g of c.adv.goals) {
+      if (!s.goalsDone.includes(g.id) && holds(g.done, s)) {
+        s.goalsDone.push(g.id);
+        w.events.push({ type: 'goal', goal: g.id });
+        changed = true;
+      }
     }
   }
   for (let ch = c.adv.chapters[s.chapter]; ch && holds(ch.done, s); ch = c.adv.chapters[s.chapter]) {
@@ -178,7 +186,7 @@ const isPerson = (hs: Hotspot): boolean => hs.on?.talk !== undefined || hs.clues
  */
 export function available(c: Compiled, s: AdventureState): Action[] {
   if (s.ended !== null) return [];
-  const hints: Action[] = activeGoals(c, s).filter((g) => (s.hints[g] ?? 0) < HINT_TIERS).map((goal) => ({ a: 'hint', goal }));
+  const hints: Action[] = activeGoals(c, s).filter((g) => own(s.hints, g) < HINT_TIERS).map((goal) => ({ a: 'hint', goal }));
   if (s.dialogue) {
     const node = c.nodes.get(`${s.dialogue.id}/${s.dialogue.node}`);
     return [...(node?.options ?? []).filter((o) => o.when === undefined || holds(o.when, s)).map((o): Action => ({ a: 'choose', option: o.id })), ...hints];
@@ -288,7 +296,7 @@ export function step(c: Compiled, state: AdventureState, action: Action): StepRe
       s.selected = action.item;
       break;
     case 'hint': {
-      const tier = (s.hints[action.goal] ?? 0) + 1;
+      const tier = own(s.hints, action.goal) + 1;
       if (!activeGoals(c, s).includes(action.goal) || tier > HINT_TIERS) return refuse(state, 'no-hint');
       s.hints[action.goal] = tier;
       w.text.push(hintKey(action.goal, tier));
