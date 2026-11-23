@@ -43,7 +43,7 @@ pnpm build && pnpm e2e
 pnpm mutation         # Stryker (slow)
 ```
 
-In cloud containers Playwright's Chromium is preinstalled (`PLAYWRIGHT_BROWSERS_PATH`); do not run `playwright install`.
+In cloud containers Playwright's Chromium is preinstalled (`PLAYWRIGHT_BROWSERS_PATH`); do not run `playwright install`. If e2e fails with "Executable doesn't exist" (the preinstalled build differs from the one this Playwright version expects), run it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium`.
 
 ## Git
 
