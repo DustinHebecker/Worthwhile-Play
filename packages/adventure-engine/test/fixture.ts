@@ -36,7 +36,7 @@ export const WATCHTOWER: Adventure = {
         { id: 'stair', shape: box, on: { use: [{ then: [{ go: 'cellar' }] }] } },
         {
           id: 'window',
-          shape: { points: [[1000, 100], [1100, 100], [1050, 200]] },
+          shape: { points: [[1000, 100], [1200, 100], [1100, 300]] },
           on: { use: [{ when: { flag: 'grapnel-hooked' }, then: [{ go: 'tower' }] }, {}] },
           items: { grapnel: [{ then: [{ take: 'grapnel' }, { set: 'grapnel-hooked', to: 1 }] }] }
         }
@@ -59,9 +59,10 @@ export const WATCHTOWER: Adventure = {
         {
           id: 'chest',
           shape: box,
-          on: { use: [{ when: { has: 'map' } }, {}] },
+          on: { use: [{}] },
           items: { 'chest-key': [{ then: [{ take: 'chest-key' }, { give: 'map' }] }] }
-        }
+        },
+        { id: 'ladder', shape: box, on: { use: [{ then: [{ go: 'yard' }] }] } }
       ]
     }
   ],
@@ -84,6 +85,7 @@ export const WATCHTOWER: Adventure = {
     }
   ],
   goals: [
+    { id: 'explore', active: { not: { visited: 'cellar' } }, done: { visited: 'cellar' } },
     { id: 'reach-window', active: { visited: 'cellar' }, done: { visited: 'tower' } },
     { id: 'keeper-secret', active: { knows: 'ledger-dates' }, done: { has: 'chest-key' } },
     { id: 'open-chest', active: { visited: 'tower' }, done: { has: 'map' } }

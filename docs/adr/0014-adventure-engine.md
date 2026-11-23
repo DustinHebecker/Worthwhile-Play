@@ -22,6 +22,14 @@ canonicalJson(value) · stateHash(state)                     // FNV-1a over cano
 textKeys(adventure): string[]                               // every derived text key (translation completeness)
 ```
 
+  Content checker (E2, subpath `@wp/adventure-engine/check`, test-time only):
+
+```ts
+checkAdventure(adventure, { texts?, budget? }): { errors, warnings, metrics }
+explore(c, budget) · canFinish(exploration) · pathTo(exploration, i)   // BFS over abstract states
+moves(c, abstractState) · startState(c) · abstractOf(state) · keyOf(abstractState)  // independent interpreter
+```
+
   `defineAdventureGame(...)` (E3, with the view) returns a standard `GameModule`.
 - **State** is plain JSON of logical state (ids only, bounded arrays), saved after every action; content ids are append-only, with `contentVersion` and pure content migrations.
 - **Content checker** (test-time only) with its own minimal interpreter: completable, no dead ends from any reachable state, coverage, fair clues, hint correctness, translation completeness, hit-area sizes, state-space budgets.
