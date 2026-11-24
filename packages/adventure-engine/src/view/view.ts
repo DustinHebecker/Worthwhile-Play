@@ -139,6 +139,9 @@ export function createAdventureView(context: GameContext, options: AdventureView
       shape.addEventListener('click', () => {
         menuFor = menuFor === hs.id ? null : hs.id;
         render();
+        // The actions open in the list below the picture: bring them into view (phones; review L4).
+        const opened = main.querySelector<HTMLElement>('.wp-adv__menu');
+        if (opened && typeof opened.scrollIntoView === 'function') opened.scrollIntoView({ block: 'nearest' });
       });
       pic.append(shape);
     }
