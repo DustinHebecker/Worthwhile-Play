@@ -1,0 +1,16 @@
+{
+  "name": "@wp/game-adventure-a",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./metadata": "./src/metadata.ts" },
+  "dependencies": {
+    "@wp/adventure-engine": "workspace:*",
+    "@wp/game-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@wp/localization": "workspace:*",
+    "@wp/persistence": "workspace:*",
+    "@wp/testing": "workspace:*"
+  }
+}

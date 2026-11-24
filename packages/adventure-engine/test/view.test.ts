@@ -56,6 +56,22 @@ describe('adventure view', () => {
     expect(q('spot-keeper')?.getAttribute('aria-hidden')).toBe('true');
   });
 
+  it('a tap on the picture scrolls the opened actions into view (phones, review L4)', () => {
+    const { root, q } = setup();
+    const calls: unknown[] = [];
+    const original = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = function (arg?: boolean | ScrollIntoViewOptions) {
+      calls.push([this.className, arg]);
+    };
+    try {
+      q('spot-stair')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(calls).toEqual([['wp-adv__menu', { block: 'nearest' }]]);
+      expect(root.querySelector('.wp-adv__menu')?.getAttribute('aria-label')).toBe('en:hs.yard.stair.name');
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original;
+    }
+  });
+
   it('refusals are explained with the shared texts and change nothing', () => {
     const { ctx, q, click, state } = setup();
     const before = JSON.stringify(state());

@@ -18,6 +18,15 @@ describe('defineAdventureGame', () => {
     expect(() => defineAdventureGame({ metadata: FIXTURE_METADATA, adventure: { ...WATCHTOWER, endings: [] }, art: plainArt, content })).toThrow('at least one ending');
   });
 
+  it('wires content migrations into migrateState', () => {
+    const v2 = { ...WATCHTOWER, contentVersion: 2 };
+    const game = defineAdventureGame({ metadata: { ...FIXTURE_METADATA, stateVersion: 2 }, adventure: v2, art: plainArt, content, migrations: { 1: (s) => s } });
+    const v1 = initialState(compile(WATCHTOWER), 1);
+    expect(game.migrateState?.(v1, 1)).toEqual({ ...v1, content: 2 });
+    const none = defineAdventureGame({ metadata: { ...FIXTURE_METADATA, stateVersion: 2 }, adventure: v2, art: plainArt, content });
+    expect(none.migrateState?.(v1, 1)).toBeUndefined();
+  });
+
   it('validates saves against the content and preloads through the content store', async () => {
     const game = fixtureGame();
     expect(game.isValidState(initialState(compile(WATCHTOWER), 1))).toBe(true);
