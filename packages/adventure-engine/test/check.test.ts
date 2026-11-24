@@ -51,6 +51,17 @@ describe('checkAdventure: broken content is reported', () => {
     expect(errorsOf(adv).join('\n')).toContain(message);
   });
 
+  it('reports onEnter scene-change loops with the path that triggers them (review L2)', () => {
+    const adv: Adventure = {
+      ...WATCHTOWER,
+      scenes: WATCHTOWER.scenes.map((sc) =>
+        sc.id === 'cellar' ? { ...sc, onEnter: [{ then: [{ go: 'yard' }] }] } : sc.id === 'yard' ? { ...sc, onEnter: [{ when: { visited: 'cellar' }, then: [{ go: 'cellar' }] }, {}] } : sc
+      )
+    };
+    expect(errorsOf(adv)).toContain('scene-change loop: an action leads through more than 8 onEnter scene changes (the engine stops there): {"a":"use","hs":"stair"}');
+    expect(errorsOf(WATCHTOWER).some((e) => e.startsWith('scene-change loop'))).toBe(false);
+  });
+
   it('reports the shortest way into a dead end', () => {
     const adv = withScene('tower', (s) => ({ ...s, hotspots: s.hotspots.filter((h) => h.id !== 'ladder') }));
     const dead = errorsOf(adv).find((e) => e.startsWith('dead end'));
