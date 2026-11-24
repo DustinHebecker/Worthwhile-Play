@@ -10,6 +10,8 @@ beforeAll(async () => {
   for (const l of SUPPORTED_LOCALES) texts[l] = await CONTENT_LOADERS[l]();
 });
 
+const PINNED_END_HASH = 2856397415;
+
 /** The golden walkthrough (also the shortest solution the checker finds). */
 export const WALKTHROUGH: readonly Action[] = [
   { a: 'take', hs: 'lamp' },
@@ -45,8 +47,9 @@ describe('Adventure A prologue: content', () => {
       return r.state;
     }, initialState(c, 1));
     expect(end.ended).toBe('prologue-end');
-    expect(end.goalsDone.sort()).toEqual(['ask-keeper', 'cross', 'light-lamp', 'open-lock']);
-    expect(stateHash(end)).toBe(stateHash(WALKTHROUGH.reduce((s, a) => step(c, s, a).state, initialState(c, 1))));
+    expect([...end.goalsDone].sort()).toEqual(['ask-keeper', 'cross', 'light-lamp', 'open-lock']);
+    // Pinned: a change of this number means the content or the engine changed the walkthrough's outcome.
+    expect(stateHash(end)).toBe(PINNED_END_HASH);
   });
 
   it('stays within the text budget (design § 4.2: hard cap 14 k English words for the whole adventure)', () => {

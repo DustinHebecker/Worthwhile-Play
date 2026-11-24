@@ -87,6 +87,8 @@ test('adventure-a: Arabic keeps the picture unmirrored and the text view right-t
   await page.getByTestId('language-menu').locator('summary').click();
   await page.getByTestId('header-language').selectOption('ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  // A language switch re-renders the game page; the saved game continues in Arabic.
+  await page.getByTestId('continue').click();
   await expect(id(page, 'scene-name')).toBeVisible();
   await expect(root(page).locator('.wp-adv__figure')).toHaveCSS('direction', 'ltr');
   const width = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

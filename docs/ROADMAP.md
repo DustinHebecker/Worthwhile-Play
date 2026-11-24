@@ -17,7 +17,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch, Stay on Task, Deep Read, Faces & Names done |
 | M6 | **Communication exercises** with deterministic evaluation (ADR 0010) | P2 | M0 | ✅ Ambiguity Detector, Audience Switch, Briefing Game, Compression Challenge |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | 🚧 |
-| M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | 🚧 [design](design/adventures.md), ADR 0014; engine core (E1), content checker (E2) and view kit (E3) done; next: vertical slice of Adventure A (A1) |
+| M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | 🚧 [design](design/adventures.md), ADR 0014; engine (E1–E3) done; Adventure A prologue playable (A1, preview); next: owner review of the art, then chapter 1 |
 | M9 | **Optional local AI** (WebLLM, explicit download, deterministic checks first) | P2 | M6 | ⏳ |
 
 Cross-cutting, continuous: accessibility review, native-speaker review of translations (currently AI-assisted; Portuguese is consistently Brazilian Portuguese, guarded by a test), performance budget per game chunk, documentation/ADRs.
@@ -84,7 +84,7 @@ Platform capabilities for games (host, ADRs 0002/0011/0012): preferences (small 
 | Strategy | Original turn-based strategy (plan→lock→resolve, command network, EW) | M7 | 🚧 | **Relay Command** (`relay-command`): playable (I2); command network with relays and order slots (I3a); doctrines and standing orders (I3b); information model with fog and ghosts (I3c); electronic warfare: jammer, tracer, burn-through (I4); opponent levels easy/normal/hard with one-turn lookahead (I5); legend, unit stat cards, open end, second map Ridge Valley, return on lost contact (UX round); economy with Supply, deposits, Extractors, yards and production, spending and siege opponent (I6a); research, map generator and balancing (I6b–d) next; not a C&C clone |
 | Strategy | Hybrid "Hold the Line": External Small / External Large / VS Small / VS Large | M7 | 🚧 | catalogue place 7; **VS Small** ("Duel", with production buildings and research by default, the shop as an option) and **External Small** ("Outside force", also alone) built, chosen on the start screen, endless by default (computer opponent easy/normal/hard); next External Large, VS Large; opponents: computer in v1, **hot-seat in the backlog** (owner 2026-10-31); shared core `@wp/td-core` |
 | Adventure | Adventure engine (scenes, hotspots, inventory, dialogue, flags) | M8 | 🚧 | core logic (E1), content checker (E2), view kit (E3) done; first playable slice next |
-| Adventure | Adventure A — original dark-fantasy exploration | M8 | ⏳ | design reference only |
+| Adventure | Adventure A — original dark-fantasy exploration | M8 | 🚧 | prologue (A1) as preview; design reference only |
 | Adventure | Adventure B — original temporal sci-fi (pause/slow/fast-forward/rewind/travel) | M8 | ⏳ | design reference only |
 | AI | Local AI pack (WebLLM), AI interface, golden eval set | M9 | ⏳ | never required |
 
