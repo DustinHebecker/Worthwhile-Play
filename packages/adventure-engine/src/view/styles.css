@@ -1,0 +1,63 @@
+/* Adventure view kit: all rules scoped under .wp-adv; shared --wp-* tokens; logical properties (RTL-safe). */
+.wp-adv {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 60rem;
+  margin-inline: auto;
+}
+.wp-adv__scene { margin: 0; font-size: 1.25rem; }
+.wp-adv__figure {
+  margin: 0;
+  overflow-x: auto;
+  border-radius: var(--wp-radius);
+  border: 1px solid var(--wp-border);
+}
+/* Never narrower than 640 CSS px, so a 110-unit hit area is at least 44 px (docs/design/adventures.md § 6); narrower screens pan. */
+.wp-adv__picture { display: block; inline-size: max(100%, 640px); block-size: auto; }
+/* Pictures depict a world: they are not mirrored in right-to-left locales. */
+[dir='rtl'] .wp-adv__figure { direction: ltr; }
+.wp-adv__spot {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 6;
+  cursor: pointer;
+}
+.wp-adv__spot:hover, .wp-adv__spot--open { stroke: var(--wp-focus); stroke-dasharray: 18 10; }
+.wp-adv__picture--reveal .wp-adv__spot { stroke: var(--wp-accent-contrast); stroke-dasharray: 18 10; fill: rgb(255 255 255 / 0.08); }
+.wp-adv__tools { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+.wp-adv__toggle { display: inline-flex; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch); }
+.wp-adv__toggle input { inline-size: 1.25rem; block-size: 1.25rem; }
+.wp-adv__desc { margin: 0; }
+.wp-adv__outcome { min-block-size: 1.5rem; padding-inline-start: 0.75rem; border-inline-start: 4px solid var(--wp-accent); }
+.wp-adv__outcome p { margin: 0.25rem 0; }
+.wp-adv__live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.wp-adv__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.wp-adv__list--row { display: flex; flex-wrap: wrap; }
+.wp-adv__menu { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-block: 0.5rem; padding-inline-start: 1rem; }
+.wp-adv__btn {
+  min-block-size: var(--wp-touch);
+  min-inline-size: var(--wp-touch);
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--wp-radius);
+  border: 1px solid var(--wp-border);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.wp-adv__btn:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+/* Selected and marked state: a thick border and a check mark (never colour alone). */
+.wp-adv__btn[aria-pressed='true'] { border-width: 3px; border-color: var(--wp-accent); }
+.wp-adv__btn[aria-pressed='true']::before { content: '✓ '; }
+.wp-adv__btn[aria-expanded='true'] { border-color: var(--wp-accent); }
+.wp-adv__btn--primary { background: var(--wp-accent); color: var(--wp-accent-contrast); }
+.wp-adv__muted { margin: 0; color: var(--wp-muted); }
+.wp-adv__panel { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 0.75rem; }
+.wp-adv__panel summary { min-block-size: var(--wp-touch); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.wp-adv__hint { margin: 0.25rem 0; }
+.wp-adv__dialogue, .wp-adv__chapter { display: grid; gap: 0.5rem; }
+.wp-adv__line { margin: 0; font-style: italic; }
+.wp-adv h3, .wp-adv h4 { margin: 0.25rem 0; font-size: 1rem; }
+@media (prefers-reduced-motion: reduce) { .wp-adv * { transition: none !important; animation: none !important; } }

@@ -30,7 +30,18 @@ explore(c, budget) · canFinish(exploration) · pathTo(exploration, i)   // BFS 
 moves(c, abstractState) · startState(c) · abstractOf(state) · keyOf(abstractState)  // independent interpreter
 ```
 
-  `defineAdventureGame(...)` (E3, with the view) returns a standard `GameModule`.
+  View kit (E3):
+
+```ts
+defineAdventureGame({ metadata, adventure, art, content, speech? }): GameModule<AdventureState>
+                                         // compile once; isValidState = isValidAdventureState; preload = content.preload
+createAdventureView(context, { compiled, art, texts, speech? }): GameInstance<AdventureState>
+ArtProvider { render(scene, state): SVGElement } · plainArt   // swappable art (owner decision Q1)
+ADVENTURE_UI_MESSAGES · withAdventureMessages(own)            // shared interface texts, 16 locales
+```
+
+  `metadata.stateVersion` equals the adventure's `contentVersion`, so a content change that breaks saves also
+  bumps the version the host uses for `migrateState`.
 - **State** is plain JSON of logical state (ids only, bounded arrays), saved after every action; content ids are append-only, with `contentVersion` and pure content migrations.
 - **Content checker** (test-time only) with its own minimal interpreter: completable, no dead ends from any reachable state, coverage, fair clues, hint correctness, translation completeness, hit-area sizes, state-space budgets.
 - **Time (Adventure B)**: no running global time; eras change only through story beats; short time manipulations (hold, slow, hasten, rewind) happen in closed, resettable *time rooms* with integer beats that advance only through player actions. Rewind uses per-object 24-beat state rings and is not a generic undo.

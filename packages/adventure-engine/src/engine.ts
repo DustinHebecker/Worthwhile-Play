@@ -8,7 +8,7 @@ import type { Action, AdventureState, Cond, Effect, GameEvent, Hotspot, RefusalR
 export const LOG_MAX = 50;
 /** Hint tiers per goal. */
 export const HINT_TIERS = 3;
-/** Scene changes in one step (onEnter rules may move on). Further moves are ignored; the content checker reports such loops. */
+/** Scene changes in one step (onEnter rules may move on). Further moves are ignored; the content checker (`checkAdventure`) reports such loops as errors. */
 export const MAX_HOPS = 8;
 
 /** Own-property read of a state record (`flags`, `hints`): never an inherited `Object.prototype` member. */

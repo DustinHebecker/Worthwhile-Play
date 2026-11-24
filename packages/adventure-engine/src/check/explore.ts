@@ -13,6 +13,8 @@ export interface Exploration {
   readonly fired: ReadonlySet<string>;
   /** True if the state budget stopped the search (all other results are then incomplete). */
   readonly truncated: boolean;
+  /** First move that hit the scene-change limit: [from state, action], or null. */
+  readonly overflow: readonly [number, Action] | null;
 }
 
 /** Breadth-first search over all abstract states reachable from the start, up to `budget` states. */
@@ -24,10 +26,12 @@ export function explore(c: Compiled, budget: number): Exploration {
   const parent: ([number, Action] | null)[] = [null];
   const fired = new Set(start.fired);
   let truncated = false;
+  let overflow: [number, Action] | null = null;
   for (let i = 0; i < states.length; i++) {
     const out: [Action, number][] = [];
     for (const m of moves(c, states[i] as AState)) {
       m.fired.forEach((k) => fired.add(k));
+      if (m.overflow && !overflow) overflow = [i, m.action];
       const key = keyOf(m.next);
       let j = index.get(key);
       if (j === undefined) {
@@ -44,7 +48,7 @@ export function explore(c: Compiled, budget: number): Exploration {
     }
     edges.push(out);
   }
-  return { states, edges, parent, fired, truncated };
+  return { states, edges, parent, fired, truncated, overflow };
 }
 
 /** The actions leading from the start to state `i` (a shortest path). */
