@@ -203,14 +203,14 @@ class Run {
   }
 }
 
-export function startState(c: Compiled): { state: AState; fired: string[] } {
+export function startState(c: Compiled): { state: AState; fired: string[]; overflow: boolean } {
   const flags: Record<string, number> = {};
   for (const [f, n] of Object.entries(c.adv.start.flags ?? {})) if (n > 0) flags[f] = n;
   const s: AState = { scene: c.adv.start.scene, flags, items: [...(c.adv.start.items ?? [])], used: [], clues: [], visited: [], goalsDone: [], dialogue: null, chapter: 0, ended: null };
   const run = new Run(c, s);
   run.enter(c.adv.start.scene, 0);
   run.settle();
-  return { state: s, fired: run.fired };
+  return { state: s, fired: run.fired, overflow: run.overflow };
 }
 
 const shown = (c: Compiled, s: AState): string[] =>

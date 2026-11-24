@@ -169,7 +169,8 @@ function dynamicChecks(c: Compiled, x: Exploration, errors: string[], warnings: 
   const { adv } = c;
   if (x.overflow) {
     const [from, action] = x.overflow;
-    errors.push(`scene-change loop: an action leads through more than ${MAX_HOPS} onEnter scene changes (the engine stops there): ${show([...pathTo(x, from), action])}`);
+    const where = action === null ? 'at the start' : show([...pathTo(x, from), action]);
+    errors.push(`scene-change loop: an action leads through more than ${MAX_HOPS} onEnter scene changes (the engine stops there): ${where}`);
   }
   if (x.truncated) errors.push(`state budget exceeded: more than ${x.states.length} reachable states — split the content into chapters or simplify a puzzle`);
   const finish = canFinish(x);
